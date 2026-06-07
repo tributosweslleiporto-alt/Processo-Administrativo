@@ -2056,13 +2056,13 @@ async function iniciarApp() {
   try { inicializar(); } catch(e) { console.warn('inicializar:', e); }
   // Construir nav
   buildUnifiedNav();
-  // Ir para dashboard
-  navegarPara('dashboard');
-  // Garantir que todos os panels e views começam ocultos
+  // Ocultar todos os panels e views ANTES de navegar
   document.querySelectorAll('.panel, .view').forEach(el => {
     el.style.display = 'none';
     el.classList.remove('active');
   });
+  // Ir para dashboard
+  navegarPara('dashboard');
 
   // Auto-refresh Sistema A (protocolo) a cada 30s
   iniciarAutoRefreshA();
