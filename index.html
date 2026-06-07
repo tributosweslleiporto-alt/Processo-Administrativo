@@ -2080,12 +2080,20 @@ async function iniciarApp() {
 function logout() {
   usuarioLogado = null;
   pa_usuarioAtual = null;
-  document.getElementById('unified-app').style.display = 'none';
-  document.getElementById('loginScreen').style.display = 'flex';
-  document.getElementById('loginUser').value = '';
-  document.getElementById('loginPass').value = '';
+  // Limpar auto-refresh
+  if (window._refreshIntervalA) { clearInterval(window._refreshIntervalA); window._refreshIntervalA = null; }
+  if (window._refreshIntervalB) { clearInterval(window._refreshIntervalB); window._refreshIntervalB = null; }
   // Limpar dados PA em memória
   pa_processos = []; pa_relatorios = []; pa_folhas = []; pa_intimacoes = [];
+  // Mostrar login
+  const app = document.getElementById('unified-app');
+  const login = document.getElementById('loginScreen');
+  if (app) app.style.display = 'none';
+  if (login) login.style.display = 'flex';
+  const loginUser = document.getElementById('loginUser');
+  const loginPass = document.getElementById('loginPass');
+  if (loginUser) loginUser.value = '';
+  if (loginPass) loginPass.value = '';
 }
 
 // ── NAVEGAÇÃO UNIFICADA ───────────────────────────────────────────
@@ -4842,13 +4850,15 @@ function pa_enviarRelInd() {
     const r={id:pa_nextRelId++,num:`REL-${String(pa_nextRelNum).padStart(4,'0')}/${new Date().getFullYear()}`,tipo:'individual',autorId:pa_usuarioAtual.id,fiscal:pa_usuarioAtual.nome,encParaId:parseInt(enc),data:document.getElementById('ri-dt').value,nm,doc:document.getElementById('ri-doc').value,im:'',trib:'',exercicio:'',vo:'',va:'',desc,conc:document.getElementById('ri-conc').value,status:'aguardando',despacho:null,procId:null,empresas:[],assinFiscal};
     pa_relatorios.push(r); pa_nextRelNum++;
   sbPost('pa_relatorios', {
-    id:r.id, numero:r.num, tipo:r.tipo, autor_login:r.autorLogin,
+    id:r.id, numero:r.num, tipo:r.tipo,
+    autor_login:r.autorLogin, autor_id:r.autorId||null,
     fiscal:r.fiscal, enc_para_login:r.encParaLogin, enc_para_id:r.encParaId,
-    data:r.data, nm:r.nm, documento:r.doc, inscricao_municipal:r.im,
-    tributo:r.trib, exercicio:r.exercicio, vo:r.vo, va:r.va,
-    descricao:r.desc, conclusao:r.conc, status:r.status,
+    data:r.data, nm:r.nm||'', documento:r.doc||'', inscricao_municipal:r.im||'',
+    tributo:r.trib||'', exercicio:r.exercicio||'', vo:r.vo||'', va:r.va||'',
+    descricao:r.desc||'', conclusao:r.conc||'', status:r.status,
+    visto:false, despacho:null,
     empresas:r.empresas||[], assinfiscal:r.assinFiscal||null
-  }).catch(e=>console.warn('Erro salvar rel:',e));
+  }).catch(e=>console.warn('Erro salvar relatorio:', e));
     toast(`Relatório ${r.num} assinado e encaminhado!`);
   }
   navegarPara('relatoriosPa'); buildUnifiedNav();
@@ -4929,13 +4939,15 @@ function pa_enviarRelCol() {
     const r={id:pa_nextRelId++,num:`REL-${String(pa_nextRelNum).padStart(4,'0')}/${new Date().getFullYear()}`,tipo:'coletivo',autorId:pa_usuarioAtual.id,fiscal:pa_usuarioAtual.nome,encParaId:parseInt(enc),data:document.getElementById('rc-dt').value,nm:`Coletivo${rcInteressado?' — '+rcInteressado:''}`,doc:rcCnpj,im:'',trib:'',interessado:rcInteressado,exercicio:'',vo:'',va:'',desc,conc:document.getElementById('rc-conc').value,status:'aguardando',despacho:null,procId:null,empresas,assinFiscal};
     pa_relatorios.push(r); pa_nextRelNum++;
   sbPost('pa_relatorios', {
-    id:r.id, numero:r.num, tipo:r.tipo, autor_login:r.autorLogin,
+    id:r.id, numero:r.num, tipo:r.tipo,
+    autor_login:r.autorLogin, autor_id:r.autorId||null,
     fiscal:r.fiscal, enc_para_login:r.encParaLogin, enc_para_id:r.encParaId,
-    data:r.data, nm:r.nm, documento:r.doc, inscricao_municipal:r.im,
-    tributo:r.trib, exercicio:r.exercicio, vo:r.vo, va:r.va,
-    descricao:r.desc, conclusao:r.conc, status:r.status,
+    data:r.data, nm:r.nm||'', documento:r.doc||'', inscricao_municipal:r.im||'',
+    tributo:r.trib||'', exercicio:r.exercicio||'', vo:r.vo||'', va:r.va||'',
+    descricao:r.desc||'', conclusao:r.conc||'', status:r.status,
+    visto:false, despacho:null,
     empresas:r.empresas||[], assinfiscal:r.assinFiscal||null
-  }).catch(e=>console.warn('Erro salvar rel:',e));
+  }).catch(e=>console.warn('Erro salvar relatorio:', e));
     toast(`Relatório coletivo ${r.num} encaminhado — ${empresas.length} empresa(s)!`);
   }
   navegarPara('relatoriosPa'); buildUnifiedNav();
@@ -5014,6 +5026,8 @@ function pa_despachar(decisao) {
     r.status='complementar';
     r.despacho={texto:document.getElementById('desp-txt').value,nm:assinAutoridade.nome,cg:assinAutoridade.cargo,data:assinAutoridade.data,assin:assinAutoridade};
     r.visto=false;
+    sbPatch('pa_relatorios', r.id, {status:r.status, despacho:r.despacho, visto:false})
+      .catch(e=>console.warn('Erro salvar complementar:',e));
     toast('Solicitação de complementação enviada ao fiscal.');
     navegarPara('notificacoesPa'); buildUnifiedNav(); return;
   }
