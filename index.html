@@ -2025,6 +2025,19 @@ async function carregarDadosPA() {
     sbGet('pa_intimacoes','select=*&limit=500'),
   ]);
   pa_processos   = (procs   || []).map(rowToProcesso);
+  // Auto-reparo: vincular relatórios autorizados que perderam o procId em sessões antigas
+  setTimeout(() => {
+    if (typeof pa_relatorios !== 'undefined' && pa_relatorios.length) {
+      pa_relatorios.filter(r => r.status === 'autorizado' && !r.procId).forEach(r => {
+        const proc = pa_relativaProcVinculado(r);
+        if (proc) {
+          r.procId = proc.id;
+          sbPatch('pa_relatorios', r.id, { proc_id: proc.id })
+            .catch(e => console.warn('Erro reparo vínculo:', e));
+        }
+      });
+    }
+  }, 500);
   pa_relatorios  = (rels    || []).map(rowToRelatorio);
   pa_folhas      = (folhas  || []).map(rowToFolha);
   pa_intimacoes  = (ints    || []).map(rowToIntimacao);
@@ -5168,16 +5181,43 @@ function pa_despachar(decisao) {
 }
 
 // ── ABRIR PROCESSO DE RELATÓRIO ────────────────────────────────────────────
+// Detecta processo já aberto a partir do relatório usando dados básicos (nome+doc+autor)
+function pa_relativaProcVinculado(r) {
+  if(!r) return null;
+  const docNorm = (r.doc||'').replace(/\D/g,'');
+  const nomeNorm = (r.nm||'').trim().toLowerCase();
+  if(!nomeNorm) return null;
+  // Buscar processo com mesmo nome E (documento ou autor)
+  const matches = pa_processos.filter(p => {
+    const pNome = (p.nome||'').trim().toLowerCase();
+    const pDoc = (p.doc||'').replace(/\D/g,'');
+    const mesmoAutor = (r.autorLogin && p.autorLogin && r.autorLogin === p.autorLogin) ||
+                       (r.autorId && p.autorId && r.autorId === p.autorId);
+    return pNome === nomeNorm && (
+      (docNorm && pDoc === docNorm) || mesmoAutor
+    );
+  });
+  // Se houver múltiplos candidatos, escolher o mais recente
+  if(matches.length === 0) return null;
+  return matches.sort((a,b) => b.id - a.id)[0];
+}
+
 function pa_abrirProcDeRel(rid) {
   const r=pa_relatorios.find(x=>x.id===rid); if(!r) return;
-  // Se o processo já foi aberto, ir direto para ele
+  // Se o vínculo já existe, ir direto
   if(r.procId) {
     const proc = pa_processos.find(x=>x.id===r.procId);
-    if(proc) {
-      pa_verDetalhe(proc.id);
-      toast(`Processo ${proc.num} já aberto — exibindo detalhes.`);
-      return;
-    }
+    if(proc) { pa_verDetalhe(proc.id); toast(`Processo ${proc.num} já aberto — exibindo detalhes.`); return; }
+  }
+  // Auto-detectar processo existente para relatórios antigos sem vínculo salvo
+  const candidato = pa_relativaProcVinculado(r);
+  if(candidato) {
+    r.procId = candidato.id;
+    sbPatch('pa_relatorios', r.id, { proc_id: candidato.id })
+      .catch(e => console.warn('Erro ao salvar vínculo retroativo:', e));
+    pa_verDetalhe(candidato.id);
+    toast(`Processo ${candidato.num} reconhecido — vínculo restaurado.`);
+    return;
   }
   // Processo ainda não existe — abrir formulário pré-preenchido com dados do relatório
   navegarPara('novo-proc');
