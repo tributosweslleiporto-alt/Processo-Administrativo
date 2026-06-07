@@ -2115,7 +2115,18 @@ function navegarPara(destino, btn) {
     secaoAtiva = 'protocolo';
   } else if (viewEl) {
     viewEl.classList.add('active');
+    viewEl.style.display = 'block'; // forçar visibilidade
+    viewEl.style.minHeight = '200px';
+    viewEl.style.background = '#fff';
     secaoAtiva = 'processadmin';
+  } else {
+    // View não encontrada - mostrar erro
+    const ca = document.querySelector('.content-area');
+    if (ca) {
+      ca.innerHTML = '<div style="padding:40px;background:#fee;color:#c00;font-size:16px;border-radius:8px;margin:20px">' +
+        '<b>Erro:</b> view-' + destino + ' não encontrada no DOM.<br>' +
+        '<small>Verifique se o HTML das views PA está dentro do content-area.</small></div>';
+    }
   }
 
   // Atualizar título
