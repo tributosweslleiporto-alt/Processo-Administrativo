@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="icon" href="data:,">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><text y='52' font-size='56'>⚖️</text></svg>">
 <title>Sistema Tributário Unificado — Caetité</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -37,9 +37,12 @@ body.dark-mode input,body.dark-mode select,body.dark-mode textarea{background:#0
 body.dark-mode label{color:#94a3b8!important}
 body.dark-mode .proto-row,body.dark-mode tbody td{background:#1e293b!important;border-color:#334155!important;color:#e2e8f0!important}
 body.dark-mode tbody tr:hover td{background:#273549!important}
+#painel-procs tr[onclick]:hover td{background:var(--accent3,#e8f0f8)!important;cursor:pointer}
 body.dark-mode thead th{background:#1e293b!important;color:#94a3b8!important;border-color:#334155!important}
 body.dark-mode .topbar-inner{background:#0a1929!important;border-color:#1e293b!important}
 body.dark-mode .stat-val{color:#e2e8f0!important}
+.stat[onclick]:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.08);transition:all .15s}
+.stat[onclick]{transition:all .15s}
 body.dark-mode .badge{filter:brightness(.85)}
 body.dark-mode .btn-outline{background:#1e293b!important;color:#93c5fd!important;border-color:#3b82f6!important}
 body.dark-mode .field input,body.dark-mode .field select,body.dark-mode .field textarea{background:#0f172a!important;border-color:#475569!important}
@@ -892,18 +895,18 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
       <!-- PAINEL -->
       <div id="view-painel" class="view">
 <div class="stats-grid">
-          <div class="stat"><div class="stat-lbl">Processos</div><div class="stat-val" id="st-proc">0</div></div>
-          <div class="stat"><div class="stat-lbl">Em andamento</div><div class="stat-val" style="color:var(--pa-blue)" id="st-and">0</div></div>
-          <div class="stat"><div class="stat-lbl">Relatórios pendentes</div><div class="stat-val" style="color:var(--pa-amber)" id="st-rel">0</div></div>
-          <div class="stat"><div class="stat-lbl">Aguard. despacho</div><div class="stat-val" style="color:var(--pa-red)" id="st-desp">0</div></div>
+          <div class="stat" onclick="navegarPara('processos')" style="cursor:pointer" title="Ver todos os processos"><div class="stat-lbl">Processos</div><div class="stat-val" id="st-proc">0</div></div>
+          <div class="stat" onclick="navegarPara('processos')" style="cursor:pointer" title="Ver processos em andamento"><div class="stat-lbl">Em andamento</div><div class="stat-val" style="color:var(--pa-blue)" id="st-and">0</div></div>
+          <div class="stat" onclick="navegarPara('relatoriosPa')" style="cursor:pointer" title="Ver relatórios"><div class="stat-lbl">Relatórios pendentes</div><div class="stat-val" style="color:var(--pa-amber)" id="st-rel">0</div></div>
+          <div class="stat" onclick="navegarPara('notificacoesPa')" style="cursor:pointer" title="Ver despachos pendentes"><div class="stat-lbl">Aguard. despacho</div><div class="stat-val" style="color:var(--pa-red)" id="st-desp">0</div></div>
         </div>
         <div class="grid2">
           <div>
-            <div style="font-size:11px;font-weight:500;color:var(--pa-text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Últimos processos</div>
+            <div style="font-size:11px;font-weight:500;color:var(--pa-text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">Últimos processos<span onclick="navegarPara('processos')" style="cursor:pointer;font-size:11px;color:var(--pa-blue);text-transform:none;letter-spacing:0;font-weight:400">Ver todos →</span></div>
             <div class="tw"><table><thead><tr><th>Processo</th><th>Requerente</th><th>Status</th></tr></thead><tbody id="painel-procs"></tbody></table></div>
           </div>
           <div>
-            <div style="font-size:11px;font-weight:500;color:var(--pa-text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Notificações recentes</div>
+            <div style="font-size:11px;font-weight:500;color:var(--pa-text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">Notificações recentes<span onclick="navegarPara('notificacoesPa')" style="cursor:pointer;font-size:11px;color:var(--pa-blue);text-transform:none;letter-spacing:0;font-weight:400">Ver todas →</span></div>
             <div id="painel-notifs"></div>
           </div>
         </div>
@@ -4226,7 +4229,21 @@ async function abrirNotif(notifId, protocoloId) {
   renderNotifBadge();
   renderNotifPanel();
   const pid = parseInt(protocoloId);
-  if (pid) { protocoloAtualId = pid; abrirDetalhes(pid); }
+  if (pid) {
+    protocoloAtualId = pid; abrirDetalhes(pid);
+  } else if (n && n.titulo) {
+    // Notificações do sistema de processos administrativos
+    // Detecta o número do relatório no título e navega inteligentemente
+    const matchRel = n.titulo.match(/REL-\d{4}\/\d{4}/);
+    if (matchRel) {
+      const rel = pa_relatorios.find(r => r.num === matchRel[0]);
+      if (rel) {
+        setTimeout(() => pa_irParaRelatorio(rel.id), 100);
+      } else {
+        navegarPara('notificacoesPa');
+      }
+    }
+  }
 }
 
 function marcarTodasLidas() {
@@ -4551,7 +4568,7 @@ function pa_renderPainel() {
   document.getElementById('st-and').textContent = pa_processos.filter(p=>p.status==='em-andamento').length;
   document.getElementById('st-rel').textContent = pa_relatorios.length;
   document.getElementById('st-desp').textContent = pa_relatorios.filter(r=>r.status==='aguardando').length;
-  document.getElementById('painel-procs').innerHTML = [...pa_processos].sort((a,b)=>b.id-a.id).slice(0,5).map(p=>`<tr><td style="font-weight:500;white-space:nowrap">${p.num}</td><td>${p.nome}</td><td>${pa_bdg(p.status)}</td></tr>`).join('');
+  document.getElementById('painel-procs').innerHTML = [...pa_processos].sort((a,b)=>b.id-a.id).slice(0,5).map(p=>`<tr style="cursor:pointer" onclick="pa_verDetalhe(${p.id})" title="Abrir processo ${p.num}"><td style="font-weight:500;white-space:nowrap">${p.num}</td><td>${p.nome}</td><td>${pa_bdg(p.status)}</td></tr>`).join('');
   const notifs = [];
   pa_relatorios.filter(r=>r.encParaLogin===pa_usuarioAtual?.login&&r.status==='aguardando').forEach(r=>notifs.push({texto:`Relatório ${r.num} aguarda despacho`,sub:`Fiscal: ${r.fiscal} · ${r.tipo==='coletivo'?r.empresas.length+' empresas':r.nm}`,tipo:'aguardando',rel:r}));
   pa_relatorios.filter(r=>r.autorLogin===pa_usuarioAtual?.login&&['autorizado','rejeitado','complementar'].includes(r.status)).slice(0,5).forEach(r=>notifs.push({texto:`${r.num} — despacho recebido`,sub:`${r.status==='autorizado'?'Autorizado':(r.status==='complementar'?'Complementação solicitada':'Não autorizado')}`,tipo:r.status,rel:r}));
