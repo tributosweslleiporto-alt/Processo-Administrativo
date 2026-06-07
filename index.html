@@ -362,9 +362,9 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
 /* LOGIN */
 /* APP */
 /* VIEWS */
-.pa-section .view{display:none}
+
 .view
-.pa-section .active{display:block}
+
 /* COMPONENTS */
 .pa-section .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--r);cursor:pointer;font-family:var(--font-b);font-size:13px;font-weight:500;border:1px solid transparent;transition:all .15s;white-space:nowrap}
 .pa-section .btn-p{background:var(--accent);color:
@@ -449,16 +449,14 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
 #fff;transition:left .2s}
 .toggle
 .pa-section .on::after{left:20px}
-.pa-section .modal-wrap{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center}
+
 .modal-wrap
 .pa-section .open{display:flex}
-.pa-section .modal{background:var(--surface);border-radius:var(--rl);border:1px solid var(--border);width:90%;max-width:580px;max-height:88vh;overflow-y:auto}
-.pa-section .modal-hdr{padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--surface);z-index:1}
-.pa-section .modal-hdr h3{font-family:var(--font-d);font-size:16px}
-.pa-section .modal-body{padding:16px 20px 20px}
+
+
+
 .pa-section .xbtn{background:transparent;border:1px solid var(--border);border-radius:var(--r);padding:4px 8px;cursor:pointer;color:var(--text2);font-size:13px}
-.pa-section .toast{position:fixed;bottom:20px;right:20px;background:var(--accent);color:
-#fff;padding:10px 16px;border-radius:var(--rl);font-size:13px;z-index:300;opacity:0;transform:translateY(6px);transition:all .25s;pointer-events:none;max-width:320px}
+
 .toast
 .pa-section .show{opacity:1;transform:translateY(0)}
 .pa-section .doc-sheet{background:
@@ -6201,7 +6199,7 @@ if (typeof pdfjsLib !== 'undefined') {
 </script>
 <!-- MODAL GENÉRICO PROCESSADMIN -->
 <div class="pa-modal-wrap" id="pa-modal" style="display:none;">
-  <div class="pa-modal pa-section">
+  <div class="pa-modal">
     <div class="pa-modal-hdr">
       <h3 id="pa-m-title">Modal</h3>
       <div style="display:flex;gap:8px;align-items:center">
