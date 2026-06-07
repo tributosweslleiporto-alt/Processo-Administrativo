@@ -4618,10 +4618,19 @@ function pa_verDetalhe(id) {
   const pf=pa_folhas.filter(f=>f.pid===id);
   document.getElementById('det-folhas').innerHTML=pf.length?pf.map(f=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--pa-border);font-size:13px"><div><strong>Folha Nº ${f.num}</strong> · ${pa_fd(f.data)}<div style="font-size:12px;color:var(--pa-text2);margin-top:1px">${f.sv||''} · ${(f.tx||'').slice(0,55)}${f.tx&&f.tx.length>55?'…':''}</div></div><button class="btn btn-g btn-xs" onclick="pa_prevFolhaById(${f.id})">Prévia</button></div>`).join(''):'<p style="color:var(--pa-text2);font-size:13px">Nenhuma folha emitida.</p>';
   const acts=document.getElementById('det-actions');
-  const canE = pa_canEdit(p.autorId);
+  const canE = pa_canEdit(p.autorId, p.autorLogin);
+  const ativo = ['em-andamento','pendente'].includes(p.status); // processo ainda editável
   const relOrigem = pa_relatorios.find(r=>r.procId===p.id);
-  const relBtn = relOrigem ? `<button class="btn btn-g btn-sm" onclick="pa_verRelatorio(${relOrigem.id})">📋 Relatório</button>` : '';
-  acts.innerHTML=`${canE?'<button class="btn btn-g btn-sm" onclick="pa_impCapa()">⎙ Capa</button>':''}<button class="btn btn-g btn-sm" onclick="pa_impCartao()">⎙ Cartão</button><button class="btn btn-g btn-sm" onclick="pa_novaFolhaDet()">+ Folha</button>${relBtn}<button class="btn btn-p btn-sm" onclick="pa_novaIntimacaoDet()">+ Intimação</button>`;
+  const relBtn = relOrigem ? `<button class="btn btn-g btn-sm" onclick="pa_verRelatorio(${relOrigem.id})">📋 Relatório origem</button>` : '';
+  const statusInfo = !ativo ? `<span style="font-size:12px;color:var(--pa-text2);padding:4px 10px;background:var(--pa-bg2);border-radius:6px;border:1px solid var(--pa-border)">🔒 Processo ${p.status === 'concluido' ? 'concluído' : p.status} — somente leitura</span>` : '';
+  acts.innerHTML=`
+    <button class="btn btn-g btn-sm" onclick="pa_impCartao()">⎙ Cartão</button>
+    ${canE ? '<button class="btn btn-g btn-sm" onclick="pa_impCapa()">⎙ Capa</button>' : ''}
+    ${relBtn}
+    ${ativo && canE ? `<button class="btn btn-g btn-sm" onclick="pa_novaFolhaDet()">+ Folha</button>` : ''}
+    ${ativo ? `<button class="btn btn-p btn-sm" onclick="pa_novaIntimacaoDet()">+ Intimação</button>` : ''}
+    ${statusInfo}
+  `;
   // Intimações vinculadas
   const intContainer = document.getElementById('det-int-container');
   if(intContainer) intContainer.innerHTML = pa_renderIntimacoesDet(id);
@@ -4721,6 +4730,8 @@ function pa_rfl() {
   c.innerHTML=pa_folhas.map(f=>`<div style="padding:9px 0;border-bottom:1px solid var(--pa-border)"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><strong style="font-size:13px">Folha Nº ${f.num}</strong> · ${pa_processos.find(x=>x.id===f.pid)?.num||''}<div style="font-size:12px;color:var(--pa-text2);margin-top:1px">${f.req} · ${pa_fd(f.data)}</div><div style="font-size:12px;color:var(--pa-text2);margin-top:1px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.tx}</div></div><button class="btn btn-g btn-xs" onclick="pa_prevFolhaById(${f.id})">Ver</button></div></div>`).join('');
 }
 function pa_novaFolhaDet() {
+  const _p=pa_processos.find(x=>x.id===pa_detProcId);
+  if(_p && !['em-andamento','pendente'].includes(_p.status)){toast('Processo encerrado — não é possível adicionar folhas.');return;}
   navegarPara('folhas'); setTimeout(()=>{document.getElementById('fi-p').value=pa_detProcId; pa_afn();},60);
 }
 
@@ -5488,6 +5499,8 @@ function pa_novaIntimacao(tipo) {
   navegarPara('nova-intimacao');
 }
 function pa_novaIntimacaoDet() {
+  const _pi=pa_processos.find(x=>x.id===pa_detProcId);
+  if(_pi && !['em-andamento','pendente'].includes(_pi.status)){toast('Processo encerrado — não é possível adicionar intimações.');return;}
   pa_intTipo = 'fisica';
   pa_intProcIdAtual = pa_detProcId;
   navegarPara('nova-intimacao');
