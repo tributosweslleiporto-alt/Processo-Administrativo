@@ -4842,10 +4842,28 @@ function pa_enviarRelInd() {
   if(pa_editRelId) {
     const r = pa_relatorios.find(x=>x.id===pa_editRelId);
     if(r) {
+      const encUserEdit = paUsuarios().find(u => u.id === parseInt(enc));
       r.nm=nm; r.doc=document.getElementById('ri-doc').value; r.data=document.getElementById('ri-dt').value;
-      r.desc=desc; r.conc=document.getElementById('ri-conc').value; r.encParaId=parseInt(enc);
+      r.desc=desc; r.conc=document.getElementById('ri-conc').value;
+      r.encParaId=parseInt(enc); r.encParaLogin=encUserEdit?.login||r.encParaLogin||'';
       r.status='aguardando'; r.visto=false; r.assinFiscal=assinFiscal;
-      toast(`Relatório ${r.num} atualizado e reencaminhado!`);
+      // Salvar correção no Supabase
+      sbPatch('pa_relatorios', r.id, {
+        nm:r.nm, documento:r.doc, data:r.data,
+        descricao:r.desc, conclusao:r.conc,
+        enc_para_id:r.encParaId, enc_para_login:r.encParaLogin,
+        status:'aguardando', visto:false, assinfiscal:r.assinFiscal
+      }).catch(e=>console.warn('Erro salvar correção relatorio:', e));
+      // Notificar diretor que relatório foi corrigido e reencaminhado
+      gerarNotificacao(
+        'parecer',
+        `📋 Relatório ${r.num} Corrigido e Reencaminhado`,
+        `Fiscal: ${r.fiscal} · Interessado: ${r.nm} · Aguarda novo despacho`,
+        null,
+        [r.encParaLogin]
+      );
+      pa_editRelId = null;
+      toast(`Relatório ${r.num} corrigido e reencaminhado!`);
     }
   } else {
     const encUserInd = paUsuarios().find(u => u.id === parseInt(enc));
@@ -4941,10 +4959,28 @@ function pa_enviarRelCol() {
   if(pa_editRelId) {
     const r = pa_relatorios.find(x=>x.id===pa_editRelId);
     if(r) {
+      const encUserColEdit = paUsuarios().find(u => u.id === parseInt(enc));
       r.data=document.getElementById('rc-dt').value; r.interessado=rcInteressado; r.doc=rcCnpj;
       r.nm=`Coletivo${rcInteressado?' — '+rcInteressado:''}`; r.desc=desc; r.conc=document.getElementById('rc-conc').value;
-      r.encParaId=parseInt(enc); r.empresas=empresas; r.status='aguardando'; r.visto=false; r.assinFiscal=assinFiscal;
-      toast(`Relatório coletivo ${r.num} atualizado e reencaminhado!`);
+      r.encParaId=parseInt(enc); r.encParaLogin=encUserColEdit?.login||r.encParaLogin||'';
+      r.empresas=empresas; r.status='aguardando'; r.visto=false; r.assinFiscal=assinFiscal;
+      // Salvar correção no Supabase
+      sbPatch('pa_relatorios', r.id, {
+        nm:r.nm, data:r.data, interessado:r.interessado, documento:r.doc,
+        descricao:r.desc, conclusao:r.conc, empresas:r.empresas,
+        enc_para_id:r.encParaId, enc_para_login:r.encParaLogin,
+        status:'aguardando', visto:false, assinfiscal:r.assinFiscal
+      }).catch(e=>console.warn('Erro salvar correção relatorio coletivo:', e));
+      // Notificar diretor que relatório foi corrigido e reencaminhado
+      gerarNotificacao(
+        'parecer',
+        `📋 Relatório Coletivo ${r.num} Corrigido e Reencaminhado`,
+        `Fiscal: ${r.fiscal} · ${r.empresas.length} empresa(s) · Aguarda novo despacho`,
+        null,
+        [r.encParaLogin]
+      );
+      pa_editRelId = null;
+      toast(`Relatório coletivo ${r.num} corrigido e reencaminhado!`);
     }
   } else {
     const encUserCol = paUsuarios().find(u => u.id === parseInt(enc));
@@ -4999,7 +5035,7 @@ function pa_renderNotificacoes() {
         <div class="notif-title">${r.num}</div>
         <div class="notif-sub">${r.tipo==='coletivo'?r.empresas.length+' empresas':r.nm}${r.interessado?' · '+r.interessado:''}</div>
         <div style="margin-top:5px">${pa_bdg(r.status)}</div>
-        ${r.status==='complementar'&&r.autorId===pa_usuarioAtual?.id?`<div style="font-size:12px;color:var(--pa-amber);margin-top:4px">⚠ Complementação solicitada: ${r.despacho?.texto||''}</div>`:''}
+        ${r.status==='complementar'&&r.autorLogin===pa_usuarioAtual?.login?`<div style="font-size:12px;color:#b45309;font-weight:600;margin-top:6px;padding:6px 8px;background:#fef3c7;border-radius:5px;border-left:3px solid #f59e0b">⚠️ Complementação solicitada: ${r.despacho?.texto||'(sem mensagem)'}<br><span style="font-size:11px;font-weight:400">Clique em Abrir para corrigir, faça as alterações e reencaminhe.</span></div>`:''}
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
         <div class="notif-time">${pa_fd(r.data)}</div>
