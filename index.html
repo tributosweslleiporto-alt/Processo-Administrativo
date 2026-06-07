@@ -502,6 +502,18 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
 
 .modal-wrap{display:none!important}
 .modal-wrap.open{display:flex!important}
+
+/* ══ FORÇAR VISIBILIDADE VIEWS PA ══ */
+.view { display: none !important; }
+.view.active { 
+  display: block !important; 
+  min-height: 200px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+.view.active * {
+  visibility: visible !important;
+}
 </style>
 </head>
 <body>
@@ -879,10 +891,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
       <!-- ══ VIEWS: PROCESSADMIN ══ -->
       <!-- PAINEL -->
       <div id="view-painel" class="view active">
-        <div style="background:#c00;color:#fff;padding:20px;font-size:18px;font-weight:bold;margin:16px;border-radius:8px;">
-          TESTE: View Painel Ativa — Se você vê isso, o JS e CSS de visibilidade funcionam
-        </div>
-        <div class="stats-grid">
+<div class="stats-grid">
           <div class="stat"><div class="stat-lbl">Processos</div><div class="stat-val" id="st-proc">0</div></div>
           <div class="stat"><div class="stat-lbl">Em andamento</div><div class="stat-val" style="color:var(--pa-blue)" id="st-and">0</div></div>
           <div class="stat"><div class="stat-lbl">Relatórios pendentes</div><div class="stat-val" style="color:var(--pa-amber)" id="st-rel">0</div></div>
@@ -2170,22 +2179,7 @@ function navegarPara(destino, btn) {
     'nova-intimacao': () => { if(!pa_intTipo) pa_intTipo='fisica'; requestAnimationFrame(()=>requestAnimationFrame(pa_initIntimacao)); },
     'novo-proc':      () => pa_initNovoProcesso(),
   };
-  if (cbs[destino]) {
-    try {
-      cbs[destino]();
-    } catch(err) {
-      console.error('Erro ao renderizar [' + destino + ']:', err);
-      // Mostrar erro na tela para debug
-      const ca = document.querySelector('.content-area');
-      if (ca && !document.querySelector('#debug-err')) {
-        const dbg = document.createElement('div');
-        dbg.id = 'debug-err';
-        dbg.style.cssText = 'background:#fee;color:#c00;padding:16px;margin:16px;border-radius:8px;font-size:13px;font-family:monospace';
-        dbg.innerHTML = '<b>Erro JS em [' + destino + ']:</b><br>' + err.message + '<br><small>' + (err.stack||'').split('\n').slice(0,3).join('<br>') + '</small>';
-        ca.prepend(dbg);
-      }
-    }
-  }
+  if (cbs[destino]) cbs[destino]();
 }
 
 function buildUnifiedNav() {
@@ -4554,24 +4548,7 @@ function sv(v, btn) {
 
 // ── PAINEL ─────────────────────────────────────────────────────────────────
 function pa_renderPainel() {
-  // DEBUG: verificar elementos
-  const el_st = document.getElementById('st-proc');
-  const el_painel = document.getElementById('view-painel');
-  console.log('[PA DEBUG] pa_renderPainel chamado');
-  console.log('[PA DEBUG] view-painel display:', el_painel ? el_painel.style.display : 'null');
-  console.log('[PA DEBUG] st-proc encontrado:', !!el_st);
-  console.log('[PA DEBUG] pa_processos.length:', pa_processos?.length);
-  if (!el_st) {
-    // Mostrar erro visual
-    const ca = document.querySelector('.content-area');
-    if (ca) {
-      const d = document.createElement('div');
-      d.style.cssText = 'background:#fee;color:#c00;padding:20px;margin:20px;border-radius:8px;font-size:14px;';
-      d.innerHTML = '<b>ERRO:</b> #st-proc não encontrado no DOM. view-painel está no DOM: ' + !!el_painel;
-      ca.prepend(d);
-    }
-    return;
-  }
+
   document.getElementById('st-proc').textContent = pa_processos.length;
   document.getElementById('st-and').textContent = pa_processos.filter(p=>p.status==='em-andamento').length;
   document.getElementById('st-rel').textContent = pa_relatorios.length;
@@ -5141,21 +5118,7 @@ function pa_reencaminharRel(rid) {
 
 // ── USUÁRIOS ───────────────────────────────────────────────────────────────
 function pa_renderUsuarios() {
-  const el_view = document.getElementById('view-usuariosPa');
-  const el_lista = document.getElementById('usr-lista');
-  console.log('[PA DEBUG] pa_renderUsuarios chamado');
-  console.log('[PA DEBUG] view-usuariosPa display:', el_view ? el_view.style.display : 'null');
-  console.log('[PA DEBUG] usr-lista encontrado:', !!el_lista);
-  if (!el_lista) {
-    const ca = document.querySelector('.content-area');
-    if (ca) {
-      const d = document.createElement('div');
-      d.style.cssText = 'background:#fee;color:#c00;padding:20px;margin:20px;border-radius:8px;font-size:14px;';
-      d.innerHTML = '<b>ERRO:</b> #usr-lista não encontrado no DOM';
-      ca.prepend(d);
-    }
-    return;
-  }
+
   const q=(document.getElementById('usr-q').value||'').toLowerCase();
   const f=paUsuarios().filter(u=>!q||u.nome.toLowerCase().includes(q)||pa_perfilNome(u.perfilId).toLowerCase().includes(q));
   document.getElementById('usr-lista').innerHTML=f.map(u=>`
