@@ -4827,6 +4827,7 @@ function pa_initRelInd() {
   enc.innerHTML='<option value="">Selecione...</option>'+paUsuarios().filter(u=>u.id!==pa_usuarioAtual?.id&&u.ativo).map(u=>`<option value="${u.id}">${u.nome} — ${pa_perfilNome(u.perfilId)}</option>`).join('');
 }
 function pa_enviarRelInd() {
+  if(!pa_usuarioAtual){alert('Sessão expirada. Faça login novamente.');return;}
   const nm=document.getElementById('ri-nm').value.trim(), desc=document.getElementById('ri-desc').value.trim();
   const enc=document.getElementById('ri-enc').value;
   if(!nm||!desc||!enc){alert('Preencha interessado, descrição e destinatário.');return;}
