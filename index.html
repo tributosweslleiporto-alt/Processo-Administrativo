@@ -4512,7 +4512,7 @@ function sv(v, btn) {
   document.querySelectorAll('.ni').forEach(el=>el.classList.remove('active'));
   if(btn) btn.classList.add('active');
   else { const b=document.querySelector(`[data-view="${v}"]`); if(b) b.classList.add('active'); }
-  const titles = {painel:'Painel',pa_processos:'Processos',detalhe:'Detalhe do processo','novo-proc':'Novo processo',tram:'Tramitação',pa_folhas:'Folhas de informação',pa_relatorios:'Relatórios','novo-rel-ind':'Novo relatório individual','novo-rel-col':'Novo relatório coletivo',notificacoes:'Notificações',despacho:'Emitir despacho','usuariosPa':'Usuários',pa_perfis:'Perfis de acesso',pa_tributos:'Tributos / Assuntos','pa_intimacoes':'Intimações','nova-intimacao':'Nova Intimação','backup':'Backup / Restauração'};
+  const titles = {painel:'Painel',pa_processos:'Processos',detalhe:'Detalhe do processo','novo-proc':'Novo processo',tram:'Tramitação',pa_folhas:'Folhas de informação',pa_relatorios:'Relatórios','novo-rel-ind':'Novo relatório individual','novo-rel-col':'Novo relatório coletivo',notificacoes:'Notificações',despacho:'Emitir despacho','usuariosPa':'Usuários',pa_perfis:'Perfis de acesso',pa_tributos:'Tributos / Assuntos','intimacoes':'Intimações / Notificações Extrajudiciais','nova-intimacao':'Nova Intimação','backup':'Backup / Restauração'};
   document.getElementById('ttitle').textContent = titles[v]||'';
   const acts = document.getElementById('topbar-actions');
   acts.innerHTML = '';
@@ -4548,7 +4548,7 @@ function pa_renderPainel() {
   pa_relatorios.filter(r=>r.encParaId===pa_usuarioAtual?.id&&r.status==='aguardando').forEach(r=>notifs.push({texto:`Relatório ${r.num} aguarda despacho`,sub:`Fiscal: ${r.fiscal} · ${r.tipo==='coletivo'?r.empresas.length+' empresas':r.nm}`,tipo:'aguardando',rel:r}));
   pa_relatorios.filter(r=>r.autorId===pa_usuarioAtual?.id&&['autorizado','rejeitado','complementar'].includes(r.status)).slice(0,5).forEach(r=>notifs.push({texto:`${r.num} — despacho recebido`,sub:`${r.status==='autorizado'?'Autorizado':(r.status==='complementar'?'Complementação solicitada':'Não autorizado')}`,tipo:r.status,rel:r}));
   document.getElementById('painel-notifs').innerHTML = notifs.length ? notifs.map(n=>`
-    <div class="notif-item ${n.tipo==='aguardando'?'unread':''}" onclick="${n.tipo==='aguardando'?`pa_abrirDespacho(${n.rel.id})`:`navegarPara('pa_relatorios')`}">
+    <div class="notif-item ${n.tipo==='aguardando'?'unread':''}" onclick="${n.tipo==='aguardando'?`pa_abrirDespacho(${n.rel.id})`:`navegarPara('relatoriosPa')`}">
       <div class="notif-dot ${n.tipo!=='aguardando'?'read':''}"></div>
       <div class="notif-info"><div class="notif-title">${n.texto}</div><div class="notif-sub">${n.sub}</div></div>
       ${pa_bdg(n.tipo)}
@@ -4695,7 +4695,7 @@ function pa_rfl() {
   c.innerHTML=pa_folhas.map(f=>`<div style="padding:9px 0;border-bottom:1px solid var(--pa-border)"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><strong style="font-size:13px">Folha Nº ${f.num}</strong> · ${pa_processos.find(x=>x.id===f.pid)?.num||''}<div style="font-size:12px;color:var(--pa-text2);margin-top:1px">${f.req} · ${pa_fd(f.data)}</div><div style="font-size:12px;color:var(--pa-text2);margin-top:1px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.tx}</div></div><button class="btn btn-g btn-xs" onclick="pa_prevFolhaById(${f.id})">Ver</button></div></div>`).join('');
 }
 function pa_novaFolhaDet() {
-  navegarPara('pa_folhas'); setTimeout(()=>{document.getElementById('fi-p').value=pa_detProcId; pa_afn();},60);
+  navegarPara('folhas'); setTimeout(()=>{document.getElementById('fi-p').value=pa_detProcId; pa_afn();},60);
 }
 
 // ── RELATÓRIOS ─────────────────────────────────────────────────────────────
@@ -4851,7 +4851,7 @@ function pa_enviarRelInd() {
   }).catch(e=>console.warn('Erro salvar rel:',e));
     toast(`Relatório ${r.num} assinado e encaminhado!`);
   }
-  navegarPara('pa_relatorios'); buildUnifiedNav();
+  navegarPara('relatoriosPa'); buildUnifiedNav();
 }
 
 // ── RELATÓRIO COLETIVO ─────────────────────────────────────────────────────
@@ -4938,7 +4938,7 @@ function pa_enviarRelCol() {
   }).catch(e=>console.warn('Erro salvar rel:',e));
     toast(`Relatório coletivo ${r.num} encaminhado — ${empresas.length} empresa(s)!`);
   }
-  navegarPara('pa_relatorios'); buildUnifiedNav();
+  navegarPara('relatoriosPa'); buildUnifiedNav();
 }
 
 // ── NOTIFICAÇÕES ───────────────────────────────────────────────────────────
@@ -5865,7 +5865,7 @@ function pa_salvarIntimacao() {
     setTimeout(()=>{ pa_prevIntimacaoById(int.id); }, 300);
   } else {
     pa_prevIntimacaoById(int.id);
-    navegarPara('pa_intimacoes');
+    navegarPara('intimacoes');
   }
 }
 
