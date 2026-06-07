@@ -1683,8 +1683,12 @@ async function sbGet(tabela, filtro='') {
 async function sbPost(tabela, dados) {
   try {
     const { data, error } = await _sb.from(tabela).insert(dados).select();
-    return error ? null : data;
-  } catch(e) { return null; }
+    if (error) {
+      console.error(`[sbPost] Erro ao inserir em "${tabela}":`, error.message, error.details, error.hint);
+      return null;
+    }
+    return data;
+  } catch(e) { console.error(`[sbPost] Exceção em "${tabela}":`, e); return null; }
 }
 async function sbPatch(tabela, id, dados) {
   try {
@@ -2184,7 +2188,7 @@ function buildUnifiedNav() {
   const admin = isAdmin();
   const perf  = pa_perfis.find(p => p.id === u?.perfilId);
   const notifProt = (DB.notificacoes||[]).filter(n=>!n.lida&&n.destinatario_login===usuarioLogado?.login).length;
-  const notifPA   = pa_relatorios.filter(r=>r.encParaId===u?.id&&r.status==='aguardando').length;
+  const notifPA   = pa_relatorios.filter(r=>r.encParaLogin===u?.login&&r.status==='aguardando').length;
 
   let html = '';
 
@@ -4548,8 +4552,8 @@ function pa_renderPainel() {
   document.getElementById('st-desp').textContent = pa_relatorios.filter(r=>r.status==='aguardando').length;
   document.getElementById('painel-procs').innerHTML = [...pa_processos].sort((a,b)=>b.id-a.id).slice(0,5).map(p=>`<tr><td style="font-weight:500;white-space:nowrap">${p.num}</td><td>${p.nome}</td><td>${pa_bdg(p.status)}</td></tr>`).join('');
   const notifs = [];
-  pa_relatorios.filter(r=>r.encParaId===pa_usuarioAtual?.id&&r.status==='aguardando').forEach(r=>notifs.push({texto:`Relatório ${r.num} aguarda despacho`,sub:`Fiscal: ${r.fiscal} · ${r.tipo==='coletivo'?r.empresas.length+' empresas':r.nm}`,tipo:'aguardando',rel:r}));
-  pa_relatorios.filter(r=>r.autorId===pa_usuarioAtual?.id&&['autorizado','rejeitado','complementar'].includes(r.status)).slice(0,5).forEach(r=>notifs.push({texto:`${r.num} — despacho recebido`,sub:`${r.status==='autorizado'?'Autorizado':(r.status==='complementar'?'Complementação solicitada':'Não autorizado')}`,tipo:r.status,rel:r}));
+  pa_relatorios.filter(r=>r.encParaLogin===pa_usuarioAtual?.login&&r.status==='aguardando').forEach(r=>notifs.push({texto:`Relatório ${r.num} aguarda despacho`,sub:`Fiscal: ${r.fiscal} · ${r.tipo==='coletivo'?r.empresas.length+' empresas':r.nm}`,tipo:'aguardando',rel:r}));
+  pa_relatorios.filter(r=>r.autorLogin===pa_usuarioAtual?.login&&['autorizado','rejeitado','complementar'].includes(r.status)).slice(0,5).forEach(r=>notifs.push({texto:`${r.num} — despacho recebido`,sub:`${r.status==='autorizado'?'Autorizado':(r.status==='complementar'?'Complementação solicitada':'Não autorizado')}`,tipo:r.status,rel:r}));
   document.getElementById('painel-notifs').innerHTML = notifs.length ? notifs.map(n=>`
     <div class="notif-item ${n.tipo==='aguardando'?'unread':''}" onclick="${n.tipo==='aguardando'?`pa_abrirDespacho(${n.rel.id})`:`navegarPara('relatoriosPa')`}">
       <div class="notif-dot ${n.tipo!=='aguardando'?'read':''}"></div>
@@ -4705,7 +4709,7 @@ function pa_novaFolhaDet() {
 function pa_renderRels() {
   const q=(document.getElementById('rel-q').value||'').toLowerCase();
   const sf=document.getElementById('rel-sf').value;
-  let f = isAdmin() ? pa_relatorios : pa_relatorios.filter(r=>r.autorId===pa_usuarioAtual.id||r.encParaId===pa_usuarioAtual.id);
+  let f = isAdmin() ? pa_relatorios : pa_relatorios.filter(r=>r.autorLogin===pa_usuarioAtual.login||r.encParaLogin===pa_usuarioAtual.login);
   f=f.filter(r=>(!q||r.num.toLowerCase().includes(q)||r.nm.toLowerCase().includes(q)||r.fiscal.toLowerCase().includes(q))&&(!sf||r.status===sf));
   const tb=document.getElementById('rel-tbody'), em=document.getElementById('rel-empty');
   if(!f.length){tb.innerHTML='';em.style.display='block';return;}
@@ -4717,7 +4721,7 @@ function pa_renderRels() {
     <td>${r.tipo==='coletivo'?`<span style="font-size:12px">${r.empresas.length} empresas</span>`:r.nm}</td>
     <td>${pa_bdg(r.status)}</td>
     <td style="color:var(--pa-text3);white-space:nowrap">${pa_fd(r.data)}</td>
-    <td style="display:flex;gap:4px">${r.encParaId===pa_usuarioAtual?.id&&r.status==='aguardando'?`<button class="btn btn-g btn-xs" onclick="pa_abrirDespacho(${r.id})">Despachar</button>`:''}<button class="btn btn-g btn-xs" onclick="pa_verRelatorio(${r.id})">Ver</button></td>
+    <td style="display:flex;gap:4px">${r.encParaLogin===pa_usuarioAtual?.login&&r.status==='aguardando'?`<button class="btn btn-g btn-xs" onclick="pa_abrirDespacho(${r.id})">Despachar</button>`:''}<button class="btn btn-g btn-xs" onclick="pa_verRelatorio(${r.id})">Ver</button></td>
   </tr>`).join('');
 }
 
@@ -4753,7 +4757,7 @@ function pa_gerarHtmlRelatorio(r) {
       '<div style="font-size:11px;color:#555;margin-bottom:14px">'+r.despacho.nm+' • '+r.despacho.cg+' • '+pa_fd(r.despacho.data)+'</div>';
   }
   var btnProc = '';
-  if(r.status === 'autorizado' && !r.procId && r.autorId === (pa_usuarioAtual && pa_usuarioAtual.id)) {
+  if(r.status === 'autorizado' && !r.procId && r.autorLogin === (pa_usuarioAtual && pa_usuarioAtual.login)) {
     btnProc = '<div style="margin-top:14px"><button onclick="pa_abrirProcDeRel('+r.id+');pa_fm()" ' +
       'style="background:#2A4538;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px">' +
       'Abrir processo com esses dados</button></div>';
@@ -4843,18 +4847,28 @@ function pa_enviarRelInd() {
       toast(`Relatório ${r.num} atualizado e reencaminhado!`);
     }
   } else {
-    const r={id:pa_nextRelId++,num:`REL-${String(pa_nextRelNum).padStart(4,'0')}/${new Date().getFullYear()}`,tipo:'individual',autorId:pa_usuarioAtual.id,fiscal:pa_usuarioAtual.nome,encParaId:parseInt(enc),data:document.getElementById('ri-dt').value,nm,doc:document.getElementById('ri-doc').value,im:'',trib:'',exercicio:'',vo:'',va:'',desc,conc:document.getElementById('ri-conc').value,status:'aguardando',despacho:null,procId:null,empresas:[],assinFiscal};
+    const encUserInd = paUsuarios().find(u => u.id === parseInt(enc));
+    const r={id:pa_nextRelId++,num:`REL-${String(pa_nextRelNum).padStart(4,'0')}/${new Date().getFullYear()}`,tipo:'individual',autorId:pa_usuarioAtual.id,autorLogin:pa_usuarioAtual.login||'',fiscal:pa_usuarioAtual.nome,encParaId:parseInt(enc),encParaLogin:encUserInd?.login||'',data:document.getElementById('ri-dt').value,nm,doc:document.getElementById('ri-doc').value,im:'',trib:'',exercicio:'',vo:'',va:'',desc,conc:document.getElementById('ri-conc').value,status:'aguardando',despacho:null,procId:null,empresas:[],assinFiscal};
     pa_relatorios.push(r); pa_nextRelNum++;
-  sbPost('pa_relatorios', {
-    id:r.id, numero:r.num, tipo:r.tipo,
-    autor_login:r.autorLogin, autor_id:r.autorId||null,
-    fiscal:r.fiscal, enc_para_login:r.encParaLogin, enc_para_id:r.encParaId,
-    data:r.data, nm:r.nm||'', documento:r.doc||'', inscricao_municipal:r.im||'',
-    tributo:r.trib||'', exercicio:r.exercicio||'', vo:r.vo||'', va:r.va||'',
-    descricao:r.desc||'', conclusao:r.conc||'', status:r.status,
-    visto:false, despacho:null,
-    empresas:r.empresas||[], assinfiscal:r.assinFiscal||null
-  }).catch(e=>console.warn('Erro salvar relatorio:', e));
+    sbPost('pa_relatorios', {
+      id:r.id, numero:r.num, tipo:r.tipo,
+      autor_login:r.autorLogin||'',
+      fiscal:r.fiscal, enc_para_login:r.encParaLogin||'',
+      data:r.data, nm:r.nm||'', documento:r.doc||'', inscricao_municipal:r.im||'',
+      tributo:r.trib||'', exercicio:r.exercicio||'', vo:r.vo||'', va:r.va||'',
+      descricao:r.desc||'', conclusao:r.conc||'', status:r.status,
+      visto:false, despacho:null,
+      empresas:r.empresas||[], assinfiscal:r.assinFiscal||null
+    }).then(res => { if(!res) console.warn('Falha ao salvar relatório individual no Supabase'); })
+      .catch(e=>console.warn('Erro salvar relatorio:', e));
+    // Notificar o destinatário (sino)
+    gerarNotificacao(
+      'parecer',
+      `📋 Relatório de Fiscalização Encaminhado`,
+      `Fiscal: ${r.fiscal} · Interessado: ${r.nm} · ${r.num}`,
+      null,
+      [r.encParaLogin]
+    );
     toast(`Relatório ${r.num} assinado e encaminhado!`);
   }
   navegarPara('relatoriosPa'); buildUnifiedNav();
@@ -4932,18 +4946,28 @@ function pa_enviarRelCol() {
       toast(`Relatório coletivo ${r.num} atualizado e reencaminhado!`);
     }
   } else {
-    const r={id:pa_nextRelId++,num:`REL-${String(pa_nextRelNum).padStart(4,'0')}/${new Date().getFullYear()}`,tipo:'coletivo',autorId:pa_usuarioAtual.id,fiscal:pa_usuarioAtual.nome,encParaId:parseInt(enc),data:document.getElementById('rc-dt').value,nm:`Coletivo${rcInteressado?' — '+rcInteressado:''}`,doc:rcCnpj,im:'',trib:'',interessado:rcInteressado,exercicio:'',vo:'',va:'',desc,conc:document.getElementById('rc-conc').value,status:'aguardando',despacho:null,procId:null,empresas,assinFiscal};
+    const encUserCol = paUsuarios().find(u => u.id === parseInt(enc));
+    const r={id:pa_nextRelId++,num:`REL-${String(pa_nextRelNum).padStart(4,'0')}/${new Date().getFullYear()}`,tipo:'coletivo',autorId:pa_usuarioAtual.id,autorLogin:pa_usuarioAtual.login||'',fiscal:pa_usuarioAtual.nome,encParaId:parseInt(enc),encParaLogin:encUserCol?.login||'',data:document.getElementById('rc-dt').value,nm:`Coletivo${rcInteressado?' — '+rcInteressado:''}`,doc:rcCnpj,im:'',trib:'',interessado:rcInteressado,exercicio:'',vo:'',va:'',desc,conc:document.getElementById('rc-conc').value,status:'aguardando',despacho:null,procId:null,empresas,assinFiscal};
     pa_relatorios.push(r); pa_nextRelNum++;
-  sbPost('pa_relatorios', {
-    id:r.id, numero:r.num, tipo:r.tipo,
-    autor_login:r.autorLogin, autor_id:r.autorId||null,
-    fiscal:r.fiscal, enc_para_login:r.encParaLogin, enc_para_id:r.encParaId,
-    data:r.data, nm:r.nm||'', documento:r.doc||'', inscricao_municipal:r.im||'',
-    tributo:r.trib||'', exercicio:r.exercicio||'', vo:r.vo||'', va:r.va||'',
-    descricao:r.desc||'', conclusao:r.conc||'', status:r.status,
-    visto:false, despacho:null,
-    empresas:r.empresas||[], assinfiscal:r.assinFiscal||null
-  }).catch(e=>console.warn('Erro salvar relatorio:', e));
+    sbPost('pa_relatorios', {
+      id:r.id, numero:r.num, tipo:r.tipo,
+      autor_login:r.autorLogin||'',
+      fiscal:r.fiscal, enc_para_login:r.encParaLogin||'',
+      data:r.data, nm:r.nm||'', documento:r.doc||'', inscricao_municipal:r.im||'',
+      tributo:r.trib||'', exercicio:r.exercicio||'', vo:r.vo||'', va:r.va||'',
+      descricao:r.desc||'', conclusao:r.conc||'', status:r.status,
+      visto:false, despacho:null,
+      empresas:r.empresas||[], assinfiscal:r.assinFiscal||null
+    }).then(res => { if(!res) console.warn('Falha ao salvar relatório coletivo no Supabase'); })
+      .catch(e=>console.warn('Erro salvar relatorio coletivo:', e));
+    // Notificar o destinatário (sino)
+    gerarNotificacao(
+      'parecer',
+      `📋 Relatório Coletivo de Fiscalização Encaminhado`,
+      `Fiscal: ${r.fiscal} · ${empresas.length} empresa(s) · ${r.num}`,
+      null,
+      [r.encParaLogin]
+    );
     toast(`Relatório coletivo ${r.num} encaminhado — ${empresas.length} empresa(s)!`);
   }
   navegarPara('relatoriosPa'); buildUnifiedNav();
@@ -4952,11 +4976,11 @@ function pa_enviarRelCol() {
 // ── NOTIFICAÇÕES ───────────────────────────────────────────────────────────
 function pa_renderNotificacoes() {
   // Marcar como visto os retornos do usuário atual ao abrir a tela
-  pa_relatorios.filter(r=>r.autorId===pa_usuarioAtual?.id&&['autorizado','rejeitado','complementar'].includes(r.status)&&!r.visto)
+  pa_relatorios.filter(r=>r.autorLogin===pa_usuarioAtual?.login&&['autorizado','rejeitado','complementar'].includes(r.status)&&!r.visto)
     .forEach(r=>{ r.visto=true; });
   buildUnifiedNav();
-  const pendentes=pa_relatorios.filter(r=>r.encParaId===pa_usuarioAtual?.id&&r.status==='aguardando');
-  const hist=pa_relatorios.filter(r=>(r.autorId===pa_usuarioAtual?.id&&['autorizado','rejeitado','complementar'].includes(r.status))||(r.encParaId===pa_usuarioAtual?.id&&r.status!=='aguardando')).sort((a,b)=>b.id-a.id);
+  const pendentes=pa_relatorios.filter(r=>r.encParaLogin===pa_usuarioAtual?.login&&r.status==='aguardando');
+  const hist=pa_relatorios.filter(r=>(r.autorLogin===pa_usuarioAtual?.login&&['autorizado','rejeitado','complementar'].includes(r.status))||(r.encParaLogin===pa_usuarioAtual?.login&&r.status!=='aguardando')).sort((a,b)=>b.id-a.id);
   document.getElementById('notif-pendentes').innerHTML=pendentes.length?pendentes.map(r=>`
     <div class="notif-item unread" onclick="pa_abrirDespacho(${r.id})">
       <div class="notif-dot"></div>
@@ -4978,8 +5002,8 @@ function pa_renderNotificacoes() {
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
         <div class="notif-time">${pa_fd(r.data)}</div>
-        ${r.status==='autorizado'&&!r.procId&&r.autorId===pa_usuarioAtual?.id?`<button class="btn btn-p btn-xs" onclick="pa_abrirProcDeRel(${r.id})">Abrir processo</button>`:''}${r.status==='rejeitado'&&r.autorId===pa_usuarioAtual?.id?`<button class="btn btn-g btn-xs" onclick="pa_verRelatorio(${r.id})">Ver justificativa</button>`:''}
-        ${r.status==='complementar'&&r.autorId===pa_usuarioAtual?.id?`<button class="btn btn-g btn-xs" onclick="pa_abrirRelParaCorrigir(${r.id})">Abrir para corrigir</button><button class="btn btn-g btn-xs" onclick="pa_reencaminharRel(${r.id})">Reencaminhar</button>`:''}
+        ${r.status==='autorizado'&&!r.procId&&r.autorLogin===pa_usuarioAtual?.login?`<button class="btn btn-p btn-xs" onclick="pa_abrirProcDeRel(${r.id})">Abrir processo</button>`:''}${r.status==='rejeitado'&&r.autorLogin===pa_usuarioAtual?.login?`<button class="btn btn-g btn-xs" onclick="pa_verRelatorio(${r.id})">Ver justificativa</button>`:''}
+        ${r.status==='complementar'&&r.autorLogin===pa_usuarioAtual?.login?`<button class="btn btn-g btn-xs" onclick="pa_abrirRelParaCorrigir(${r.id})">Abrir para corrigir</button><button class="btn btn-g btn-xs" onclick="pa_reencaminharRel(${r.id})">Reencaminhar</button>`:''}
       </div>
     </div>`).join(''):'<p style="color:var(--pa-text2);font-size:13px">Nenhum histórico.</p>';
 }
@@ -5022,6 +5046,14 @@ function pa_despachar(decisao) {
     r.status='complementar';
     r.despacho={texto:document.getElementById('desp-txt').value,nm:assinAutoridade.nome,cg:assinAutoridade.cargo,data:assinAutoridade.data,assin:assinAutoridade};
     r.visto=false;
+    // Notificar fiscal sobre o despacho
+    gerarNotificacao(
+      r.status === 'autorizado' ? 'conclusao' : r.status === 'rejeitado' ? 'devolucao' : 'parecer',
+      r.status === 'autorizado' ? `✅ Relatório ${r.num} Autorizado` : r.status === 'rejeitado' ? `❌ Relatório ${r.num} Não Autorizado` : `⚠️ Relatório ${r.num} — Complementação Solicitada`,
+      `Despachado por: ${pa_usuarioAtual.nome}${r.despacho?.texto ? ' · ' + r.despacho.texto.slice(0,80) : ''}`,
+      null,
+      [r.autorLogin]
+    );
     sbPatch('pa_relatorios', r.id, {status:r.status, despacho:r.despacho, visto:false})
       .catch(e=>console.warn('Erro salvar complementar:',e));
     toast('Solicitação de complementação enviada ao fiscal.');
