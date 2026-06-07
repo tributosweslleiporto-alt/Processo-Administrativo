@@ -1741,6 +1741,22 @@ let pa_tributos = [
   {id:6,nome:'Multa',desc:'Multa administrativa',ativo:true},
 ];
 
+// ── FUNÇÕES AUXILIARES ────────────────────────────────────────────
+function paUsuarios() {
+  return DB.usuarios.map(u => ({
+    id: u.id,
+    nome: u.nome,
+    login: u.login,
+    cargo: u.cargo || '',
+    perfil: u.perfil || 'fiscal',
+    perfilId: pa_perfis.find(p => p.nome.toLowerCase() === (u.perfil||'fiscal').toLowerCase())?.id || 2,
+    iniciais: u.nome.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase(),
+    cor: '#fff',
+    bg: u.cor || '#0a3d62',
+    ativo: u.ativo !== false,
+  }));
+}
+
 // ── MAPEAMENTO DE USUÁRIO ─────────────────────────────────────────
 // Deriva iniciais, cor e bg do usuário do Supabase para o Sistema B
 function mapearUsuarioParaPA(u) {
@@ -1777,9 +1793,6 @@ function mapearPerfilId(perfil) {
 }
 
 // Usuários mapeados para o Sistema B
-function paUsuarios() {
-  return DB.usuarios.filter(u => u.ativo).map(mapearUsuarioParaPA);
-}
 
 // ── DARK MODE ─────────────────────────────────────────────────────
 function toggleDarkMode() {
@@ -2135,7 +2148,22 @@ function navegarPara(destino, btn) {
     'nova-intimacao': () => { if(!pa_intTipo) pa_intTipo='fisica'; requestAnimationFrame(()=>requestAnimationFrame(pa_initIntimacao)); },
     'novo-proc':      () => pa_initNovoProcesso(),
   };
-  if (cbs[destino]) cbs[destino]();
+  if (cbs[destino]) {
+    try {
+      cbs[destino]();
+    } catch(err) {
+      console.error('Erro ao renderizar [' + destino + ']:', err);
+      // Mostrar erro na tela para debug
+      const ca = document.querySelector('.content-area');
+      if (ca && !document.querySelector('#debug-err')) {
+        const dbg = document.createElement('div');
+        dbg.id = 'debug-err';
+        dbg.style.cssText = 'background:#fee;color:#c00;padding:16px;margin:16px;border-radius:8px;font-size:13px;font-family:monospace';
+        dbg.innerHTML = '<b>Erro JS em [' + destino + ']:</b><br>' + err.message + '<br><small>' + (err.stack||'').split('\n').slice(0,3).join('<br>') + '</small>';
+        ca.prepend(dbg);
+      }
+    }
+  }
 }
 
 function buildUnifiedNav() {
@@ -2224,7 +2252,15 @@ const pa_bdg = (s,lbl) => {
   return `<span class="badge ${c}">${lbl||l}</span>`;
 };
 const pa_perfilNome = id => pa_perfis.find(p=>p.id===id)?.nome||'—';
-const isAdmin = () => usuarioLogado && (usuarioLogado.perfil === 'admin');
+const isAdmin = () => {
+  if (!usuarioLogado) return false;
+  if (usuarioLogado.perfil === 'admin') return true;
+  if (pa_usuarioAtual) {
+    const perf = pa_perfis.find(p => p.id === pa_usuarioAtual.perfilId);
+    if (perf?.perms?.tudo) return true;
+  }
+  return false;
+};
 const pa_canEdit = (autorId) => isAdmin() || (pa_usuarioAtual && pa_usuarioAtual.id === autorId);
 
 // ── BRASÃO ────────────────────────────────────────────────────────
