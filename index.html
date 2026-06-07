@@ -4554,6 +4554,24 @@ function sv(v, btn) {
 
 // ── PAINEL ─────────────────────────────────────────────────────────────────
 function pa_renderPainel() {
+  // DEBUG: verificar elementos
+  const el_st = document.getElementById('st-proc');
+  const el_painel = document.getElementById('view-painel');
+  console.log('[PA DEBUG] pa_renderPainel chamado');
+  console.log('[PA DEBUG] view-painel display:', el_painel ? el_painel.style.display : 'null');
+  console.log('[PA DEBUG] st-proc encontrado:', !!el_st);
+  console.log('[PA DEBUG] pa_processos.length:', pa_processos?.length);
+  if (!el_st) {
+    // Mostrar erro visual
+    const ca = document.querySelector('.content-area');
+    if (ca) {
+      const d = document.createElement('div');
+      d.style.cssText = 'background:#fee;color:#c00;padding:20px;margin:20px;border-radius:8px;font-size:14px;';
+      d.innerHTML = '<b>ERRO:</b> #st-proc não encontrado no DOM. view-painel está no DOM: ' + !!el_painel;
+      ca.prepend(d);
+    }
+    return;
+  }
   document.getElementById('st-proc').textContent = pa_processos.length;
   document.getElementById('st-and').textContent = pa_processos.filter(p=>p.status==='em-andamento').length;
   document.getElementById('st-rel').textContent = pa_relatorios.length;
@@ -5123,6 +5141,21 @@ function pa_reencaminharRel(rid) {
 
 // ── USUÁRIOS ───────────────────────────────────────────────────────────────
 function pa_renderUsuarios() {
+  const el_view = document.getElementById('view-usuariosPa');
+  const el_lista = document.getElementById('usr-lista');
+  console.log('[PA DEBUG] pa_renderUsuarios chamado');
+  console.log('[PA DEBUG] view-usuariosPa display:', el_view ? el_view.style.display : 'null');
+  console.log('[PA DEBUG] usr-lista encontrado:', !!el_lista);
+  if (!el_lista) {
+    const ca = document.querySelector('.content-area');
+    if (ca) {
+      const d = document.createElement('div');
+      d.style.cssText = 'background:#fee;color:#c00;padding:20px;margin:20px;border-radius:8px;font-size:14px;';
+      d.innerHTML = '<b>ERRO:</b> #usr-lista não encontrado no DOM';
+      ca.prepend(d);
+    }
+    return;
+  }
   const q=(document.getElementById('usr-q').value||'').toLowerCase();
   const f=paUsuarios().filter(u=>!q||u.nome.toLowerCase().includes(q)||pa_perfilNome(u.perfilId).toLowerCase().includes(q));
   document.getElementById('usr-lista').innerHTML=f.map(u=>`
