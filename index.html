@@ -4666,7 +4666,16 @@ function pa_cadProc() {
   }).catch(e=>console.warn('Erro salvar processo:',e));
   // Vincula o relatório de origem ao processo recém criado
   const relId = parseInt(document.getElementById('np-form')?.dataset?.relId||'0');
-  if(relId) { const rel=pa_relatorios.find(x=>x.id===relId); if(rel) rel.procId=p.id; document.getElementById('np-form').dataset.relId=''; }
+  if(relId) {
+    const rel = pa_relatorios.find(x=>x.id===relId);
+    if(rel) {
+      rel.procId = p.id;
+      // Persistir vínculo no Supabase
+      sbPatch('pa_relatorios', rel.id, { proc_id: p.id })
+        .catch(e => console.warn('Erro ao vincular relatório ao processo:', e));
+    }
+    document.getElementById('np-form').dataset.relId='';
+  }
   ['np-nm','np-dc','np-im','np-at','np-as','np-ds'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('np-ok').style.display='block';
   document.getElementById('np-ok').textContent=`✓ Processo ${p.num} aberto com sucesso para ${p.nome}.`;
@@ -4676,7 +4685,7 @@ function pa_cadProc() {
 // ── TRAMITAÇÃO ─────────────────────────────────────────────────────────────
 function pa_initTram() {
   const sel=document.getElementById('tr-p');
-  const meus = isAdmin() ? pa_processos : pa_processos.filter(p=>p.autorId===pa_usuarioAtual.id);
+  const meus = isAdmin() ? pa_processos : pa_processos.filter(p=>p.autorId===pa_usuarioAtual.id||p.autorLogin===pa_usuarioAtual.login);
   sel.innerHTML='<option value="">Selecione...</option>'+meus.map(p=>`<option value="${p.id}">${p.num} — ${p.nome}</option>`).join('');
   document.getElementById('tr-dt').value=new Date().toISOString().slice(0,10);
   pa_rht();
@@ -5326,7 +5335,7 @@ function pa_salvarUsuario(id) {
 // ── PERFIS ─────────────────────────────────────────────────────────────────
 
 function pa_renderPerfis() {
-  document.getElementById('pa_perfis-lista').innerHTML=pa_perfis.map(p=>`
+  document.getElementById('perfis-lista').innerHTML=pa_perfis.map(p=>`
     <div class="card" style="margin-bottom:0">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
         <div style="display:flex;align-items:center;gap:8px">
