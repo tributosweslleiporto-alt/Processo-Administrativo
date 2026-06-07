@@ -2278,7 +2278,7 @@ const isAdmin = () => {
   }
   return false;
 };
-const pa_canEdit = (autorId) => isAdmin() || (pa_usuarioAtual && pa_usuarioAtual.id === autorId);
+const pa_canEdit = (autorId, autorLogin) => isAdmin() || (pa_usuarioAtual && (pa_usuarioAtual.id === autorId || (autorLogin && pa_usuarioAtual.login === autorLogin)));
 
 // ── BRASÃO ────────────────────────────────────────────────────────
 // BRASÃO:
@@ -4631,7 +4631,8 @@ function pa_cadProc() {
     id:p.id, numero:p.num, nome:p.nome, tipo:p.tipo, documento:p.doc,
     inscricao_municipal:p.im, atendente:p.atend, assunto:p.assunto,
     descricao:p.desc, destino:p.destino, status:p.status, data:p.data,
-    autor_login:pa_usuarioAtual?.login||'', coletivo:false, empresas:[], trams:p.trams
+    autor_id:pa_usuarioAtual?.id||null, autor_login:pa_usuarioAtual?.login||'',
+    coletivo:false, empresas:[], trams:p.trams
   }).catch(e=>console.warn('Erro salvar processo:',e));
   // Vincula o relatório de origem ao processo recém criado
   const relId = parseInt(document.getElementById('np-form')?.dataset?.relId||'0');
@@ -4690,7 +4691,7 @@ function pa_salvarFolha() {
   sbPost('pa_folhas', {
     id:f.id, proc_id:f.pid, numero:f.num, requerente:f.req,
     data:f.data, servidor:f.sv, cargo:f.cg, setor:f.st,
-    texto:f.tx, autor_login:pa_usuarioAtual?.login||''
+    texto:f.tx, autor_id:pa_usuarioAtual?.id||null, autor_login:pa_usuarioAtual?.login||''
   }).catch(e=>console.warn('Erro salvar folha:',e));
   document.getElementById('fi-n').value=parseInt(f.num)+1;
   document.getElementById('fi-tx').value='';
@@ -4852,8 +4853,8 @@ function pa_enviarRelInd() {
     pa_relatorios.push(r); pa_nextRelNum++;
     sbPost('pa_relatorios', {
       id:r.id, numero:r.num, tipo:r.tipo,
-      autor_login:r.autorLogin||'',
-      fiscal:r.fiscal, enc_para_login:r.encParaLogin||'',
+      autor_id:r.autorId||null, autor_login:r.autorLogin||'',
+      fiscal:r.fiscal, enc_para_id:r.encParaId||null, enc_para_login:r.encParaLogin||'',
       data:r.data, nm:r.nm||'', documento:r.doc||'', inscricao_municipal:r.im||'',
       tributo:r.trib||'', exercicio:r.exercicio||'', vo:r.vo||'', va:r.va||'',
       descricao:r.desc||'', conclusao:r.conc||'', status:r.status,
@@ -4951,8 +4952,8 @@ function pa_enviarRelCol() {
     pa_relatorios.push(r); pa_nextRelNum++;
     sbPost('pa_relatorios', {
       id:r.id, numero:r.num, tipo:r.tipo,
-      autor_login:r.autorLogin||'',
-      fiscal:r.fiscal, enc_para_login:r.encParaLogin||'',
+      autor_id:r.autorId||null, autor_login:r.autorLogin||'',
+      fiscal:r.fiscal, enc_para_id:r.encParaId||null, enc_para_login:r.encParaLogin||'',
       data:r.data, nm:r.nm||'', documento:r.doc||'', inscricao_municipal:r.im||'',
       tributo:r.trib||'', exercicio:r.exercicio||'', vo:r.vo||'', va:r.va||'',
       descricao:r.desc||'', conclusao:r.conc||'', status:r.status,
@@ -5062,6 +5063,14 @@ function pa_despachar(decisao) {
   r.status=decisao;
   r.despacho={texto:document.getElementById('desp-txt').value,nm:assinAutoridade.nome,cg:assinAutoridade.cargo,data:assinAutoridade.data,assin:assinAutoridade};
   r.visto=false;
+  // Notificar fiscal sobre autorização/rejeição
+  gerarNotificacao(
+    decisao === 'autorizado' ? 'conclusao' : 'devolucao',
+    decisao === 'autorizado' ? `✅ Relatório ${r.num} Autorizado` : `❌ Relatório ${r.num} Não Autorizado`,
+    `Despachado por: ${pa_usuarioAtual.nome}${r.despacho?.texto ? ' · ' + r.despacho.texto.slice(0,80) : ''}`,
+    null,
+    [r.autorLogin]
+  );
   sbPatch('pa_relatorios', r.id, {status:r.status, despacho:r.despacho, visto:false})
     .catch(e=>console.warn('Erro salvar despacho:',e));
   toast(decisao==='autorizado'?'Despacho emitido — processo autorizado!':'Despacho emitido — não autorizado.');
@@ -5141,9 +5150,17 @@ function pa_abrirRelParaCorrigir(rid) {
 
 function pa_reencaminharRel(rid) {
   const r=pa_relatorios.find(x=>x.id===rid); if(!r) return;
-  // Volta o status para aguardando e mantém o mesmo destinatário para re-análise
   r.status='aguardando';
   r.visto=false;
+  sbPatch('pa_relatorios', r.id, {status:'aguardando', visto:false})
+    .catch(e=>console.warn('Erro reencaminhar relatorio:',e));
+  gerarNotificacao(
+    'parecer',
+    `📋 Relatório ${r.num} Reencaminhado`,
+    `Fiscal: ${r.fiscal} — aguarda novo despacho`,
+    null,
+    [r.encParaLogin]
+  );
   toast(`Relatório ${r.num} reencaminhado para nova análise.`);
   pa_renderNotificacoes(); buildUnifiedNav();
 }
@@ -5928,14 +5945,14 @@ function pa_renderIntimacoes() {
     <td style="color:var(--pa-text3)">${pa_fd(i.data)}</td>
     <td style="display:flex;gap:4px">
       <button class="btn btn-g btn-xs" onclick="pa_prevIntimacaoById(${i.id})">Ver</button>
-      ${pa_canEdit(i.autorId)?`<button class="btn btn-g btn-xs" onclick="pa_editarIntimacao(${i.id})">Editar</button>`:'<span title="Apenas o autor ou admin pode editar" style="font-size:11px;color:var(--pa-text3);padding:2px 6px">🔒</span>'}
+      ${pa_canEdit(i.autorId, i.autorLogin)?`<button class="btn btn-g btn-xs" onclick="pa_editarIntimacao(${i.id})">Editar</button>`:'<span title="Apenas o autor ou admin pode editar" style="font-size:11px;color:var(--pa-text3);padding:2px 6px">🔒</span>'}
     </td>
   </tr>`).join('');
 }
 
 function pa_editarIntimacao(id) {
   const i = pa_intimacoes.find(x=>x.id===id); if(!i) return;
-  if(!pa_canEdit(i.autorId)){ toast('Você não tem permissão para editar esta intimação.'); return; }
+  if(!pa_canEdit(i.autorId, i.autorLogin)){ toast('Você não tem permissão para editar esta intimação.'); return; }
   pa_intTipo = i.tipo; pa_intProcIdAtual = null;
   navegarPara('nova-intimacao');
   setTimeout(()=>{
