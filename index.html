@@ -4555,7 +4555,7 @@ function pa_renderPainel() {
   pa_relatorios.filter(r=>r.encParaLogin===pa_usuarioAtual?.login&&r.status==='aguardando').forEach(r=>notifs.push({texto:`Relatório ${r.num} aguarda despacho`,sub:`Fiscal: ${r.fiscal} · ${r.tipo==='coletivo'?r.empresas.length+' empresas':r.nm}`,tipo:'aguardando',rel:r}));
   pa_relatorios.filter(r=>r.autorLogin===pa_usuarioAtual?.login&&['autorizado','rejeitado','complementar'].includes(r.status)).slice(0,5).forEach(r=>notifs.push({texto:`${r.num} — despacho recebido`,sub:`${r.status==='autorizado'?'Autorizado':(r.status==='complementar'?'Complementação solicitada':'Não autorizado')}`,tipo:r.status,rel:r}));
   document.getElementById('painel-notifs').innerHTML = notifs.length ? notifs.map(n=>`
-    <div class="notif-item ${n.tipo==='aguardando'?'unread':''}" onclick="${n.tipo==='aguardando'?`pa_abrirDespacho(${n.rel.id})`:`navegarPara('relatoriosPa')`}">
+    <div class="notif-item ${n.tipo==='aguardando'?'unread':''}" style="cursor:pointer" onclick="${n.tipo==='aguardando'?`pa_abrirDespacho(${n.rel.id})`:`pa_irParaRelatorio(${n.rel.id})`}">
       <div class="notif-dot ${n.tipo!=='aguardando'?'read':''}"></div>
       <div class="notif-info"><div class="notif-title">${n.texto}</div><div class="notif-sub">${n.sub}</div></div>
       ${pa_bdg(n.tipo)}
@@ -4598,7 +4598,7 @@ function pa_verDetalhe(id) {
   } else document.getElementById('det-empresas').innerHTML='';
   document.getElementById('det-tram').innerHTML=p.trams.map((t,i)=>`<div class="ti${i===p.trams.length-1?' cur':''}"><div class="ti-dest">${t.destino}</div><div class="ti-meta">${pa_fd(t.data)}${t.obs?' · '+t.obs:''}</div></div>`).join('');
   const pf=pa_folhas.filter(f=>f.pid===id);
-  document.getElementById('det-pa_folhas').innerHTML=pf.length?pf.map(f=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--pa-border);font-size:13px"><div><strong>Folha Nº ${f.num}</strong> · ${pa_fd(f.data)}<div style="font-size:12px;color:var(--pa-text2);margin-top:1px">${f.sv||''} · ${(f.tx||'').slice(0,55)}${f.tx&&f.tx.length>55?'…':''}</div></div><button class="btn btn-g btn-xs" onclick="pa_prevFolhaById(${f.id})">Prévia</button></div>`).join(''):'<p style="color:var(--pa-text2);font-size:13px">Nenhuma folha emitida.</p>';
+  document.getElementById('det-folhas').innerHTML=pf.length?pf.map(f=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--pa-border);font-size:13px"><div><strong>Folha Nº ${f.num}</strong> · ${pa_fd(f.data)}<div style="font-size:12px;color:var(--pa-text2);margin-top:1px">${f.sv||''} · ${(f.tx||'').slice(0,55)}${f.tx&&f.tx.length>55?'…':''}</div></div><button class="btn btn-g btn-xs" onclick="pa_prevFolhaById(${f.id})">Prévia</button></div>`).join(''):'<p style="color:var(--pa-text2);font-size:13px">Nenhuma folha emitida.</p>';
   const acts=document.getElementById('det-actions');
   const canE = pa_canEdit(p.autorId);
   const relOrigem = pa_relatorios.find(r=>r.procId===p.id);
@@ -5019,7 +5019,7 @@ function pa_renderNotificacoes() {
   const pendentes=pa_relatorios.filter(r=>r.encParaLogin===pa_usuarioAtual?.login&&r.status==='aguardando');
   const hist=pa_relatorios.filter(r=>(r.autorLogin===pa_usuarioAtual?.login&&['autorizado','rejeitado','complementar'].includes(r.status))||(r.encParaLogin===pa_usuarioAtual?.login&&r.status!=='aguardando')).sort((a,b)=>b.id-a.id);
   document.getElementById('notif-pendentes').innerHTML=pendentes.length?pendentes.map(r=>`
-    <div class="notif-item unread" onclick="pa_abrirDespacho(${r.id})">
+    <div class="notif-item unread" style="cursor:pointer" onclick="pa_abrirDespacho(${r.id})">
       <div class="notif-dot"></div>
       <div class="notif-info">
         <div class="notif-title">${r.num} ${r.tipo==='coletivo'?'<span class="badge b-new" style="font-size:10px">Coletivo</span>':''}</div>
@@ -5029,7 +5029,7 @@ function pa_renderNotificacoes() {
       <div class="notif-time">${pa_fd(r.data)}</div>
     </div>`).join(''):'<p style="color:var(--pa-text2);font-size:13px">Nenhuma pendência.</p>';
   document.getElementById('notif-hist').innerHTML=hist.length?hist.map(r=>`
-    <div class="notif-item">
+    <div class="notif-item" style="cursor:pointer" onclick="pa_irParaRelatorio(${r.id})">
       <div class="notif-dot read"></div>
       <div class="notif-info">
         <div class="notif-title">${r.num}</div>
@@ -5182,6 +5182,21 @@ function pa_abrirRelParaCorrigir(rid) {
       toast('Relatório carregado para correção. Faça as alterações necessárias e reencaminhe.');
     }, 100);
   }
+}
+
+function pa_irParaRelatorio(rid) {
+  navegarPara('notificacoesPa');
+  setTimeout(() => {
+    const r = pa_relatorios.find(x => x.id === rid);
+    if (!r) return;
+    if (r.status === 'complementar' && r.autorLogin === pa_usuarioAtual?.login) {
+      pa_abrirRelParaCorrigir(rid);
+    } else if (r.status === 'aguardando' && r.encParaLogin === pa_usuarioAtual?.login) {
+      pa_abrirDespacho(rid);
+    } else {
+      pa_verRelatorio(rid);
+    }
+  }, 150);
 }
 
 function pa_reencaminharRel(rid) {
