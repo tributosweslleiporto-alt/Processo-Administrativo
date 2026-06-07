@@ -2192,7 +2192,7 @@ function buildUnifiedNav() {
   const admin = isAdmin();
   const perf  = pa_perfis.find(p => p.id === u?.perfilId);
   const notifProt = (DB.notificacoes||[]).filter(n=>!n.lida&&n.destinatario_login===usuarioLogado?.login).length;
-  const notifPA   = pa_relatorios.filter(r=>r.encParaLogin===u?.login&&r.status==='aguardando').length;
+  const notifPA   = isAdmin() ? pa_relatorios.filter(r=>r.status==='aguardando').length : pa_relatorios.filter(r=>r.encParaLogin===u?.login&&r.status==='aguardando').length;
 
   let html = '';
 
@@ -4564,14 +4564,17 @@ function sv(v, btn) {
 function pa_renderPainel() {
 
 
+  const _adm = isAdmin();
   document.getElementById('st-proc').textContent = pa_processos.length;
   document.getElementById('st-and').textContent = pa_processos.filter(p=>p.status==='em-andamento').length;
   document.getElementById('st-rel').textContent = pa_relatorios.length;
   document.getElementById('st-desp').textContent = pa_relatorios.filter(r=>r.status==='aguardando').length;
   document.getElementById('painel-procs').innerHTML = [...pa_processos].sort((a,b)=>b.id-a.id).slice(0,5).map(p=>`<tr style="cursor:pointer" onclick="pa_verDetalhe(${p.id})" title="Abrir processo ${p.num}"><td style="font-weight:500;white-space:nowrap">${p.num}</td><td>${p.nome}</td><td>${pa_bdg(p.status)}</td></tr>`).join('');
   const notifs = [];
-  pa_relatorios.filter(r=>r.encParaLogin===pa_usuarioAtual?.login&&r.status==='aguardando').forEach(r=>notifs.push({texto:`Relatório ${r.num} aguarda despacho`,sub:`Fiscal: ${r.fiscal} · ${r.tipo==='coletivo'?r.empresas.length+' empresas':r.nm}`,tipo:'aguardando',rel:r}));
-  pa_relatorios.filter(r=>r.autorLogin===pa_usuarioAtual?.login&&['autorizado','rejeitado','complementar'].includes(r.status)).slice(0,5).forEach(r=>notifs.push({texto:`${r.num} — despacho recebido`,sub:`${r.status==='autorizado'?'Autorizado':(r.status==='complementar'?'Complementação solicitada':'Não autorizado')}`,tipo:r.status,rel:r}));
+  // Pendentes: direcionados ao usuário atual OU admin vê todos
+  pa_relatorios.filter(r=>(r.encParaLogin===pa_usuarioAtual?.login||_adm)&&r.status==='aguardando').forEach(r=>notifs.push({texto:`Relatório ${r.num} aguarda despacho`,sub:`Fiscal: ${r.fiscal} · ${r.tipo==='coletivo'?r.empresas.length+' empresas':r.nm}${_adm&&r.encParaLogin?' → '+r.encParaLogin:''}`,tipo:'aguardando',rel:r}));
+  // Histórico: retornos ao autor OU admin vê todos
+  pa_relatorios.filter(r=>(r.autorLogin===pa_usuarioAtual?.login||_adm)&&['autorizado','rejeitado','complementar'].includes(r.status)).slice(0,5).forEach(r=>notifs.push({texto:`${r.num} — despacho recebido`,sub:`${r.status==='autorizado'?'Autorizado':(r.status==='complementar'?'Complementação solicitada':'Não autorizado')}${_adm?' · fiscal: '+r.fiscal:''}`,tipo:r.status,rel:r}));
   document.getElementById('painel-notifs').innerHTML = notifs.length ? notifs.map(n=>`
     <div class="notif-item ${n.tipo==='aguardando'?'unread':''}" style="cursor:pointer" onclick="${n.tipo==='aguardando'?`pa_abrirDespacho(${n.rel.id})`:`pa_irParaRelatorio(${n.rel.id})`}">
       <div class="notif-dot ${n.tipo!=='aguardando'?'read':''}"></div>
@@ -4787,10 +4790,16 @@ function pa_gerarHtmlRelatorio(r) {
       '<div style="font-size:11px;color:#555;margin-bottom:14px">'+r.despacho.nm+' • '+r.despacho.cg+' • '+pa_fd(r.despacho.data)+'</div>';
   }
   var btnProc = '';
-  if(r.status === 'autorizado' && !r.procId && r.autorLogin === (pa_usuarioAtual && pa_usuarioAtual.login)) {
+  if(r.status === 'autorizado' && r.autorLogin === (pa_usuarioAtual && pa_usuarioAtual.login)) {
+    const _jaExiste = !!r.procId;
+    const _procExist = _jaExiste ? pa_processos.find(x=>x.id===r.procId) : null;
+    const _btnLabel = _jaExiste && _procExist
+      ? '📂 Ver processo ' + _procExist.num + ' — já aberto'
+      : 'Abrir processo com esses dados';
+    const _btnColor = _jaExiste ? '#4B6272' : '#2A4538';
     btnProc = '<div style="margin-top:14px"><button onclick="pa_abrirProcDeRel('+r.id+');pa_fm()" ' +
-      'style="background:#2A4538;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px">' +
-      'Abrir processo com esses dados</button></div>';
+      'style="background:'+_btnColor+';color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;width:100%">' +
+      _btnLabel + '</button></div>';
   }
   return '<div style="font-family:Times New Roman,Georgia,serif;padding:10px 20px;color:#111">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">' +
@@ -5042,17 +5051,24 @@ function pa_enviarRelCol() {
 // ── NOTIFICAÇÕES ───────────────────────────────────────────────────────────
 function pa_renderNotificacoes() {
   // Marcar como visto os retornos do usuário atual ao abrir a tela
+  const _admNotif = isAdmin();
+  // Marcar como visto apenas os do próprio usuário
   pa_relatorios.filter(r=>r.autorLogin===pa_usuarioAtual?.login&&['autorizado','rejeitado','complementar'].includes(r.status)&&!r.visto)
     .forEach(r=>{ r.visto=true; });
   buildUnifiedNav();
-  const pendentes=pa_relatorios.filter(r=>r.encParaLogin===pa_usuarioAtual?.login&&r.status==='aguardando');
-  const hist=pa_relatorios.filter(r=>(r.autorLogin===pa_usuarioAtual?.login&&['autorizado','rejeitado','complementar'].includes(r.status))||(r.encParaLogin===pa_usuarioAtual?.login&&r.status!=='aguardando')).sort((a,b)=>b.id-a.id);
+  // Admin vê todos; demais veem só os seus
+  const pendentes = _admNotif
+    ? pa_relatorios.filter(r=>r.status==='aguardando')
+    : pa_relatorios.filter(r=>r.encParaLogin===pa_usuarioAtual?.login&&r.status==='aguardando');
+  const hist = _admNotif
+    ? pa_relatorios.filter(r=>r.status!=='aguardando').sort((a,b)=>b.id-a.id)
+    : pa_relatorios.filter(r=>(r.autorLogin===pa_usuarioAtual?.login&&['autorizado','rejeitado','complementar'].includes(r.status))||(r.encParaLogin===pa_usuarioAtual?.login&&r.status!=='aguardando')).sort((a,b)=>b.id-a.id);
   document.getElementById('notif-pendentes').innerHTML=pendentes.length?pendentes.map(r=>`
     <div class="notif-item unread" style="cursor:pointer" onclick="pa_abrirDespacho(${r.id})">
       <div class="notif-dot"></div>
       <div class="notif-info">
         <div class="notif-title">${r.num} ${r.tipo==='coletivo'?'<span class="badge b-new" style="font-size:10px">Coletivo</span>':''}</div>
-        <div class="notif-sub">Fiscal: ${r.fiscal} · ${r.tipo==='coletivo'?r.empresas.length+' empresas':r.nm}${r.interessado?' · '+r.interessado:''}</div>
+        <div class="notif-sub">Fiscal: ${r.fiscal} · ${r.tipo==='coletivo'?r.empresas.length+' empresas':r.nm}${r.interessado?' · '+r.interessado:''}${isAdmin()&&r.encParaLogin?' <span style="color:var(--pa-amber)">→ '+r.encParaLogin+'</span>':''}</div>
         <div style="margin-top:5px">${pa_bdg('aguardando')}</div>
       </div>
       <div class="notif-time">${pa_fd(r.data)}</div>
@@ -5068,7 +5084,7 @@ function pa_renderNotificacoes() {
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
         <div class="notif-time">${pa_fd(r.data)}</div>
-        ${r.status==='autorizado'&&!r.procId&&r.autorLogin===pa_usuarioAtual?.login?`<button class="btn btn-p btn-xs" onclick="pa_abrirProcDeRel(${r.id})">Abrir processo</button>`:''}${r.status==='rejeitado'&&r.autorLogin===pa_usuarioAtual?.login?`<button class="btn btn-g btn-xs" onclick="pa_verRelatorio(${r.id})">Ver justificativa</button>`:''}
+        ${r.status==='autorizado'&&r.autorLogin===pa_usuarioAtual?.login?`<button class="btn ${r.procId?'btn-g':'btn-p'} btn-xs" onclick="pa_abrirProcDeRel(${r.id})">${r.procId?'📂 Ver processo':'Abrir processo'}</button>`:''}${r.status==='rejeitado'&&r.autorLogin===pa_usuarioAtual?.login?`<button class="btn btn-g btn-xs" onclick="pa_verRelatorio(${r.id})">Ver justificativa</button>`:''}
         ${r.status==='complementar'&&r.autorLogin===pa_usuarioAtual?.login?`<button class="btn btn-g btn-xs" onclick="pa_abrirRelParaCorrigir(${r.id})">Abrir para corrigir</button><button class="btn btn-g btn-xs" onclick="pa_reencaminharRel(${r.id})">Reencaminhar</button>`:''}
       </div>
     </div>`).join(''):'<p style="color:var(--pa-text2);font-size:13px">Nenhum histórico.</p>';
@@ -5145,20 +5161,27 @@ function pa_despachar(decisao) {
 // ── ABRIR PROCESSO DE RELATÓRIO ────────────────────────────────────────────
 function pa_abrirProcDeRel(rid) {
   const r=pa_relatorios.find(x=>x.id===rid); if(!r) return;
+  // Se o processo já foi aberto, ir direto para ele
+  if(r.procId) {
+    const proc = pa_processos.find(x=>x.id===r.procId);
+    if(proc) {
+      pa_verDetalhe(proc.id);
+      toast(`Processo ${proc.num} já aberto — exibindo detalhes.`);
+      return;
+    }
+  }
+  // Processo ainda não existe — abrir formulário pré-preenchido com dados do relatório
   navegarPara('novo-proc');
   setTimeout(()=>{
-    // Requerente e campos de identificação: em branco conforme instrução
-    document.getElementById('np-nm').value = '';
-    document.getElementById('np-dc').value = '';
-    document.getElementById('np-im').value = '';
-    // Assunto e descrição em branco — do processo é diferente do relatório
-    document.getElementById('np-as').value = '';
-    document.getElementById('np-ds').value = '';
-    document.getElementById('np-tp').value = 'juridica';
+    document.getElementById('np-nm').value = r.nm || '';
+    document.getElementById('np-dc').value = r.doc || '';
+    document.getElementById('np-im').value = r.im || '';
+    document.getElementById('np-as').value = r.desc ? r.desc.slice(0,80) : '';
+    document.getElementById('np-ds').value = r.desc || '';
+    document.getElementById('np-tp').value = r.tipo === 'coletivo' ? 'juridica' : 'fisica';
     document.getElementById('np-at').value = pa_usuarioAtual?.nome||'';
-    // Guarda o relatorioId para vincular ao processo após pa_cadProc()
     document.getElementById('np-form').dataset.relId = rid;
-    toast('Formulário pronto. Preencha os dados do processo e confirme.');
+    toast('Formulário pré-preenchido com os dados do relatório. Confirme para abrir o processo.');
   }, 100);
 }
 
