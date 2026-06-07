@@ -2058,6 +2058,12 @@ async function iniciarApp() {
   buildUnifiedNav();
   // Ir para dashboard
   navegarPara('dashboard');
+  // Garantir que todos os panels e views começam ocultos
+  document.querySelectorAll('.panel, .view').forEach(el => {
+    el.style.display = 'none';
+    el.classList.remove('active');
+  });
+
   // Auto-refresh Sistema A (protocolo) a cada 30s
   iniciarAutoRefreshA();
   // Auto-refresh Sistema B (processadmin) a cada 45s
@@ -2100,9 +2106,10 @@ const TITULOS = {
 let secaoAtiva = 'protocolo';
 
 function navegarPara(destino, btn) {
-  // Ocultar todos os panels e views
+  // Ocultar todos os panels e views (via style inline para garantir)
   document.querySelectorAll('.panel, .view').forEach(el => {
     el.classList.remove('active');
+    el.style.display = 'none';
   });
   document.querySelectorAll('.ni').forEach(el => el.classList.remove('active'));
 
@@ -2112,12 +2119,11 @@ function navegarPara(destino, btn) {
 
   if (panelEl) {
     panelEl.classList.add('active');
+    panelEl.style.display = 'block';
     secaoAtiva = 'protocolo';
   } else if (viewEl) {
     viewEl.classList.add('active');
-    viewEl.style.display = 'block'; // forçar visibilidade
-    viewEl.style.minHeight = '200px';
-    viewEl.style.background = '#fff';
+    viewEl.style.display = 'block';
     secaoAtiva = 'processadmin';
   } else {
     // View não encontrada - mostrar erro
