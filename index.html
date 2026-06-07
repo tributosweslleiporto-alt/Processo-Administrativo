@@ -341,176 +341,167 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
 .config-section h3{font-size:14px;font-weight:700;color:var(--accent);margin-bottom:.9rem;padding-bottom:5px;border-bottom:2px solid var(--accent3)}
 
 /* ══ CSS PROCESSADMIN ══ */
-/* ══ VARIÁVEIS PROCESSADMIN (scopadas) ══ */
-.pa-section {
-  --bg:#F4F2ED;--surface:#FDFCF9;--surface2:#F0EDE6;
-  --border:#E0DBD0;--border2:#C8C2B5;
-  --text:#1C1A16;--text2:#6B6760;--text3:#A8A49D;
-  --accent:#2A4538;--accent2:#3D6B55;--accent3:#EAF0EC;
-  --amber:#7A4A10;--amber-l:#FBF0E0;
-  --blue:#1A3A5C;--blue-l:#E6EFF8;
-  --green:#1E4A28;--green-l:#E4F0E6;
-  --red:#6B1E1E;--red-l:#F5E4E4;
-  --purple:#3A2A6B;--purple-l:#EDE8F8;
-  --r:7px;--rl:11px;
-  --font-d:'Lora',serif;--font-b:'DM Sans',sans-serif;
-  color: var(--text);
-  font-family: var(--font-b);
-  font-size: 14px;
+:root {
+  --pa-bg:#F4F2ED; --pa-surface:#FDFCF9; --pa-surface2:#F0EDE6;
+  --pa-border:#E0DBD0; --pa-border2:#C8C2B5;
+  --pa-text:#1C1A16; --pa-text2:#6B6760; --pa-text3:#A8A49D;
+  --pa-accent:#2A4538; --pa-accent2:#3D6B55; --pa-accent3:#EAF0EC;
+  --pa-amber:#7A4A10; --pa-amber-l:#FBF0E0;
+  --pa-blue:#1A3A5C; --pa-blue-l:#E6EFF8;
+  --pa-green:#1E4A28; --pa-green-l:#E4F0E6;
+  --pa-red:#6B1E1E; --pa-red-l:#F5E4E4;
+  --pa-purple:#3A2A6B; --pa-purple-l:#EDE8F8;
+  --pa-r:7px; --pa-rl:11px;
+  --pa-font-d:'Lora',serif; --pa-font-b:'DM Sans',sans-serif;
 }
 
 /* LOGIN */
+
 /* APP */
+
+.ni.active{background:rgba(255,255,255,.15);color:#fff;font-weight:500}
+
+.s-foot button{background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;font-size:11px}
+.s-foot button:hover{color:#fff}
+
 /* VIEWS */
 
-.view
 
 /* COMPONENTS */
-.pa-section .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--r);cursor:pointer;font-family:var(--font-b);font-size:13px;font-weight:500;border:1px solid transparent;transition:all .15s;white-space:nowrap}
-.pa-section .btn-p{background:var(--accent);color:
-#fff}
-.pa-section .btn-p:hover{background:var(--accent2)}
-.pa-section .btn-g{background:transparent;color:var(--text2);border-color:var(--border)}
-.pa-section .btn-g:hover{background:var(--surface2);color:var(--text);border-color:var(--border2)}
-.pa-section .btn-danger{background:transparent;color:var(--red);border-color:
-#F09595}
-.pa-section .btn-danger:hover{background:var(--red-l)}
-.pa-section .btn-success{background:transparent;color:var(--green);border-color:#97C459}
-.pa-section .btn-success:hover{background:var(--green-l)}
-.pa-section .btn-sm{padding:5px 10px;font-size:12px}
-.pa-section .btn-xs{padding:3px 8px;font-size:11px}
-.pa-section .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:18px 20px;margin-bottom:14px;min-height:40px}
-.pa-section .card-title{font-family:var(--font-d);font-size:14px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);color:var(--text)}
-.pa-section .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-.pa-section .stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:14px 16px}
-.pa-section .stat-lbl{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
-.pa-section .stat-val{font-family:var(--font-d);font-size:26px;line-height:1}
-.pa-section .tw{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;margin-bottom:14px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--pa-r);cursor:pointer;font-family:var(--pa-font-b);font-size:13px;font-weight:500;border:1px solid transparent;transition:all .15s;white-space:nowrap}
+.btn-p{background:var(--pa-accent);color:#fff}.btn-p:hover{background:var(--pa-accent2)}
+.btn-g{background:transparent;color:var(--pa-text2);border-color:var(--pa-border)}.btn-g:hover{background:var(--pa-surface2);color:var(--pa-text);border-color:var(--pa-border2)}
+.btn-danger{background:transparent;color:var(--pa-red);border-color:#F09595}.btn-danger:hover{background:var(--pa-red-l)}
+.btn-success{background:transparent;color:var(--pa-green);border-color:#97C459}.btn-success:hover{background:var(--pa-green-l)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-xs{padding:3px 8px;font-size:11px}
+
+.card{background:var(--pa-surface);border:1px solid var(--pa-border);border-radius:var(--pa-rl);padding:18px 20px;margin-bottom:14px;min-height:40px}
+.card-title{font-family:var(--pa-font-d);font-size:14px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--pa-border);color:var(--pa-text)}
+
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--pa-surface);border:1px solid var(--pa-border);border-radius:var(--pa-rl);padding:14px 16px}
+.stat-lbl{font-size:11px;color:var(--pa-text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.stat-val{font-family:var(--pa-font-d);font-size:26px;line-height:1}
+
+.tw{background:var(--pa-surface);border:1px solid var(--pa-border);border-radius:var(--pa-rl);overflow:hidden;margin-bottom:14px}
 table{width:100%;border-collapse:collapse;font-size:13px}
-thead th{background:var(--surface2);padding:9px 13px;text-align:left;font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)}
-tbody td{padding:10px 13px;border-bottom:1px solid var(--border);vertical-align:middle}
+thead th{background:var(--pa-surface2);padding:9px 13px;text-align:left;font-size:11px;font-weight:500;color:var(--pa-text2);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--pa-border)}
+tbody td{padding:10px 13px;border-bottom:1px solid var(--pa-border);vertical-align:middle}
 tbody tr:last-child td{border-bottom:none}
-tbody tr:hover td{background:var(--surface2)}
-.pa-section .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap}
-.pa-section .b-and{background:var(--blue-l);color:var(--blue)}
-.pa-section .b-pen{background:var(--amber-l);color:var(--amber)}
-.pa-section .b-con{background:var(--green-l);color:var(--green)}
-.pa-section .b-arq{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
-.pa-section .b-agu{background:var(--amber-l);color:var(--amber)}
-.pa-section .b-aut{background:var(--green-l);color:var(--green)}
-.pa-section .b-rej{background:var(--red-l);color:var(--red)}
-.pa-section .b-ras{background:var(--surface2);color:var(--text2)}
-.pa-section .b-admin{background:var(--purple-l);color:var(--purple)}
-.pa-section .b-new{background:var(--blue-l);color:var(--blue)}
-.pa-section .fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.pa-section .fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
-.pa-section .fg4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
-.pa-section .fgg{display:flex;flex-direction:column;gap:4px}
-.fgg
-.pa-section .full{grid-column:1/-1}
-label{font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.4px}
-input,select,textarea{font-family:var(--font-b);font-size:13px;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:7px 10px;width:100%;transition:border-color .15s}
-input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent2);background:var(--surface)}
-input[readonly]{color:var(--text2);cursor:default}
+tbody tr:hover td{background:var(--pa-surface2)}
+
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap}
+.b-and{background:var(--pa-blue-l);color:var(--pa-blue)}
+.b-pen{background:var(--pa-amber-l);color:var(--pa-amber)}
+.b-con{background:var(--pa-green-l);color:var(--pa-green)}
+.b-arq{background:var(--pa-surface2);color:var(--pa-text2);border:1px solid var(--pa-border)}
+.b-agu{background:var(--pa-amber-l);color:var(--pa-amber)}
+.b-aut{background:var(--pa-green-l);color:var(--pa-green)}
+.b-rej{background:var(--pa-red-l);color:var(--pa-red)}
+.b-ras{background:var(--pa-surface2);color:var(--pa-text2)}
+.b-admin{background:var(--pa-purple-l);color:var(--pa-purple)}
+.b-new{background:var(--pa-blue-l);color:var(--pa-blue)}
+
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.fg4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
+.fgg{display:flex;flex-direction:column;gap:4px}
+.fgg.full{grid-column:1/-1}
+label{font-size:11px;font-weight:500;color:var(--pa-text2);text-transform:uppercase;letter-spacing:.4px}
+input,select,textarea{font-family:var(--pa-font-b);font-size:13px;color:var(--pa-text);background:var(--pa-surface2);border:1px solid var(--pa-border);border-radius:var(--pa-r);padding:7px 10px;width:100%;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--pa-accent2);background:var(--pa-surface)}
+input[readonly]{color:var(--pa-text2);cursor:default}
 textarea{resize:vertical;min-height:80px;line-height:1.6}
-.pa-section .sep{border:none;border-top:1px solid var(--border);margin:14px 0}
-.pa-section .notif-item{display:flex;align-items:flex-start;gap:11px;padding:11px 14px;border-radius:var(--r);cursor:pointer;transition:background .15s;border:1px solid var(--border);margin-bottom:8px}
-.pa-section .notif-item:hover{background:var(--surface2)}
-.notif-item
-.pa-section .unread{border-left:3px solid #378ADD}
-.pa-section .notif-dot{width:8px;height:8px;border-radius:50%;background:#378ADD;flex-shrink:0;margin-top:5px}
-.notif-dot
-.pa-section .read{background:var(--border2)}
-.pa-section .notif-info{flex:1}
-.pa-section .notif-title{font-size:13px;font-weight:500}
-.pa-section .notif-sub{font-size:12px;color:var(--text2);margin-top:2px}
-.pa-section .notif-time{font-size:11px;color:var(--text3);white-space:nowrap}
-.pa-section .tl{position:relative;padding-left:20px}
-.pa-section .tl::before{content:'';position:absolute;left:3px;top:8px;bottom:0;width:1px;background:var(--border)}
-.pa-section .ti{position:relative;padding-bottom:16px}
-.pa-section .ti:last-child{padding-bottom:0}
-.pa-section .ti::before{content:'';position:absolute;left:-18px;top:5px;width:8px;height:8px;border-radius:50%;background:var(--border2);border:2px solid var(--surface)}
-.ti
-.pa-section .cur::before{background:var(--accent)}
-.pa-section .ti-dest{font-weight:500;font-size:13px}
-.pa-section .ti-meta{font-size:12px;color:var(--text2);margin-top:1px}
-.pa-section .empresa-row{display:flex;gap:10px;align-items:flex-end;padding:12px;background:var(--surface2);border-radius:var(--r);border:1px solid var(--border);margin-bottom:8px}
-.empresa-row
-.pa-section .fgg{flex:1}
-.pa-section .empresa-num{font-size:11px;color:var(--text3);font-weight:500;width:20px;padding-bottom:8px;flex-shrink:0}
-.pa-section .perm-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
-.pa-section .perm-row:last-child{border-bottom:none}
-.pa-section .perm-name{font-size:13px;font-weight:500}
-.pa-section .perm-desc{font-size:12px;color:var(--text2);margin-top:2px}
-.pa-section .toggle{width:38px;height:20px;background:var(--border2);border-radius:10px;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;border:none}
-.toggle
-.pa-section .on{background:var(--accent2)}
-.pa-section .toggle::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:
-#fff;transition:left .2s}
-.toggle
-.pa-section .on::after{left:20px}
+.sep{border:none;border-top:1px solid var(--pa-border);margin:14px 0}
 
-.modal-wrap
-.pa-section .open{display:flex}
+.notif-item{display:flex;align-items:flex-start;gap:11px;padding:11px 14px;border-radius:var(--pa-r);cursor:pointer;transition:background .15s;border:1px solid var(--pa-border);margin-bottom:8px}
+.notif-item:hover{background:var(--pa-surface2)}
+.notif-item.unread{border-left:3px solid #378ADD}
+.notif-dot{width:8px;height:8px;border-radius:50%;background:#378ADD;flex-shrink:0;margin-top:5px}
+.notif-dot.read{background:var(--pa-border2)}
+.notif-info{flex:1}
+.notif-title{font-size:13px;font-weight:500}
+.notif-sub{font-size:12px;color:var(--pa-text2);margin-top:2px}
+.notif-time{font-size:11px;color:var(--pa-text3);white-space:nowrap}
+
+.tl{position:relative;padding-left:20px}
+.tl::before{content:'';position:absolute;left:3px;top:8px;bottom:0;width:1px;background:var(--pa-border)}
+.ti{position:relative;padding-bottom:16px}
+.ti:last-child{padding-bottom:0}
+.ti::before{content:'';position:absolute;left:-18px;top:5px;width:8px;height:8px;border-radius:50%;background:var(--pa-border2);border:2px solid var(--pa-surface)}
+.ti.cur::before{background:var(--pa-accent)}
+.ti-dest{font-weight:500;font-size:13px}
+.ti-meta{font-size:12px;color:var(--pa-text2);margin-top:1px}
+
+.empresa-row{display:flex;gap:10px;align-items:flex-end;padding:12px;background:var(--pa-surface2);border-radius:var(--pa-r);border:1px solid var(--pa-border);margin-bottom:8px}
+.empresa-row .fgg{flex:1}
+.empresa-num{font-size:11px;color:var(--pa-text3);font-weight:500;width:20px;padding-bottom:8px;flex-shrink:0}
+
+.perm-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--pa-border)}
+.perm-row:last-child{border-bottom:none}
+.perm-name{font-size:13px;font-weight:500}
+.perm-desc{font-size:12px;color:var(--pa-text2);margin-top:2px}
+.toggle{width:38px;height:20px;background:var(--pa-border2);border-radius:10px;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;border:none}
+.toggle.on{background:var(--pa-accent2)}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .2s}
+.toggle.on::after{left:20px}
 
 
 
-.pa-section .xbtn{background:transparent;border:1px solid var(--border);border-radius:var(--r);padding:4px 8px;cursor:pointer;color:var(--text2);font-size:13px}
 
-.toast
-.pa-section .show{opacity:1;transform:translateY(0)}
-.pa-section .doc-sheet{background:
-#fff;color:#111;font-family:'Times New Roman',Georgia,serif;padding:36px 44px 0;border:1px solid var(--border);border-radius:var(--rl);margin:0 auto 18px;max-width:660px;display:flex;flex-direction:column;min-height:900px}
-.pa-section .doc-sheet *{color:#111}
-.pa-section .doc-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
-.pa-section .doc-hdr-c{text-align:center;flex:1;padding:0 10px}
-.pa-section .doc-inst{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
-.pa-section .doc-sub{font-size:10px;margin-top:2px}
-.pa-section .doc-brasao{width:52px;height:52px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
-.pa-section .doc-bar{text-align:center;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;border-top:2px solid #111;border-bottom:2px solid #111;padding:5px 0;margin:11px 0 10px}
-.pa-section .doc-row{display:flex;gap:7px;margin-bottom:7px;align-items:baseline;flex-wrap:wrap}
-.pa-section .doc-lbl{font-size:11px;font-weight:700;text-transform:uppercase;white-space:nowrap;flex-shrink:0}
-.pa-section .doc-val{font-size:12px;border-bottom:.5px solid #999;flex:1;min-width:60px;padding-bottom:1px}
-.pa-section .doc-hr{border:none;border-top:.5px solid
-#ccc;margin:9px 0}
-.pa-section .doc-body{min-height:110px;border:.5px solid
-#ccc;border-radius:3px;padding:9px 11px;font-size:12px;line-height:1.9;white-space:pre-wrap}
-.pa-section .doc-tram{width:100%;border-collapse:collapse;font-size:11px;margin-top:5px}
-.pa-section .doc-tram th{border:.5px solid
-#bbb;padding:3px 7px;background:
-#f5f5f5;font-weight:700;text-transform:uppercase}
-.pa-section .doc-tram td{border:.5px solid
-#bbb;padding:4px 7px;height:22px}
-.pa-section .doc-assin{margin-top:30px;text-align:center}
-.pa-section .doc-assin-ln{border-top:.5px solid #333;width:200px;margin:0 auto 3px}
-.pa-section .doc-assin-name{font-size:11px;font-weight:700}
-.pa-section .doc-assin-sub{font-size:10px;color:#555}
-.pa-section .doc-addr{text-align:center;font-size:10px;color:#555;margin-top:18px;line-height:1.6}
-.pa-section .ct-sheet{background:
-#fff;color:#111;border:1px solid var(--border);border-radius:var(--rl);padding:20px 28px;max-width:660px;margin:0 auto}
-.pa-section .ct-box{border:1px solid
-#bbb;border-radius:4px;padding:12px 16px;margin-bottom:12px}
-.pa-section .ct-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;text-align:center;border-bottom:.5px solid
-#ddd;padding-bottom:5px;margin-bottom:8px;color:#111;font-family:'Times New Roman',serif}
-.pa-section .ct-row{display:flex;gap:5px;margin-bottom:5px;align-items:baseline}
-.pa-section .ct-lbl{font-size:9px;font-weight:700;text-transform:uppercase;white-space:nowrap;flex-shrink:0;color:#111;font-family:'Times New Roman',serif}
-.pa-section .ct-val{font-size:10px;border-bottom:.5px solid
-#aaa;flex:1;padding-bottom:1px;color:#111;font-family:'Times New Roman',serif}
-.pa-section .ct-corte{text-align:center;font-size:9px;color:
-#aaa;border-top:1px dashed
-#ccc;padding-top:6px;margin:10px 0}
-.pa-section .sb{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
-.sb input,
-.pa-section .sb select{flex:1;min-width:150px}
-.pa-section .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.pa-section .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
-.pa-section .user-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:14px 16px;display:flex;align-items:center;gap:12px}
-.pa-section .u-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0}
-.pa-section .u-name{font-size:13px;font-weight:500}
-.pa-section .u-role{font-size:12px;color:var(--text2);margin-top:1px}
-.pa-section .u-actions{margin-left:auto;display:flex;gap:6px}
-.pa-section .search-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;justify-content:space-between}
-.pa-section .col-tag{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:3px 10px}
+
+.modal-hdr h3{font-family:var(--pa-font-d);font-size:16px}
+
+.xbtn{background:transparent;border:1px solid var(--pa-border);border-radius:var(--pa-r);padding:4px 8px;cursor:pointer;color:var(--pa-text2);font-size:13px}
+
+.toast{position:fixed;bottom:20px;right:20px;background:var(--pa-accent);color:#fff;padding:10px 16px;border-radius:var(--pa-rl);font-size:13px;z-index:300;opacity:0;transform:translateY(6px);transition:all .25s;pointer-events:none;max-width:320px}
+.toast.show{opacity:1;transform:translateY(0)}
+
+.doc-sheet{background:#fff;color:#111;font-family:'Times New Roman',Georgia,serif;padding:36px 44px 0;border:1px solid var(--pa-border);border-radius:var(--pa-rl);margin:0 auto 18px;max-width:660px;display:flex;flex-direction:column;min-height:900px}
+
+.doc-sheet *{color:#111}
+.doc-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.doc-hdr-c{text-align:center;flex:1;padding:0 10px}
+.doc-inst{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.doc-sub{font-size:10px;margin-top:2px}
+.doc-brasao{width:52px;height:52px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.doc-bar{text-align:center;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;border-top:2px solid #111;border-bottom:2px solid #111;padding:5px 0;margin:11px 0 10px}
+.doc-row{display:flex;gap:7px;margin-bottom:7px;align-items:baseline;flex-wrap:wrap}
+.doc-lbl{font-size:11px;font-weight:700;text-transform:uppercase;white-space:nowrap;flex-shrink:0}
+.doc-val{font-size:12px;border-bottom:.5px solid #999;flex:1;min-width:60px;padding-bottom:1px}
+.doc-hr{border:none;border-top:.5px solid #ccc;margin:9px 0}
+.doc-body{min-height:110px;border:.5px solid #ccc;border-radius:3px;padding:9px 11px;font-size:12px;line-height:1.9;white-space:pre-wrap}
+.doc-tram{width:100%;border-collapse:collapse;font-size:11px;margin-top:5px}
+.doc-tram th{border:.5px solid #bbb;padding:3px 7px;background:#f5f5f5;font-weight:700;text-transform:uppercase}
+.doc-tram td{border:.5px solid #bbb;padding:4px 7px;height:22px}
+.doc-assin{margin-top:30px;text-align:center}
+.doc-assin-ln{border-top:.5px solid #333;width:200px;margin:0 auto 3px}
+.doc-assin-name{font-size:11px;font-weight:700}
+.doc-assin-sub{font-size:10px;color:#555}
+.doc-addr{text-align:center;font-size:10px;color:#555;margin-top:18px;line-height:1.6}
+.ct-sheet{background:#fff;color:#111;border:1px solid var(--pa-border);border-radius:var(--pa-rl);padding:20px 28px;max-width:660px;margin:0 auto}
+.ct-box{border:1px solid #bbb;border-radius:4px;padding:12px 16px;margin-bottom:12px}
+.ct-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;text-align:center;border-bottom:.5px solid #ddd;padding-bottom:5px;margin-bottom:8px;color:#111;font-family:'Times New Roman',serif}
+.ct-row{display:flex;gap:5px;margin-bottom:5px;align-items:baseline}
+.ct-lbl{font-size:9px;font-weight:700;text-transform:uppercase;white-space:nowrap;flex-shrink:0;color:#111;font-family:'Times New Roman',serif}
+.ct-val{font-size:10px;border-bottom:.5px solid #aaa;flex:1;padding-bottom:1px;color:#111;font-family:'Times New Roman',serif}
+.ct-corte{text-align:center;font-size:9px;color:#aaa;border-top:1px dashed #ccc;padding-top:6px;margin:10px 0}
+.sb{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.sb input,.sb select{flex:1;min-width:150px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.user-card{background:var(--pa-surface);border:1px solid var(--pa-border);border-radius:var(--pa-rl);padding:14px 16px;display:flex;align-items:center;gap:12px}
+.u-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0}
+.u-name{font-size:13px;font-weight:500}
+.u-role{font-size:12px;color:var(--pa-text2);margin-top:1px}
+.u-actions{margin-left:auto;display:flex;gap:6px}
+.search-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.col-tag{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--pa-text2);background:var(--pa-surface2);border:1px solid var(--pa-border);border-radius:20px;padding:3px 10px}
+.perfil-card{background:var(--pa-surface);border:1px solid var(--pa-border);border-radius:var(--pa-rl);padding:16px 18px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+
+.modal-wrap{display:none!important}
+.modal-wrap.open{display:flex!important}
 </style>
 </head>
 <body>
@@ -887,42 +878,42 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
       
       <!-- ══ VIEWS: PROCESSADMIN ══ -->
       <!-- PAINEL -->
-      <div id="view-painel" class="view active pa-section">
+      <div id="view-painel" class="view active">
         <div class="stats-grid">
           <div class="stat"><div class="stat-lbl">Processos</div><div class="stat-val" id="st-proc">0</div></div>
-          <div class="stat"><div class="stat-lbl">Em andamento</div><div class="stat-val" style="color:var(--blue)" id="st-and">0</div></div>
-          <div class="stat"><div class="stat-lbl">Relatórios pendentes</div><div class="stat-val" style="color:var(--amber)" id="st-rel">0</div></div>
-          <div class="stat"><div class="stat-lbl">Aguard. despacho</div><div class="stat-val" style="color:var(--red)" id="st-desp">0</div></div>
+          <div class="stat"><div class="stat-lbl">Em andamento</div><div class="stat-val" style="color:var(--pa-blue)" id="st-and">0</div></div>
+          <div class="stat"><div class="stat-lbl">Relatórios pendentes</div><div class="stat-val" style="color:var(--pa-amber)" id="st-rel">0</div></div>
+          <div class="stat"><div class="stat-lbl">Aguard. despacho</div><div class="stat-val" style="color:var(--pa-red)" id="st-desp">0</div></div>
         </div>
         <div class="grid2">
           <div>
-            <div style="font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Últimos processos</div>
+            <div style="font-size:11px;font-weight:500;color:var(--pa-text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Últimos processos</div>
             <div class="tw"><table><thead><tr><th>Processo</th><th>Requerente</th><th>Status</th></tr></thead><tbody id="painel-procs"></tbody></table></div>
           </div>
           <div>
-            <div style="font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Notificações recentes</div>
+            <div style="font-size:11px;font-weight:500;color:var(--pa-text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Notificações recentes</div>
             <div id="painel-notifs"></div>
           </div>
         </div>
       </div>
 
       <!-- PROCESSOS -->
-      <div id="view-processos" class="view pa-section">
+      <div id="view-processos" class="view">
         <div class="sb">
           <input type="text" id="proc-q" placeholder="Buscar..." oninput="pa_renderProcs()">
           <select id="proc-sf" onchange="pa_renderProcs()"><option value="">Todos os status</option><option value="em-andamento">Em andamento</option><option value="pendente">Pendente</option><option value="concluido">Concluído</option><option value="arquivado">Arquivado</option></select>
         </div>
         <div class="tw"><table><thead><tr><th>Nº</th><th>Tipo</th><th>Requerente / Assunto</th><th>Destino</th><th>Status</th><th>Data</th><th></th></tr></thead><tbody id="proc-tbody"></tbody></table>
-        <div id="proc-empty" style="text-align:center;padding:44px;color:var(--text2);font-size:13px;display:none">Nenhum processo encontrado.</div></div>
+        <div id="proc-empty" style="text-align:center;padding:44px;color:var(--pa-text2);font-size:13px;display:none">Nenhum processo encontrado.</div></div>
       </div>
 
       <!-- DETALHE PROCESSO -->
-      <div id="view-detalhe" class="view pa-section">
+      <div id="view-detalhe" class="view">
         <button class="btn btn-g btn-sm" onclick="navegarPara('processos')" style="margin-bottom:14px">← Voltar</button>
         <div class="card" id="det-card">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
             <div>
-              <div style="font-family:var(--font-d);font-size:20px" id="det-num"></div>
+              <div style="font-family:var(--pa-font-d);font-size:20px" id="det-num"></div>
               <div id="det-badge" style="margin-top:5px"></div>
               <div class="fg3" style="margin-top:12px;font-size:13px">
                 <div class="fgg"><label>Requerente</label><span id="det-nm" style="font-weight:500"></span></div>
@@ -937,7 +928,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
           </div>
         </div>
         <div class="grid2">
-          <div class="card"><div class="card-title">Descrição</div><p id="det-ds" style="font-size:13px;line-height:1.7;color:var(--text2)"></p>
+          <div class="card"><div class="card-title">Descrição</div><p id="det-ds" style="font-size:13px;line-height:1.7;color:var(--pa-text2)"></p>
             <div id="det-empresas" style="margin-top:12px"></div>
           </div>
           <div class="card"><div class="card-title">Tramitação</div><div class="tl" id="det-tram"></div></div>
@@ -947,7 +938,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
       </div>
 
       <!-- NOVO PROCESSO -->
-      <div id="view-novo-proc" class="view pa-section">
+      <div id="view-novo-proc" class="view">
         <div id="np-form">
         <div class="card"><div class="card-title">Identificação</div>
           <div class="fg3">
@@ -976,12 +967,12 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
           <button class="btn btn-p" onclick="pa_cadProc()">✓ Abrir processo</button>
           <button class="btn btn-g" onclick="navegarPara('processos')">Cancelar</button>
         </div>
-        <div id="np-ok" style="display:none;margin-top:12px;padding:10px 14px;background:var(--green-l);border-radius:var(--r);font-size:13px;color:var(--green)"></div>
+        <div id="np-ok" style="display:none;margin-top:12px;padding:10px 14px;background:var(--pa-green-l);border-radius:var(--pa-r);font-size:13px;color:var(--pa-green)"></div>
         </div><!-- /np-form -->
       </div>
 
       <!-- TRAMITAÇÃO -->
-      <div id="view-tram" class="view pa-section">
+      <div id="view-tram" class="view">
         <div class="grid2">
           <div class="card"><div class="card-title">Registrar movimentação</div>
             <div style="display:flex;flex-direction:column;gap:11px">
@@ -993,12 +984,12 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
               <button class="btn btn-p" onclick="pa_regTram()">Registrar</button>
             </div>
           </div>
-          <div class="card"><div class="card-title">Histórico</div><div id="tram-h"><p style="color:var(--text2);font-size:13px">Selecione um processo.</p></div></div>
+          <div class="card"><div class="card-title">Histórico</div><div id="tram-h"><p style="color:var(--pa-text2);font-size:13px">Selecione um processo.</p></div></div>
         </div>
       </div>
 
       <!-- FOLHAS -->
-      <div id="view-folhas" class="view pa-section">
+      <div id="view-folhas" class="view">
         <div class="grid2">
           <div class="card"><div class="card-title">Nova folha de informação</div>
             <div style="display:flex;flex-direction:column;gap:11px">
@@ -1016,12 +1007,12 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
               </div>
             </div>
           </div>
-          <div class="card"><div class="card-title">Folhas emitidas</div><div id="f-lista"><p style="color:var(--text2);font-size:13px">Nenhuma folha ainda.</p></div></div>
+          <div class="card"><div class="card-title">Folhas emitidas</div><div id="f-lista"><p style="color:var(--pa-text2);font-size:13px">Nenhuma folha ainda.</p></div></div>
         </div>
       </div>
 
       <!-- RELATÓRIOS -->
-      <div id="view-relatoriosPa" class="view pa-section">
+      <div id="view-relatoriosPa" class="view">
         <div class="search-row">
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <input type="text" id="rel-q" placeholder="Buscar relatório..." oninput="pa_renderRels()" style="width:220px">
@@ -1033,11 +1024,11 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
           </div>
         </div>
         <div class="tw"><table><thead><tr><th>Nº</th><th>Tipo</th><th>Fiscal</th><th>Interessado(s)</th><th>Status</th><th>Data</th><th></th></tr></thead><tbody id="rel-tbody"></tbody></table>
-        <div id="rel-empty" style="text-align:center;padding:44px;color:var(--text2);font-size:13px;display:none">Nenhum relatório.</div></div>
+        <div id="rel-empty" style="text-align:center;padding:44px;color:var(--pa-text2);font-size:13px;display:none">Nenhum relatório.</div></div>
       </div>
 
       <!-- NOVO RELATÓRIO INDIVIDUAL -->
-      <div id="view-novo-rel-ind" class="view pa-section">
+      <div id="view-novo-rel-ind" class="view">
         <button class="btn btn-g btn-sm" onclick="navegarPara('relatoriosPa')" style="margin-bottom:14px">← Voltar</button>
         <div class="card"><div class="card-title">Relatório individual de fiscalização</div>
           <div style="display:flex;flex-direction:column;gap:12px">
@@ -1064,11 +1055,11 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
       </div>
 
       <!-- NOVO RELATÓRIO COLETIVO -->
-      <div id="view-novo-rel-col" class="view pa-section">
+      <div id="view-novo-rel-col" class="view">
         <button class="btn btn-g btn-sm" onclick="navegarPara('relatoriosPa')" style="margin-bottom:14px">← Voltar</button>
         <div class="card">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)">
-            <div style="font-family:var(--font-d);font-size:14px">Relatório coletivo de fiscalização</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--pa-border)">
+            <div style="font-family:var(--pa-font-d);font-size:14px">Relatório coletivo de fiscalização</div>
             <span class="badge b-and" style="font-size:11px">Múltiplas empresas</span>
           </div>
           <div style="display:flex;flex-direction:column;gap:12px">
@@ -1090,7 +1081,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
               <button class="btn btn-g btn-sm" onclick="pa_addEmpresa()">+ Adicionar empresa</button>
             </div>
             <div id="empresas-lista"></div>
-            <div id="rc-resumo" style="display:none;background:var(--surface2);border-radius:var(--r);padding:12px 14px;font-size:13px;color:var(--text2);border:1px solid var(--border)"></div>
+            <div id="rc-resumo" style="display:none;background:var(--pa-surface2);border-radius:var(--pa-r);padding:12px 14px;font-size:13px;color:var(--pa-text2);border:1px solid var(--pa-border)"></div>
             <div style="display:flex;gap:8px">
               <button class="btn btn-p" onclick="pa_enviarRelCol()">Assinar e encaminhar</button>
               <button class="btn btn-g" onclick="navegarPara('relatoriosPa')">Cancelar</button>
@@ -1100,25 +1091,25 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
       </div>
 
       <!-- NOTIFICAÇÕES / DESPACHO -->
-      <div id="view-notificacoesPa" class="view pa-section">
+      <div id="view-notificacoesPa" class="view">
         <div class="grid2">
           <div>
-            <div style="font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Pendentes</div>
-            <div id="notif-pendentes"><p style="color:var(--text2);font-size:13px">Nenhuma notificação pendente.</p></div>
+            <div style="font-size:11px;font-weight:500;color:var(--pa-text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Pendentes</div>
+            <div id="notif-pendentes"><p style="color:var(--pa-text2);font-size:13px">Nenhuma notificação pendente.</p></div>
           </div>
           <div>
-            <div style="font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Histórico</div>
+            <div style="font-size:11px;font-weight:500;color:var(--pa-text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Histórico</div>
             <div id="notif-hist"></div>
           </div>
         </div>
       </div>
 
       <!-- DESPACHO -->
-      <div id="view-despacho" class="view pa-section">
+      <div id="view-despacho" class="view">
         <button class="btn btn-g btn-sm" onclick="navegarPara('notificacoesPa')" style="margin-bottom:14px">← Voltar</button>
         <div class="card" id="desp-card">
           <div class="card-title">Analisar relatório</div>
-          <div id="desp-resumo" style="background:var(--surface2);border-radius:var(--r);padding:14px 16px;margin-bottom:14px;border:1px solid var(--border);font-size:13px;line-height:1.7"></div>
+          <div id="desp-resumo" style="background:var(--pa-surface2);border-radius:var(--pa-r);padding:14px 16px;margin-bottom:14px;border:1px solid var(--pa-border);font-size:13px;line-height:1.7"></div>
           <div class="sep"></div>
           <div style="font-size:13px;font-weight:500;margin-bottom:10px">Emitir despacho</div>
           <div style="display:flex;flex-direction:column;gap:11px">
@@ -1138,7 +1129,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
       </div>
 
       <!-- USUÁRIOS (ADMIN) -->
-      <div id="view-usuariosPa" class="view pa-section">
+      <div id="view-usuariosPa" class="view">
         <div class="search-row">
           <input type="text" id="usr-q" placeholder="Buscar usuário..." oninput="pa_renderUsuarios()" style="width:220px">
           <button class="btn btn-p btn-sm" onclick="pa_abrirModalUsuario(null)">+ Novo usuário</button>
@@ -1147,7 +1138,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
       </div>
 
       <!-- PERFIS (ADMIN) -->
-      <div id="view-perfis" class="view pa-section">
+      <div id="view-perfis" class="view">
         <div class="search-row">
           <div style="font-size:13px;font-weight:500">Perfis de acesso</div>
           <button class="btn btn-p btn-sm" onclick="pa_abrirModalPerfil(null)">+ Novo perfil</button>
@@ -1156,38 +1147,38 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
       </div>
 
       <!-- BACKUP E RESTAURAÇÃO -->
-      <div id="view-backup" class="view pa-section">
+      <div id="view-backup" class="view">
         <div class="card" style="max-width:620px;margin:0 auto">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--pa-border)">
             <span style="font-size:22px">🛡️</span>
             <div>
               <div style="font-size:15px;font-weight:600">Backup e Restauração</div>
-              <div style="font-size:12px;color:var(--text2)">Salve e recupere todos os dados do sistema</div>
+              <div style="font-size:12px;color:var(--pa-text2)">Salve e recupere todos os dados do sistema</div>
             </div>
           </div>
 
           <!-- EXPORTAR -->
-          <div style="background:var(--surface2);border-radius:var(--r);padding:16px 18px;border:1px solid var(--border);margin-bottom:14px">
+          <div style="background:var(--pa-surface2);border-radius:var(--pa-r);padding:16px 18px;border:1px solid var(--pa-border);margin-bottom:14px">
             <div style="font-size:13px;font-weight:600;margin-bottom:4px">📥 Exportar backup</div>
-            <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Gera um arquivo <code>.json</code> com todos os processos, relatórios, usuários, intimações e configurações. Guarde este arquivo em local seguro.</div>
+            <div style="font-size:12px;color:var(--pa-text2);margin-bottom:12px">Gera um arquivo <code>.json</code> com todos os processos, relatórios, usuários, intimações e configurações. Guarde este arquivo em local seguro.</div>
             <button class="btn btn-p" onclick="pa_exportarBackup()">Baixar arquivo de backup</button>
           </div>
 
           <!-- IMPORTAR -->
-          <div style="background:var(--surface2);border-radius:var(--r);padding:16px 18px;border:1px solid var(--border);margin-bottom:14px">
+          <div style="background:var(--pa-surface2);border-radius:var(--pa-r);padding:16px 18px;border:1px solid var(--pa-border);margin-bottom:14px">
             <div style="font-size:13px;font-weight:600;margin-bottom:4px">📤 Restaurar backup</div>
-            <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Selecione um arquivo de backup gerado por este sistema. <strong style="color:#c0392b">Atenção:</strong> os dados atuais serão substituídos pelos do arquivo.</div>
+            <div style="font-size:12px;color:var(--pa-text2);margin-bottom:12px">Selecione um arquivo de backup gerado por este sistema. <strong style="color:#c0392b">Atenção:</strong> os dados atuais serão substituídos pelos do arquivo.</div>
             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
               <label class="btn btn-g" style="cursor:pointer">
                 Selecionar arquivo
                 <input type="file" accept=".json" id="backup-file-input" style="display:none" onchange="pa_importarBackup(this)">
               </label>
-              <span id="backup-file-name" style="font-size:12px;color:var(--text2)">Nenhum arquivo selecionado</span>
+              <span id="backup-file-name" style="font-size:12px;color:var(--pa-text2)">Nenhum arquivo selecionado</span>
             </div>
           </div>
 
           <!-- HISTÓRICO -->
-          <div style="background:var(--surface2);border-radius:var(--r);padding:16px 18px;border:1px solid var(--border)">
+          <div style="background:var(--pa-surface2);border-radius:var(--pa-r);padding:16px 18px;border:1px solid var(--pa-border)">
             <div style="font-size:13px;font-weight:600;margin-bottom:10px">📋 Resumo atual dos dados</div>
             <div id="backup-resumo" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px"></div>
           </div>
@@ -1195,7 +1186,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
       </div>
 
       <!-- TRIBUTOS (ADMIN) -->
-      <div id="view-tributos" class="view pa-section">
+      <div id="view-tributos" class="view">
         <div class="search-row">
           <div style="font-size:13px;font-weight:500">Tributos e assuntos</div>
           <button class="btn btn-p btn-sm" onclick="pa_abrirModalTributo(null)">+ Novo tributo</button>
@@ -1204,7 +1195,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
       </div>
 
       <!-- INTIMAÇÕES -->
-      <div id="view-intimacoes" class="view pa-section">
+      <div id="view-intimacoes" class="view">
         <div class="search-row">
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <input type="text" id="int-q" placeholder="Buscar intimação..." oninput="pa_renderIntimacoes()" style="width:220px">
@@ -1216,30 +1207,30 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
           </div>
         </div>
         <div class="tw"><table><thead><tr><th>Nº</th><th>Tipo</th><th>Contribuinte</th><th>Tributo</th><th>Valor Total</th><th>Processo</th><th>Data</th><th></th></tr></thead><tbody id="int-tbody"></tbody></table>
-        <div id="int-empty" style="text-align:center;padding:44px;color:var(--text2);font-size:13px;display:none">Nenhuma intimação gerada.</div></div>
+        <div id="int-empty" style="text-align:center;padding:44px;color:var(--pa-text2);font-size:13px;display:none">Nenhuma intimação gerada.</div></div>
       </div>
 
       <!-- NOVA INTIMAÇÃO -->
-      <div id="view-nova-intimacao" class="view pa-section">
+      <div id="view-nova-intimacao" class="view">
       <button class="btn btn-g btn-sm" onclick="navegarPara('intimacoes')" style="margin-bottom:14px">&#8592; Voltar</button>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:20px 24px">
+      <div style="background:var(--pa-surface);border:1px solid var(--pa-border);border-radius:var(--pa-rl);padding:20px 24px">
 
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border)">
-          <div style="font-family:var(--font-d);font-size:15px" id="int-form-title">Nova Intimação</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--pa-border)">
+          <div style="font-family:var(--pa-font-d);font-size:15px" id="int-form-title">Nova Intimação</div>
           <span id="int-tipo-badge" class="badge b-and">Pessoa Física</span>
         </div>
 
         <!-- IMPORTAR BOLETO -->
-        <div style="background:var(--surface2);border:2px dashed var(--border2);border-radius:var(--r);padding:16px;margin-bottom:20px;text-align:center">
+        <div style="background:var(--pa-surface2);border:2px dashed var(--border2);border-radius:var(--pa-r);padding:16px;margin-bottom:20px;text-align:center">
           <div style="font-size:13px;font-weight:500;margin-bottom:6px">Importar boleto PDF</div>
-          <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Selecione o boleto do sistema da prefeitura para preencher automaticamente</div>
+          <div style="font-size:12px;color:var(--pa-text2);margin-bottom:12px">Selecione o boleto do sistema da prefeitura para preencher automaticamente</div>
           <input type="file" id="boleto-file" accept=".pdf" style="display:none" onchange="pa_processarBoleto(this)">
           <button class="btn btn-g" onclick="document.getElementById('boleto-file').click()">&#128196; Selecionar boleto PDF</button>
-          <div id="boleto-status" style="margin-top:8px;font-size:12px;color:var(--text2)"></div>
+          <div id="boleto-status" style="margin-top:8px;font-size:12px;color:var(--pa-text2)"></div>
         </div>
 
         <!-- IDENTIFICAÇÃO -->
-        <div style="font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">Identificação do Contribuinte</div>
+        <div style="font-size:11px;font-weight:500;color:var(--pa-text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--pa-border)">Identificação do Contribuinte</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
           <div style="grid-column:1/-1;display:flex;flex-direction:column;gap:4px"><label>Nome / Razão Social</label><input type="text" id="int-nm" placeholder="Nome completo ou razão social"></div>
           <div style="display:flex;flex-direction:column;gap:4px"><label id="int-doc-lbl">CPF</label><input type="text" id="int-doc" placeholder="000.000.000-00" oninput="pa_formatarCNPJouCPF(this)"></div>
@@ -1257,7 +1248,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
 
         <!-- SÓCIOS (só juridica) -->
         <div id="socios-section" style="display:none;margin-bottom:12px">
-          <div style="font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+          <div style="font-size:11px;font-weight:500;color:var(--pa-text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--pa-border);display:flex;justify-content:space-between;align-items:center">
             <span>Sócios / Responsáveis</span>
             <button class="btn btn-g btn-xs" onclick="pa_addSocio()">+ Adicionar sócio</button>
           </div>
@@ -1265,7 +1256,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
         </div>
 
         <!-- DÍVIDA -->
-        <div style="font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">Descrição da Dívida</div>
+        <div style="font-size:11px;font-weight:500;color:var(--pa-text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--pa-border)">Descrição da Dívida</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:12px">
           <div style="display:flex;flex-direction:column;gap:4px"><label>Origem / Fase</label><input type="text" id="int-origem" placeholder="Ex: Administrativo"></div>
           <div style="display:flex;flex-direction:column;gap:4px"><label>Natureza / Tributo</label><input type="text" id="int-natureza" placeholder="Ex: TFF, IPTU"></div>
@@ -1278,10 +1269,10 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
         </div>
 
         <!-- MODO: simples ou agrupado -->
-        <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;padding:10px 14px;background:var(--surface2);border-radius:var(--r);border:1px solid var(--border)">
-          <label style="text-transform:none;font-size:13px;font-weight:500;color:var(--text);letter-spacing:0">Tipo de débito:</label>
-          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;text-transform:none;letter-spacing:0;font-weight:400;color:var(--text)"><input type="radio" name="int-debito-tipo" value="simples" checked onchange="pa_toggleDebitoTipo()"> Débito único</label>
-          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;text-transform:none;letter-spacing:0;font-weight:400;color:var(--text)"><input type="radio" name="int-debito-tipo" value="agrupado" onchange="pa_toggleDebitoTipo()"> Débitos agrupados (vários exercícios)</label>
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;padding:10px 14px;background:var(--pa-surface2);border-radius:var(--pa-r);border:1px solid var(--pa-border)">
+          <label style="text-transform:none;font-size:13px;font-weight:500;color:var(--pa-text);letter-spacing:0">Tipo de débito:</label>
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;text-transform:none;letter-spacing:0;font-weight:400;color:var(--pa-text)"><input type="radio" name="int-debito-tipo" value="simples" checked onchange="pa_toggleDebitoTipo()"> Débito único</label>
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;text-transform:none;letter-spacing:0;font-weight:400;color:var(--pa-text)"><input type="radio" name="int-debito-tipo" value="agrupado" onchange="pa_toggleDebitoTipo()"> Débitos agrupados (vários exercícios)</label>
         </div>
 
         <!-- DÉBITO ÚNICO -->
@@ -1293,7 +1284,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
             <div style="display:flex;flex-direction:column;gap:4px"><label>Correção Monetária (R$)</label><input type="text" id="int-cm" placeholder="0,00" oninput="pa_calcTotal()"></div>
             <div style="display:flex;flex-direction:column;gap:4px"><label>Multa de Mora (R$)</label><input type="text" id="int-multa" placeholder="0,00" oninput="pa_calcTotal()"></div>
             <div style="display:flex;flex-direction:column;gap:4px"><label>Juros de Mora (R$)</label><input type="text" id="int-juros" placeholder="0,00" oninput="pa_calcTotal()"></div>
-            <div style="display:flex;flex-direction:column;gap:4px"><label>Valor Atualizado (R$)</label><input type="text" id="int-total" placeholder="0,00" style="font-weight:500;color:var(--accent)"></div>
+            <div style="display:flex;flex-direction:column;gap:4px"><label>Valor Atualizado (R$)</label><input type="text" id="int-total" placeholder="0,00" style="font-weight:500;color:var(--pa-accent)"></div>
           </div>
         </div>
 
@@ -1302,29 +1293,29 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
           <div style="overflow-x:auto;margin-bottom:8px">
             <table style="width:100%;border-collapse:collapse;font-size:12px" id="agrup-table">
               <thead>
-                <tr style="background:var(--surface2)">
-                  <th style="padding:6px 8px;text-align:left;border:1px solid var(--border);font-size:11px">ID / Débito</th>
-                  <th style="padding:6px 8px;text-align:left;border:1px solid var(--border);font-size:11px">Tributo</th>
-                  <th style="padding:6px 8px;text-align:left;border:1px solid var(--border);font-size:11px">Exercício</th>
-                  <th style="padding:6px 8px;text-align:left;border:1px solid var(--border);font-size:11px">Vencimento</th>
-                  <th style="padding:6px 8px;text-align:right;border:1px solid var(--border);font-size:11px">Valor Principal</th>
-                  <th style="padding:6px 8px;text-align:right;border:1px solid var(--border);font-size:11px">Juros</th>
-                  <th style="padding:6px 8px;text-align:right;border:1px solid var(--border);font-size:11px">Multa</th>
-                  <th style="padding:6px 8px;text-align:right;border:1px solid var(--border);font-size:11px">Correção</th>
-                  <th style="padding:6px 8px;text-align:right;border:1px solid var(--border);font-size:11px">Total</th>
-                  <th style="padding:6px 8px;border:1px solid var(--border);font-size:11px"></th>
+                <tr style="background:var(--pa-surface2)">
+                  <th style="padding:6px 8px;text-align:left;border:1px solid var(--pa-border);font-size:11px">ID / Débito</th>
+                  <th style="padding:6px 8px;text-align:left;border:1px solid var(--pa-border);font-size:11px">Tributo</th>
+                  <th style="padding:6px 8px;text-align:left;border:1px solid var(--pa-border);font-size:11px">Exercício</th>
+                  <th style="padding:6px 8px;text-align:left;border:1px solid var(--pa-border);font-size:11px">Vencimento</th>
+                  <th style="padding:6px 8px;text-align:right;border:1px solid var(--pa-border);font-size:11px">Valor Principal</th>
+                  <th style="padding:6px 8px;text-align:right;border:1px solid var(--pa-border);font-size:11px">Juros</th>
+                  <th style="padding:6px 8px;text-align:right;border:1px solid var(--pa-border);font-size:11px">Multa</th>
+                  <th style="padding:6px 8px;text-align:right;border:1px solid var(--pa-border);font-size:11px">Correção</th>
+                  <th style="padding:6px 8px;text-align:right;border:1px solid var(--pa-border);font-size:11px">Total</th>
+                  <th style="padding:6px 8px;border:1px solid var(--pa-border);font-size:11px"></th>
                 </tr>
               </thead>
               <tbody id="agrup-tbody"></tbody>
               <tfoot>
-                <tr style="background:var(--surface2);font-weight:600">
-                  <td colspan="4" style="padding:6px 8px;border:1px solid var(--border);font-size:11px">TOTAIS</td>
-                  <td id="agrup-tot-vp" style="padding:6px 8px;text-align:right;border:1px solid var(--border);font-size:11px">0,00</td>
-                  <td id="agrup-tot-juros" style="padding:6px 8px;text-align:right;border:1px solid var(--border);font-size:11px">0,00</td>
-                  <td id="agrup-tot-multa" style="padding:6px 8px;text-align:right;border:1px solid var(--border);font-size:11px">0,00</td>
-                  <td id="agrup-tot-cm" style="padding:6px 8px;text-align:right;border:1px solid var(--border);font-size:11px">0,00</td>
-                  <td id="agrup-tot-total" style="padding:6px 8px;text-align:right;border:1px solid var(--border);font-size:11px;color:var(--accent);font-weight:700">0,00</td>
-                  <td style="border:1px solid var(--border)"></td>
+                <tr style="background:var(--pa-surface2);font-weight:600">
+                  <td colspan="4" style="padding:6px 8px;border:1px solid var(--pa-border);font-size:11px">TOTAIS</td>
+                  <td id="agrup-tot-vp" style="padding:6px 8px;text-align:right;border:1px solid var(--pa-border);font-size:11px">0,00</td>
+                  <td id="agrup-tot-juros" style="padding:6px 8px;text-align:right;border:1px solid var(--pa-border);font-size:11px">0,00</td>
+                  <td id="agrup-tot-multa" style="padding:6px 8px;text-align:right;border:1px solid var(--pa-border);font-size:11px">0,00</td>
+                  <td id="agrup-tot-cm" style="padding:6px 8px;text-align:right;border:1px solid var(--pa-border);font-size:11px">0,00</td>
+                  <td id="agrup-tot-total" style="padding:6px 8px;text-align:right;border:1px solid var(--pa-border);font-size:11px;color:var(--pa-accent);font-weight:700">0,00</td>
+                  <td style="border:1px solid var(--pa-border)"></td>
                 </tr>
               </tfoot>
             </table>
@@ -1339,7 +1330,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
           <input type="hidden" id="int-juros-h" value="">
           <input type="hidden" id="int-total-h" value="">
         </div>
-        <div id="proc-vinc-info" style="display:none;margin-bottom:12px;padding:8px 12px;background:var(--green-l);border-radius:var(--r);font-size:12px;color:var(--green)"></div>
+        <div id="proc-vinc-info" style="display:none;margin-bottom:12px;padding:8px 12px;background:var(--pa-green-l);border-radius:var(--pa-r);font-size:12px;color:var(--pa-green)"></div>
 
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
           <button class="btn btn-p" onclick="pa_salvarIntimacao()">Salvar intimação</button>
@@ -1353,13 +1344,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
   </div><!-- end .main -->
 </div><!-- end .app -->
 
-<!-- MODAL GENÉRICO -->
-<div class="modal-wrap" id="modal">
-  <div class="modal">
-    <div class="modal-hdr"><h3 id="m-title-inline">Modal</h3><div style="display:flex;gap:8px;align-items:center"><span id="m-title-actions-inline"></span><button class="xbtn" onclick="pa_fm()">✕</button></div></div>
-    <div class="modal-body" id="m-body"></div>
-  </div>
-</div>
+
 <div class="toast" id="toast"></div>
 
 
@@ -4524,7 +4509,7 @@ function pa_renderPainel() {
       <div class="notif-dot ${n.tipo!=='aguardando'?'read':''}"></div>
       <div class="notif-info"><div class="notif-title">${n.texto}</div><div class="notif-sub">${n.sub}</div></div>
       ${pa_bdg(n.tipo)}
-    </div>`).join('') : '<p style="color:var(--text2);font-size:13px">Nenhuma notificação.</p>';
+    </div>`).join('') : '<p style="color:var(--pa-text2);font-size:13px">Nenhuma notificação.</p>';
 }
 
 // ── PROCESSOS ──────────────────────────────────────────────────────────────
@@ -4538,10 +4523,10 @@ function pa_renderProcs() {
   tb.innerHTML=f.map(p=>`<tr>
     <td style="font-weight:500;white-space:nowrap">${p.num}</td>
     <td>${p.coletivo?`<span class="badge b-new" style="font-size:10px">Coletivo</span>`:'Individual'}</td>
-    <td><div style="font-weight:500">${p.nome}</div><div style="font-size:12px;color:var(--text2)">${p.assunto}</div></td>
-    <td style="color:var(--text2)">${p.destino}</td>
+    <td><div style="font-weight:500">${p.nome}</div><div style="font-size:12px;color:var(--pa-text2)">${p.assunto}</div></td>
+    <td style="color:var(--pa-text2)">${p.destino}</td>
     <td>${pa_bdg(p.status)}</td>
-    <td style="color:var(--text3);white-space:nowrap">${pa_fd(p.data)}</td>
+    <td style="color:var(--pa-text3);white-space:nowrap">${pa_fd(p.data)}</td>
     <td><button class="btn btn-g btn-xs" onclick="pa_verDetalhe(${p.id})">Ver</button></td>
   </tr>`).join('');
 }
@@ -4559,11 +4544,11 @@ function pa_verDetalhe(id) {
   document.getElementById('det-dt').textContent=pa_fd(p.data);
   document.getElementById('det-ds').textContent=p.desc||'—';
   if(p.coletivo && p.empresas.length) {
-    document.getElementById('det-empresas').innerHTML=`<div style="margin-top:10px"><div style="font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Empresas (${p.empresas.length})</div>${p.empresas.map((e,i)=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:6px 0;border-bottom:1px solid var(--border)"><span><strong>${i+1}.</strong> ${e.nm} · ${e.doc}</span><span style="color:var(--text2)">R$ ${e.va}</span></div>`).join('')}</div>`;
+    document.getElementById('det-empresas').innerHTML=`<div style="margin-top:10px"><div style="font-size:11px;font-weight:500;color:var(--pa-text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Empresas (${p.empresas.length})</div>${p.empresas.map((e,i)=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:6px 0;border-bottom:1px solid var(--pa-border)"><span><strong>${i+1}.</strong> ${e.nm} · ${e.doc}</span><span style="color:var(--pa-text2)">R$ ${e.va}</span></div>`).join('')}</div>`;
   } else document.getElementById('det-empresas').innerHTML='';
   document.getElementById('det-tram').innerHTML=p.trams.map((t,i)=>`<div class="ti${i===p.trams.length-1?' cur':''}"><div class="ti-dest">${t.destino}</div><div class="ti-meta">${pa_fd(t.data)}${t.obs?' · '+t.obs:''}</div></div>`).join('');
   const pf=pa_folhas.filter(f=>f.pid===id);
-  document.getElementById('det-pa_folhas').innerHTML=pf.length?pf.map(f=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px"><div><strong>Folha Nº ${f.num}</strong> · ${pa_fd(f.data)}<div style="font-size:12px;color:var(--text2);margin-top:1px">${f.sv||''} · ${(f.tx||'').slice(0,55)}${f.tx&&f.tx.length>55?'…':''}</div></div><button class="btn btn-g btn-xs" onclick="pa_prevFolhaById(${f.id})">Prévia</button></div>`).join(''):'<p style="color:var(--text2);font-size:13px">Nenhuma folha emitida.</p>';
+  document.getElementById('det-pa_folhas').innerHTML=pf.length?pf.map(f=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--pa-border);font-size:13px"><div><strong>Folha Nº ${f.num}</strong> · ${pa_fd(f.data)}<div style="font-size:12px;color:var(--pa-text2);margin-top:1px">${f.sv||''} · ${(f.tx||'').slice(0,55)}${f.tx&&f.tx.length>55?'…':''}</div></div><button class="btn btn-g btn-xs" onclick="pa_prevFolhaById(${f.id})">Prévia</button></div>`).join(''):'<p style="color:var(--pa-text2);font-size:13px">Nenhuma folha emitida.</p>';
   const acts=document.getElementById('det-actions');
   const canE = pa_canEdit(p.autorId);
   const relOrigem = pa_relatorios.find(r=>r.procId===p.id);
@@ -4617,7 +4602,7 @@ function pa_initTram() {
 }
 function pa_rht() {
   const pid=parseInt(document.getElementById('tr-p').value), c=document.getElementById('tram-h');
-  if(!pid){c.innerHTML='<p style="color:var(--text2);font-size:13px">Selecione um processo.</p>';return;}
+  if(!pid){c.innerHTML='<p style="color:var(--pa-text2);font-size:13px">Selecione um processo.</p>';return;}
   const p=pa_processos.find(x=>x.id===pid);
   c.innerHTML=p?`<div class="tl">${p.trams.map((t,i)=>`<div class="ti${i===p.trams.length-1?' cur':''}"><div class="ti-dest">${t.destino}</div><div class="ti-meta">${pa_fd(t.data)}${t.obs?' · '+t.obs:''}</div></div>`).join('')}</div>`:'';
 }
@@ -4663,8 +4648,8 @@ function pa_salvarFolha() {
 }
 function pa_rfl() {
   const c=document.getElementById('f-lista');
-  if(!pa_folhas.length){c.innerHTML='<p style="color:var(--text2);font-size:13px">Nenhuma folha ainda.</p>';return;}
-  c.innerHTML=pa_folhas.map(f=>`<div style="padding:9px 0;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><strong style="font-size:13px">Folha Nº ${f.num}</strong> · ${pa_processos.find(x=>x.id===f.pid)?.num||''}<div style="font-size:12px;color:var(--text2);margin-top:1px">${f.req} · ${pa_fd(f.data)}</div><div style="font-size:12px;color:var(--text2);margin-top:1px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.tx}</div></div><button class="btn btn-g btn-xs" onclick="pa_prevFolhaById(${f.id})">Ver</button></div></div>`).join('');
+  if(!pa_folhas.length){c.innerHTML='<p style="color:var(--pa-text2);font-size:13px">Nenhuma folha ainda.</p>';return;}
+  c.innerHTML=pa_folhas.map(f=>`<div style="padding:9px 0;border-bottom:1px solid var(--pa-border)"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><strong style="font-size:13px">Folha Nº ${f.num}</strong> · ${pa_processos.find(x=>x.id===f.pid)?.num||''}<div style="font-size:12px;color:var(--pa-text2);margin-top:1px">${f.req} · ${pa_fd(f.data)}</div><div style="font-size:12px;color:var(--pa-text2);margin-top:1px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.tx}</div></div><button class="btn btn-g btn-xs" onclick="pa_prevFolhaById(${f.id})">Ver</button></div></div>`).join('');
 }
 function pa_novaFolhaDet() {
   navegarPara('pa_folhas'); setTimeout(()=>{document.getElementById('fi-p').value=pa_detProcId; pa_afn();},60);
@@ -4682,10 +4667,10 @@ function pa_renderRels() {
   tb.innerHTML=f.map(r=>`<tr>
     <td style="font-weight:500;white-space:nowrap">${r.num}</td>
     <td>${r.tipo==='coletivo'?`<span class="badge b-new">Coletivo</span>`:'Individual'}</td>
-    <td style="color:var(--text2)">${r.fiscal}</td>
+    <td style="color:var(--pa-text2)">${r.fiscal}</td>
     <td>${r.tipo==='coletivo'?`<span style="font-size:12px">${r.empresas.length} empresas</span>`:r.nm}</td>
     <td>${pa_bdg(r.status)}</td>
-    <td style="color:var(--text3);white-space:nowrap">${pa_fd(r.data)}</td>
+    <td style="color:var(--pa-text3);white-space:nowrap">${pa_fd(r.data)}</td>
     <td style="display:flex;gap:4px">${r.encParaId===pa_usuarioAtual?.id&&r.status==='aguardando'?`<button class="btn btn-g btn-xs" onclick="pa_abrirDespacho(${r.id})">Despachar</button>`:''}<button class="btn btn-g btn-xs" onclick="pa_verRelatorio(${r.id})">Ver</button></td>
   </tr>`).join('');
 }
@@ -4777,8 +4762,8 @@ function pa_gerarHtmlRelatorio(r) {
 
 function pa_verRelatorio(id) {
   const r=pa_relatorios.find(x=>x.id===id); if(!r) return;
-  const empresasHtml = r.tipo==='coletivo' ? `<div style="margin-top:10px"><strong style="font-size:12px">Empresas:</strong>${r.empresas.map((e,i)=>`<div style="font-size:12px;padding:4px 0;border-bottom:1px solid var(--border)">${i+1}. ${e.nm} · CNPJ: ${e.doc}</div>`).join('')}</div>`:'';
-  const despachoHtml = r.despacho ? `<div style="margin-top:12px;background:var(--surface2);border-radius:var(--r);padding:12px 14px;border:1px solid var(--border)"><div style="font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Despacho</div><p style="font-size:13px;line-height:1.7;font-style:italic">${r.despacho.texto}</p><div style="font-size:12px;color:var(--text2);margin-top:6px">${r.despacho.nm} · ${r.despacho.cg} · ${pa_fd(r.despacho.data)}</div></div>` : '';
+  const empresasHtml = r.tipo==='coletivo' ? `<div style="margin-top:10px"><strong style="font-size:12px">Empresas:</strong>${r.empresas.map((e,i)=>`<div style="font-size:12px;padding:4px 0;border-bottom:1px solid var(--pa-border)">${i+1}. ${e.nm} · CNPJ: ${e.doc}</div>`).join('')}</div>`:'';
+  const despachoHtml = r.despacho ? `<div style="margin-top:12px;background:var(--pa-surface2);border-radius:var(--pa-r);padding:12px 14px;border:1px solid var(--pa-border)"><div style="font-size:11px;font-weight:500;color:var(--pa-text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Despacho</div><p style="font-size:13px;line-height:1.7;font-style:italic">${r.despacho.texto}</p><div style="font-size:12px;color:var(--pa-text2);margin-top:6px">${r.despacho.nm} · ${r.despacho.cg} · ${pa_fd(r.despacho.data)}</div></div>` : '';
   pa_openModal('Relatório ' + r.num, pa_gerarHtmlRelatorio(r), true);
 }
 function pa_initRelInd() {
@@ -4930,7 +4915,7 @@ function pa_renderNotificacoes() {
         <div style="margin-top:5px">${pa_bdg('aguardando')}</div>
       </div>
       <div class="notif-time">${pa_fd(r.data)}</div>
-    </div>`).join(''):'<p style="color:var(--text2);font-size:13px">Nenhuma pendência.</p>';
+    </div>`).join(''):'<p style="color:var(--pa-text2);font-size:13px">Nenhuma pendência.</p>';
   document.getElementById('notif-hist').innerHTML=hist.length?hist.map(r=>`
     <div class="notif-item">
       <div class="notif-dot read"></div>
@@ -4938,14 +4923,14 @@ function pa_renderNotificacoes() {
         <div class="notif-title">${r.num}</div>
         <div class="notif-sub">${r.tipo==='coletivo'?r.empresas.length+' empresas':r.nm}${r.interessado?' · '+r.interessado:''}</div>
         <div style="margin-top:5px">${pa_bdg(r.status)}</div>
-        ${r.status==='complementar'&&r.autorId===pa_usuarioAtual?.id?`<div style="font-size:12px;color:var(--amber);margin-top:4px">⚠ Complementação solicitada: ${r.despacho?.texto||''}</div>`:''}
+        ${r.status==='complementar'&&r.autorId===pa_usuarioAtual?.id?`<div style="font-size:12px;color:var(--pa-amber);margin-top:4px">⚠ Complementação solicitada: ${r.despacho?.texto||''}</div>`:''}
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
         <div class="notif-time">${pa_fd(r.data)}</div>
         ${r.status==='autorizado'&&!r.procId&&r.autorId===pa_usuarioAtual?.id?`<button class="btn btn-p btn-xs" onclick="pa_abrirProcDeRel(${r.id})">Abrir processo</button>`:''}${r.status==='rejeitado'&&r.autorId===pa_usuarioAtual?.id?`<button class="btn btn-g btn-xs" onclick="pa_verRelatorio(${r.id})">Ver justificativa</button>`:''}
         ${r.status==='complementar'&&r.autorId===pa_usuarioAtual?.id?`<button class="btn btn-g btn-xs" onclick="pa_abrirRelParaCorrigir(${r.id})">Abrir para corrigir</button><button class="btn btn-g btn-xs" onclick="pa_reencaminharRel(${r.id})">Reencaminhar</button>`:''}
       </div>
-    </div>`).join(''):'<p style="color:var(--text2);font-size:13px">Nenhum histórico.</p>';
+    </div>`).join(''):'<p style="color:var(--pa-text2);font-size:13px">Nenhum histórico.</p>';
 }
 
 // ── DESPACHO ───────────────────────────────────────────────────────────────
@@ -4955,11 +4940,11 @@ function pa_abrirDespacho(rid) {
   const empresasHtml=r.tipo==='coletivo'?`<div style="margin-top:8px"><strong>Empresas (${r.empresas.length}):</strong>${r.empresas.map((e,i)=>`<div style="font-size:12px;padding:3px 0">${i+1}. ${e.nm}</div>`).join('')}</div>`:'';
   document.getElementById('desp-resumo').innerHTML=`
     <div class="fg3" style="margin-bottom:8px;font-size:13px">
-      <div><span style="color:var(--text2)">Fiscal:</span> <strong>${r.fiscal}</strong></div>
-      ${r.interessado?`<div><span style="color:var(--text2)">Interessado:</span> <strong>${r.interessado}</strong></div>`:''}
-      ${r.doc&&r.tipo==='coletivo'?`<div><span style="color:var(--text2)">CNPJ:</span> <strong>${r.doc}</strong></div>`:''}
-      <div><span style="color:var(--text2)">Tipo:</span> ${r.tipo==='coletivo'?`<span class="badge b-new">Coletivo</span>`:'Individual'}</div>
-      ${r.tipo==='individual'?`<div><span style="color:var(--text2)">Interessado:</span> <strong>${r.nm}</strong></div>`:''}
+      <div><span style="color:var(--pa-text2)">Fiscal:</span> <strong>${r.fiscal}</strong></div>
+      ${r.interessado?`<div><span style="color:var(--pa-text2)">Interessado:</span> <strong>${r.interessado}</strong></div>`:''}
+      ${r.doc&&r.tipo==='coletivo'?`<div><span style="color:var(--pa-text2)">CNPJ:</span> <strong>${r.doc}</strong></div>`:''}
+      <div><span style="color:var(--pa-text2)">Tipo:</span> ${r.tipo==='coletivo'?`<span class="badge b-new">Coletivo</span>`:'Individual'}</div>
+      ${r.tipo==='individual'?`<div><span style="color:var(--pa-text2)">Interessado:</span> <strong>${r.nm}</strong></div>`:''}
     </div>
     <div style="font-size:13px;line-height:1.7"><strong>Fatos:</strong> ${r.desc}</div>
     ${empresasHtml}`;
@@ -5144,8 +5129,8 @@ function pa_renderPerfis() {
         </div>
         <button class="btn btn-g btn-xs" onclick="pa_abrirModalPerfil(${p.id})">Editar</button>
       </div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:10px">${p.descricao}</div>
-      <div>${PERMS_DEF.map(pd=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px"><span>${pd.nome}</span>${p.perms[pd.key]?'<span style="color:var(--green);font-weight:500">✓</span>':'<span style="color:var(--border2)">—</span>'}</div>`).join('')}</div>
+      <div style="font-size:12px;color:var(--pa-text2);margin-bottom:10px">${p.descricao}</div>
+      <div>${PERMS_DEF.map(pd=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--pa-border);font-size:12px"><span>${pd.nome}</span>${p.perms[pd.key]?'<span style="color:var(--pa-green);font-weight:500">✓</span>':'<span style="color:var(--border2)">—</span>'}</div>`).join('')}</div>
     </div>`).join('');
 }
 function pa_abrirModalPerfil(id) {
@@ -5190,11 +5175,11 @@ function pa_renderBackupResumo() {
     {label:'Tributos', val: pa_tributos.length, icon:'🏷️'},
   ];
   el.innerHTML = itens.map(i=>`
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;display:flex;align-items:center;gap:10px">
+    <div style="background:var(--pa-surface);border:1px solid var(--pa-border);border-radius:var(--pa-r);padding:10px 14px;display:flex;align-items:center;gap:10px">
       <span style="font-size:18px">${i.icon}</span>
       <div>
         <div style="font-size:18px;font-weight:700;line-height:1">${i.val}</div>
-        <div style="font-size:11px;color:var(--text2)">${i.label}</div>
+        <div style="font-size:11px;color:var(--pa-text2)">${i.label}</div>
       </div>
     </div>`).join('');
 }
@@ -5267,7 +5252,7 @@ function pa_importarBackup(input) {
 
 function pa_renderTributos() {
   document.getElementById('trib-tbody').innerHTML=pa_tributos.map(t=>`<tr>
-    <td style="font-weight:500">${t.nome}</td><td style="color:var(--text2)">${t.desc}</td>
+    <td style="font-weight:500">${t.nome}</td><td style="color:var(--pa-text2)">${t.desc}</td>
     <td>${t.ativo?'<span class="badge b-con">Ativo</span>':'<span class="badge b-arq">Inativo</span>'}</td>
     <td style="display:flex;gap:4px"><button class="btn btn-g btn-xs" onclick="pa_abrirModalTributo(${t.id})">Editar</button><button class="btn btn-g btn-xs" onclick="pa_toggleTrib(${t.id})">${t.ativo?'Desativar':'Ativar'}</button></td>
   </tr>`).join('');
@@ -5396,8 +5381,8 @@ function pa_addSocio() {
   pa_numSocios++;
   const div = document.createElement('div');
   div.id = `socio-${pa_numSocios}`;
-  div.style.cssText = 'background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:10px';
-  div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-size:12px;font-weight:500;color:var(--text2)">Sócio / Responsável ${pa_numSocios}</span><button class="btn btn-g btn-xs" onclick="document.getElementById('socio-${pa_numSocios}').remove()">Remover</button></div>
+  div.style.cssText = 'background:var(--pa-surface2);border:1px solid var(--pa-border);border-radius:var(--pa-r);padding:12px;margin-bottom:10px';
+  div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-size:12px;font-weight:500;color:var(--pa-text2)">Sócio / Responsável ${pa_numSocios}</span><button class="btn btn-g btn-xs" onclick="document.getElementById('socio-${pa_numSocios}').remove()">Remover</button></div>
   <div class="fg3">
     <div class="fgg full"><label>Nome</label><input type="text" id="sc-nm-${pa_numSocios}" placeholder="Nome do sócio"></div>
     <div class="fgg"><label>CPF</label><input type="text" id="sc-cpf-${pa_numSocios}" placeholder="000.000.000-00" oninput="pa_formatarCPF(this)"></div>
@@ -5427,16 +5412,16 @@ function pa_addLinhaAgrupado(linha) {
   const tr = document.createElement('tr');
   tr.id = 'agrup-linha-' + n;
   tr.innerHTML = `
-    <td style="padding:3px 4px;border:1px solid var(--border)"><input type="text" id="agrup-id-${n}" value="${l.id||''}" placeholder="ID" style="width:70px;font-size:11px;padding:3px 5px"></td>
-    <td style="padding:3px 4px;border:1px solid var(--border)"><input type="text" id="agrup-trib-${n}" value="${l.trib||''}" placeholder="TFF" style="width:55px;font-size:11px;padding:3px 5px"></td>
-    <td style="padding:3px 4px;border:1px solid var(--border)"><input type="text" id="agrup-exerc-${n}" value="${l.exerc||''}" placeholder="2024" style="width:55px;font-size:11px;padding:3px 5px"></td>
-    <td style="padding:3px 4px;border:1px solid var(--border)"><input type="date" id="agrup-venc-${n}" value="${l.venc||''}" style="width:120px;font-size:11px;padding:3px 5px"></td>
-    <td style="padding:3px 4px;border:1px solid var(--border)"><input type="text" id="agrup-vp-${n}" value="${l.vp||''}" placeholder="0,00" style="width:80px;font-size:11px;padding:3px 5px;text-align:right" oninput="pa_calcTotaisAgrupado()"></td>
-    <td style="padding:3px 4px;border:1px solid var(--border)"><input type="text" id="agrup-juros-${n}" value="${l.juros||''}" placeholder="0,00" style="width:75px;font-size:11px;padding:3px 5px;text-align:right" oninput="pa_calcTotaisAgrupado()"></td>
-    <td style="padding:3px 4px;border:1px solid var(--border)"><input type="text" id="agrup-multa-${n}" value="${l.multa||''}" placeholder="0,00" style="width:75px;font-size:11px;padding:3px 5px;text-align:right" oninput="pa_calcTotaisAgrupado()"></td>
-    <td style="padding:3px 4px;border:1px solid var(--border)"><input type="text" id="agrup-cm-${n}" value="${l.cm||''}" placeholder="0,00" style="width:75px;font-size:11px;padding:3px 5px;text-align:right" oninput="pa_calcTotaisAgrupado()"></td>
-    <td style="padding:3px 4px;border:1px solid var(--border)"><input type="text" id="agrup-tot-${n}" value="${l.total||''}" placeholder="0,00" style="width:80px;font-size:11px;padding:3px 5px;text-align:right;font-weight:600;color:var(--accent)" oninput="pa_calcTotaisAgrupado()"></td>
-    <td style="padding:3px 4px;border:1px solid var(--border);text-align:center"><button class="btn btn-danger btn-xs" onclick="document.getElementById('agrup-linha-${n}').remove();pa_calcTotaisAgrupado()">✕</button></td>`;
+    <td style="padding:3px 4px;border:1px solid var(--pa-border)"><input type="text" id="agrup-id-${n}" value="${l.id||''}" placeholder="ID" style="width:70px;font-size:11px;padding:3px 5px"></td>
+    <td style="padding:3px 4px;border:1px solid var(--pa-border)"><input type="text" id="agrup-trib-${n}" value="${l.trib||''}" placeholder="TFF" style="width:55px;font-size:11px;padding:3px 5px"></td>
+    <td style="padding:3px 4px;border:1px solid var(--pa-border)"><input type="text" id="agrup-exerc-${n}" value="${l.exerc||''}" placeholder="2024" style="width:55px;font-size:11px;padding:3px 5px"></td>
+    <td style="padding:3px 4px;border:1px solid var(--pa-border)"><input type="date" id="agrup-venc-${n}" value="${l.venc||''}" style="width:120px;font-size:11px;padding:3px 5px"></td>
+    <td style="padding:3px 4px;border:1px solid var(--pa-border)"><input type="text" id="agrup-vp-${n}" value="${l.vp||''}" placeholder="0,00" style="width:80px;font-size:11px;padding:3px 5px;text-align:right" oninput="pa_calcTotaisAgrupado()"></td>
+    <td style="padding:3px 4px;border:1px solid var(--pa-border)"><input type="text" id="agrup-juros-${n}" value="${l.juros||''}" placeholder="0,00" style="width:75px;font-size:11px;padding:3px 5px;text-align:right" oninput="pa_calcTotaisAgrupado()"></td>
+    <td style="padding:3px 4px;border:1px solid var(--pa-border)"><input type="text" id="agrup-multa-${n}" value="${l.multa||''}" placeholder="0,00" style="width:75px;font-size:11px;padding:3px 5px;text-align:right" oninput="pa_calcTotaisAgrupado()"></td>
+    <td style="padding:3px 4px;border:1px solid var(--pa-border)"><input type="text" id="agrup-cm-${n}" value="${l.cm||''}" placeholder="0,00" style="width:75px;font-size:11px;padding:3px 5px;text-align:right" oninput="pa_calcTotaisAgrupado()"></td>
+    <td style="padding:3px 4px;border:1px solid var(--pa-border)"><input type="text" id="agrup-tot-${n}" value="${l.total||''}" placeholder="0,00" style="width:80px;font-size:11px;padding:3px 5px;text-align:right;font-weight:600;color:var(--pa-accent)" oninput="pa_calcTotaisAgrupado()"></td>
+    <td style="padding:3px 4px;border:1px solid var(--pa-border);text-align:center"><button class="btn btn-danger btn-xs" onclick="document.getElementById('agrup-linha-${n}').remove();pa_calcTotaisAgrupado()">✕</button></td>`;
   document.getElementById('agrup-tbody').appendChild(tr);
 }
 
@@ -5497,8 +5482,8 @@ function pa_buscarProcesso() {
   const num = document.getElementById('int-proc-num').value.trim();
   const p = pa_processos.find(x=>x.num===num);
   const el = document.getElementById('proc-vinc-info');
-  if(p) { el.style.display='block'; el.textContent=`✓ Processo encontrado: ${p.nome}`; el.style.background='var(--green-l)'; el.style.color='var(--green)'; }
-  else if(num.length>4) { el.style.display='block'; el.textContent='Processo não encontrado — será vinculado quando criado.'; el.style.background='var(--amber-l)'; el.style.color='var(--amber)'; }
+  if(p) { el.style.display='block'; el.textContent=`✓ Processo encontrado: ${p.nome}`; el.style.background='var(--pa-green-l)'; el.style.color='var(--pa-green)'; }
+  else if(num.length>4) { el.style.display='block'; el.textContent='Processo não encontrado — será vinculado quando criado.'; el.style.background='var(--pa-amber-l)'; el.style.color='var(--pa-amber)'; }
   else el.style.display='none';
 }
 
@@ -5507,7 +5492,7 @@ function pa_processarBoleto(input) {
   const file = input.files[0]; if(!file) return;
   const status = document.getElementById('boleto-status');
   status.textContent = 'Processando boleto...';
-  status.style.color = 'var(--text2)';
+  status.style.color = 'var(--pa-text2)';
 
   const reader = new FileReader();
   reader.onload = function(e) {
@@ -5527,12 +5512,12 @@ function pa_processarBoleto(input) {
           const allText = pages.join('\n');
           pa_preencherDadosBoleto(allText);
           status.textContent = '✓ Boleto processado! Revise os campos preenchidos.';
-          status.style.color = 'var(--green)';
+          status.style.color = 'var(--pa-green)';
         });
       }).catch(err=>{
         console.error('PDF erro:', err);
         status.textContent = 'Não foi possível ler o PDF automaticamente. Preencha os campos manualmente.';
-        status.style.color = 'var(--red)';
+        status.style.color = 'var(--pa-red)';
       });
     }
 
@@ -5544,7 +5529,7 @@ function pa_processarBoleto(input) {
       script.onload = runPdfExtract;
       script.onerror = () => {
         status.textContent = 'Sem conexão para carregar leitor de PDF. Preencha manualmente.';
-        status.style.color = 'var(--amber)';
+        status.style.color = 'var(--pa-amber)';
       };
       document.head.appendChild(script);
     }
@@ -5851,13 +5836,13 @@ function pa_renderIntimacoes() {
     <td style="font-weight:500">#${i.id}</td>
     <td>${i.tipo==='fisica'?'<span class="badge b-and">Física</span>':'<span class="badge b-pen">Jurídica</span>'}</td>
     <td>${i.nm}</td>
-    <td style="color:var(--text2)">${i.natureza||'—'}</td>
+    <td style="color:var(--pa-text2)">${i.natureza||'—'}</td>
     <td style="font-weight:500">R$ ${i.total||'—'}</td>
-    <td style="color:var(--text2)">${i.procNum||'—'}</td>
-    <td style="color:var(--text3)">${pa_fd(i.data)}</td>
+    <td style="color:var(--pa-text2)">${i.procNum||'—'}</td>
+    <td style="color:var(--pa-text3)">${pa_fd(i.data)}</td>
     <td style="display:flex;gap:4px">
       <button class="btn btn-g btn-xs" onclick="pa_prevIntimacaoById(${i.id})">Ver</button>
-      ${pa_canEdit(i.autorId)?`<button class="btn btn-g btn-xs" onclick="pa_editarIntimacao(${i.id})">Editar</button>`:'<span title="Apenas o autor ou admin pode editar" style="font-size:11px;color:var(--text3);padding:2px 6px">🔒</span>'}
+      ${pa_canEdit(i.autorId)?`<button class="btn btn-g btn-xs" onclick="pa_editarIntimacao(${i.id})">Editar</button>`:'<span title="Apenas o autor ou admin pode editar" style="font-size:11px;color:var(--pa-text3);padding:2px 6px">🔒</span>'}
     </td>
   </tr>`).join('');
 }
@@ -5883,11 +5868,11 @@ function pa_editarIntimacao(id) {
 function pa_renderIntimacoesDet(procId) {
   const pNum = pa_processos.find(x=>x.id===procId)?.num||'';
   const ints = pa_intimacoes.filter(i=>i.procId===procId||i.procNum===pNum);
-  return ints.length ? `<div class="card" style="margin-top:14px"><div class="card-title">Intimações (${ints.length})</div>${ints.map(i=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px"><div><strong>${i.nm}</strong> · ${i.tipo==='fisica'?'Física':'Jurídica'}<div style="font-size:12px;color:var(--text2);margin-top:1px">${i.natureza} · R$ ${i.total} · ${pa_fd(i.data)}</div></div><button class="btn btn-g btn-xs" onclick="pa_prevIntimacaoById(${i.id})">Ver</button></div>`).join('')}</div>` : '';
+  return ints.length ? `<div class="card" style="margin-top:14px"><div class="card-title">Intimações (${ints.length})</div>${ints.map(i=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--pa-border);font-size:13px"><div><strong>${i.nm}</strong> · ${i.tipo==='fisica'?'Física':'Jurídica'}<div style="font-size:12px;color:var(--pa-text2);margin-top:1px">${i.natureza} · R$ ${i.total} · ${pa_fd(i.data)}</div></div><button class="btn btn-g btn-xs" onclick="pa_prevIntimacaoById(${i.id})">Ver</button></div>`).join('')}</div>` : '';
 }
 
 function pa_imprimirModal() {
-  const mBody = document.getElementById('m-body');
+  const mBody = document.getElementById('pa-m-body');
   const body = mBody.innerHTML;
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Documento</title>
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -6213,7 +6198,3 @@ if (typeof pdfjsLib !== 'undefined') {
 
 </body>
 </html>
-
-
-
-      
