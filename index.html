@@ -2168,15 +2168,7 @@ function navegarPara(destino, btn) {
     'novo-proc':      () => pa_initNovoProcesso(),
   };
   if (cbs[destino]) cbs[destino]();
-  // Verificar se a view está visível após ativar
-  if (viewEl) {
-    const cs = window.getComputedStyle(viewEl);
-    if (cs.display === 'none' || cs.visibility === 'hidden' || cs.opacity === '0') {
-      // Forçar visibilidade diretamente
-      viewEl.setAttribute('style', 'display:block!important;visibility:visible!important;opacity:1!important;');
-      console.warn('[PA] View forçada visível. computed:', cs.display, cs.visibility, cs.opacity);
-    }
-  }
+
 }
 
 function buildUnifiedNav() {
@@ -4545,28 +4537,7 @@ function sv(v, btn) {
 
 // ── PAINEL ─────────────────────────────────────────────────────────────────
 function pa_renderPainel() {
-  // DIAGNÓSTICO: elemento fixo que não pode ser escondido por nenhum CSS
-  let diag = document.getElementById('_pa_diag');
-  if (!diag) {
-    diag = document.createElement('div');
-    diag.id = '_pa_diag';
-    diag.style.cssText = 'position:fixed;top:80px;right:20px;width:340px;background:#1a3a5c;color:#fff;padding:16px;border-radius:10px;z-index:99999;font-size:13px;font-family:monospace;box-shadow:0 4px 20px rgba(0,0,0,.5)';
-    document.body.appendChild(diag);
-    setTimeout(() => diag && diag.remove(), 10000);
-  }
-  const viewEl = document.getElementById('view-painel');
-  const rect = viewEl ? viewEl.getBoundingClientRect() : null;
-  const caEl = document.querySelector('.content-area');
-  const caRect = caEl ? caEl.getBoundingClientRect() : null;
-  diag.innerHTML = '<b>PA DIAGNÓSTICO</b><br>' +
-    'view-painel display: ' + (viewEl ? viewEl.style.display : 'NULL') + '<br>' +
-    'view-painel rect: ' + (rect ? rect.width.toFixed(0) + 'x' + rect.height.toFixed(0) + ' @ ' + rect.top.toFixed(0) + ',' + rect.left.toFixed(0) : 'null') + '<br>' +
-    'content-area rect: ' + (caRect ? caRect.width.toFixed(0) + 'x' + caRect.height.toFixed(0) : 'null') + '<br>' +
-    'pa_processos: ' + pa_processos.length + '<br>' +
-    'computedDisplay: ' + (viewEl ? window.getComputedStyle(viewEl).display : 'null') + '<br>' +
-    'computedVisibility: ' + (viewEl ? window.getComputedStyle(viewEl).visibility : 'null') + '<br>' +
-    'computedOpacity: ' + (viewEl ? window.getComputedStyle(viewEl).opacity : 'null') + '<br>' +
-    'overflow: ' + (caEl ? window.getComputedStyle(caEl).overflow : 'null');
+
 
   document.getElementById('st-proc').textContent = pa_processos.length;
   document.getElementById('st-and').textContent = pa_processos.filter(p=>p.status==='em-andamento').length;
