@@ -4042,14 +4042,15 @@ async function exportarBackup() {
   showLoading('Gerando backup completo...');
   try {
     // Fetch all data from Supabase
-    const [protocolos, historico, pareceres, usuarios, notificacoes, sequencial, assuntos] = await Promise.all([
+    const [protocolos, historico, pareceres, usuarios, notificacoes, sequencial, assuntos, feriados] = await Promise.all([
       _sbGet_sdk('protocolos', 'order=data_hora.desc&limit=5000'),
       _sbGet_sdk('historico',  'order=data.asc&limit=50000'),
       _sbGet_sdk('pareceres',  'order=data.desc&limit=5000'),
       _sbGet_sdk('usuarios',   'order=id'),
       _sbGet_sdk('notificacoes','order=data.desc&limit=5000'),
       _sbGet_sdk('sequencial'),
-      _sbGet_sdk('assuntos',   'order=id')
+      _sbGet_sdk('assuntos',   'order=id'),
+      _sbGet_sdk('feriados',   'order=data')
     ]);
 
     const backup = {
@@ -4057,7 +4058,7 @@ async function exportarBackup() {
       sistema:   'Sistema de Protocolos Tributários — Prefeitura de Caetité',
       geradoEm:  new Date().toLocaleString('pt-BR', {timeZone:'America/Sao_Paulo'}),
       geradoPor: usuarioLogado.nome,
-      dados: { protocolos, historico, pareceres, usuarios, notificacoes, sequencial, assuntos }
+      dados: { protocolos, historico, pareceres, usuarios, notificacoes, sequencial, assuntos, feriados }
     };
 
     const json    = JSON.stringify(backup, null, 2);
@@ -4132,6 +4133,11 @@ async function importarBackup(input) {
     showLoading('Importando assuntos...');
     for (const row of (backup.dados.assuntos || [])) {
       try { await _sbPost_sdk('assuntos', row); ok++; } catch(e) { erros++; }
+    }
+
+    showLoading('Importando feriados...');
+    for (const row of (backup.dados.feriados || [])) {
+      try { await _sbPost_sdk('feriados', row); ok++; } catch(e) { erros++; }
     }
 
     hideLoading();
