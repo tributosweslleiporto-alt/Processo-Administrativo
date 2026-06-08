@@ -4648,19 +4648,26 @@ function pa_verDetalhe(id) {
   } else document.getElementById('det-empresas').innerHTML='';
   document.getElementById('det-tram').innerHTML=p.trams.map((t,i)=>`<div class="ti${i===p.trams.length-1?' cur':''}"><div class="ti-dest">${t.destino}</div><div class="ti-meta">${pa_fd(t.data)}${t.obs?' · '+t.obs:''}</div></div>`).join('');
   const pf=pa_folhas.filter(f=>f.pid===id);
-  document.getElementById('det-folhas').innerHTML=pf.length?pf.map(f=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--pa-border);font-size:13px"><div><strong>Folha Nº ${f.num}</strong> · ${pa_fd(f.data)}<div style="font-size:12px;color:var(--pa-text2);margin-top:1px">${f.sv||''} · ${(f.tx||'').slice(0,55)}${f.tx&&f.tx.length>55?'…':''}</div></div><button class="btn btn-g btn-xs" onclick="pa_prevFolhaById(${f.id})">Prévia</button></div>`).join(''):'<p style="color:var(--pa-text2);font-size:13px">Nenhuma folha emitida.</p>';
+  document.getElementById('det-folhas').innerHTML=pf.length?pf.map(f=>{
+    const canEf = pa_canEdit(f.autorId, f.autorLogin);
+    const canAd = isAdmin();
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--pa-border);font-size:13px"><div><strong>Folha Nº ${f.num}</strong> · ${pa_fd(f.data)}<div style="font-size:12px;color:var(--pa-text2);margin-top:1px">${f.sv||''} · ${(f.tx||'').slice(0,55)}${f.tx&&f.tx.length>55?'…':''}</div></div><div style="display:flex;gap:4px"><button class="btn btn-g btn-xs" onclick="pa_prevFolhaById(${f.id})">Prévia</button>${canEf?`<button class="btn btn-g btn-xs" onclick="pa_editarFolha(${f.id})" title="Editar">✏️</button>`:''}${canAd?`<button class="btn btn-xs" style="background:#dc2626;color:#fff" onclick="pa_excluirFolha(${f.id})" title="Excluir">🗑️</button>`:''}</div></div>`;
+  }).join(''):'<p style="color:var(--pa-text2);font-size:13px">Nenhuma folha emitida.</p>';
   const acts=document.getElementById('det-actions');
   const canE = pa_canEdit(p.autorId, p.autorLogin);
-  const ativo = ['em-andamento','pendente'].includes(p.status); // processo ainda editável
+  const canAdmin = isAdmin();
+  const ativo = ['em-andamento','pendente'].includes(p.status);
   const relOrigem = pa_relatorios.find(r=>r.procId===p.id);
   const relBtn = relOrigem ? `<button class="btn btn-g btn-sm" onclick="pa_verRelatorio(${relOrigem.id})">📋 Relatório origem</button>` : '';
   const statusInfo = !ativo ? `<span style="font-size:12px;color:var(--pa-text2);padding:4px 10px;background:var(--pa-bg2);border-radius:6px;border:1px solid var(--pa-border)">🔒 Processo ${p.status === 'concluido' ? 'concluído' : p.status} — somente leitura</span>` : '';
   acts.innerHTML=`
     <button class="btn btn-g btn-sm" onclick="pa_impCartao()">⎙ Cartão</button>
-    ${canE ? '<button class="btn btn-g btn-sm" onclick="pa_impCapa()">⎙ Capa</button>' : ''}
+    <button class="btn btn-g btn-sm" onclick="pa_impCapa()">⎙ Capa</button>
     ${relBtn}
     ${ativo && canE ? `<button class="btn btn-g btn-sm" onclick="pa_novaFolhaDet()">+ Folha</button>` : ''}
     ${ativo ? `<button class="btn btn-p btn-sm" onclick="pa_novaIntimacaoDet()">+ Intimação</button>` : ''}
+    ${canE ? `<button class="btn btn-g btn-sm" onclick="pa_editarProcesso(${p.id})" title="Editar processo">✏️ Editar</button>` : ''}
+    ${canAdmin ? `<button class="btn btn-sm" style="background:#dc2626;color:#fff" onclick="pa_excluirProcesso(${p.id})" title="Excluir processo (somente admin)">🗑️ Excluir</button>` : ''}
     ${statusInfo}
   `;
   // Intimações vinculadas
@@ -4792,7 +4799,7 @@ function pa_renderRels() {
     <td>${r.tipo==='coletivo'?`<span style="font-size:12px">${r.empresas.length} empresas</span>`:r.nm}</td>
     <td>${pa_bdg(r.status)}</td>
     <td style="color:var(--pa-text3);white-space:nowrap">${pa_fd(r.data)}</td>
-    <td style="display:flex;gap:4px">${r.encParaLogin===pa_usuarioAtual?.login&&r.status==='aguardando'?`<button class="btn btn-g btn-xs" onclick="pa_abrirDespacho(${r.id})">Despachar</button>`:''}<button class="btn btn-g btn-xs" onclick="pa_verRelatorio(${r.id})">Ver</button></td>
+    <td style="display:flex;gap:4px;flex-wrap:wrap">${r.encParaLogin===pa_usuarioAtual?.login&&r.status==='aguardando'?`<button class="btn btn-g btn-xs" onclick="pa_abrirDespacho(${r.id})">Despachar</button>`:''}<button class="btn btn-g btn-xs" onclick="pa_verRelatorio(${r.id})">Ver</button>${pa_canEdit(r.autorId,r.autorLogin)?`<button class="btn btn-g btn-xs" onclick="pa_editarRelatorio(${r.id})" title="Editar">✏️</button>`:''}${isAdmin()?`<button class="btn btn-xs" style="background:#dc2626;color:#fff" onclick="pa_excluirRelatorio(${r.id})" title="Excluir">🗑️</button>`:''}</td>
   </tr>`).join('');
 }
 
@@ -5388,6 +5395,193 @@ function pa_salvarUsuario(id) {
   pa_fm(); pa_renderUsuarios(); buildUnifiedNav();
 }
 
+// ── FUNÇÕES DE EDITAR / EXCLUIR (admin e autor) ──────────────────────────────
+
+// EDITAR PROCESSO
+function pa_editarProcesso(id) {
+  const p = pa_processos.find(x=>x.id===id); if(!p) return;
+  if(!pa_canEdit(p.autorId, p.autorLogin)) { toast('Sem permissão para editar este processo.'); return; }
+  pa_openModal('Editar Processo ' + p.num, `
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div><label style="font-size:12px;color:var(--pa-text2)">NOME / RAZÃO SOCIAL</label><input id="ep-nm" type="text" value="${(p.nome||'').replace(/"/g,'&quot;')}" style="width:100%"></div>
+      <div style="display:flex;gap:10px">
+        <div style="flex:1"><label style="font-size:12px;color:var(--pa-text2)">DOCUMENTO</label><input id="ep-dc" type="text" value="${(p.doc||'').replace(/"/g,'&quot;')}" style="width:100%"></div>
+        <div style="flex:1"><label style="font-size:12px;color:var(--pa-text2)">INSCR. MUNICIPAL</label><input id="ep-im" type="text" value="${(p.im||'').replace(/"/g,'&quot;')}" style="width:100%"></div>
+      </div>
+      <div><label style="font-size:12px;color:var(--pa-text2)">ASSUNTO</label><input id="ep-as" type="text" value="${(p.assunto||'').replace(/"/g,'&quot;')}" style="width:100%"></div>
+      <div><label style="font-size:12px;color:var(--pa-text2)">DESCRIÇÃO</label><textarea id="ep-ds" rows="3" style="width:100%">${p.desc||''}</textarea></div>
+      <div style="display:flex;gap:10px">
+        <div style="flex:1"><label style="font-size:12px;color:var(--pa-text2)">DESTINO</label><input id="ep-de" type="text" value="${(p.destino||'').replace(/"/g,'&quot;')}" style="width:100%"></div>
+        <div style="flex:1"><label style="font-size:12px;color:var(--pa-text2)">STATUS</label><select id="ep-st" style="width:100%"><option value="em-andamento"${p.status==='em-andamento'?' selected':''}>Em andamento</option><option value="pendente"${p.status==='pendente'?' selected':''}>Pendente</option><option value="concluido"${p.status==='concluido'?' selected':''}>Concluído</option><option value="arquivado"${p.status==='arquivado'?' selected':''}>Arquivado</option></select></div>
+      </div>
+      <button class="btn btn-p" onclick="pa_salvarEdicaoProcesso(${p.id})">💾 Salvar alterações</button>
+    </div>
+  `, false);
+}
+
+function pa_salvarEdicaoProcesso(id) {
+  const p = pa_processos.find(x=>x.id===id); if(!p) return;
+  p.nome = document.getElementById('ep-nm').value.trim();
+  p.doc = document.getElementById('ep-dc').value.trim();
+  p.im = document.getElementById('ep-im').value.trim();
+  p.assunto = document.getElementById('ep-as').value.trim();
+  p.desc = document.getElementById('ep-ds').value.trim();
+  p.destino = document.getElementById('ep-de').value.trim();
+  p.status = document.getElementById('ep-st').value;
+  sbPatch('pa_processos', p.id, {
+    nome:p.nome, documento:p.doc, inscricao_municipal:p.im,
+    assunto:p.assunto, descricao:p.desc, destino:p.destino, status:p.status
+  }).catch(e=>console.warn('Erro salvar edição processo:', e));
+  pa_fm();
+  pa_verDetalhe(p.id);
+  toast(`Processo ${p.num} atualizado!`);
+}
+
+// EXCLUIR PROCESSO
+async function pa_excluirProcesso(id) {
+  if(!isAdmin()) { toast('Apenas administradores podem excluir.'); return; }
+  const p = pa_processos.find(x=>x.id===id); if(!p) return;
+  const folhasVinc = pa_folhas.filter(f=>f.pid===id).length;
+  const intimVinc = pa_intimacoes.filter(i=>i.procId===id).length;
+  const relsVinc = pa_relatorios.filter(r=>r.procId===id).length;
+  if(!confirm(`⚠️ EXCLUIR processo ${p.num} - ${p.nome}?\n\n• ${folhasVinc} folha(s) também serão excluídas\n• ${intimVinc} intimação(ões) também serão excluídas\n• ${relsVinc} relatório(s) terão o vínculo removido\n\nEsta ação NÃO pode ser desfeita.`)) return;
+  try {
+    showLoading && showLoading('Excluindo processo...');
+    // Apagar folhas
+    for(const f of pa_folhas.filter(f=>f.pid===id)) {
+      await sbDelete('pa_folhas', f.id);
+    }
+    // Apagar intimações
+    for(const i of pa_intimacoes.filter(i=>i.procId===id)) {
+      await sbDelete('pa_intimacoes', i.id);
+    }
+    // Desvincular relatórios
+    for(const r of pa_relatorios.filter(r=>r.procId===id)) {
+      await sbPatch('pa_relatorios', r.id, {proc_id:null});
+      r.procId = null;
+    }
+    // Apagar processo
+    await sbDelete('pa_processos', id);
+    // Atualizar memória
+    pa_folhas = pa_folhas.filter(f=>f.pid!==id);
+    pa_intimacoes = pa_intimacoes.filter(i=>i.procId!==id);
+    pa_processos = pa_processos.filter(x=>x.id!==id);
+    hideLoading && hideLoading();
+    toast(`Processo ${p.num} excluído.`);
+    navegarPara('processos');
+  } catch(e) {
+    hideLoading && hideLoading();
+    alert('Erro ao excluir: ' + e.message);
+  }
+}
+
+// EDITAR FOLHA
+function pa_editarFolha(id) {
+  const f = pa_folhas.find(x=>x.id===id); if(!f) return;
+  if(!pa_canEdit(f.autorId, f.autorLogin)) { toast('Sem permissão para editar esta folha.'); return; }
+  pa_openModal('Editar Folha Nº ' + f.num, `
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;gap:10px">
+        <div style="flex:1"><label style="font-size:12px;color:var(--pa-text2)">NÚMERO</label><input id="ef-n" type="text" value="${f.num||''}" style="width:100%"></div>
+        <div style="flex:1"><label style="font-size:12px;color:var(--pa-text2)">DATA</label><input id="ef-dt" type="date" value="${f.data||''}" style="width:100%"></div>
+      </div>
+      <div><label style="font-size:12px;color:var(--pa-text2)">REQUERENTE</label><input id="ef-r" type="text" value="${(f.req||'').replace(/"/g,'&quot;')}" style="width:100%"></div>
+      <div style="display:flex;gap:10px">
+        <div style="flex:1"><label style="font-size:12px;color:var(--pa-text2)">SERVIDOR</label><input id="ef-sv" type="text" value="${(f.sv||'').replace(/"/g,'&quot;')}" style="width:100%"></div>
+        <div style="flex:1"><label style="font-size:12px;color:var(--pa-text2)">CARGO</label><input id="ef-cg" type="text" value="${(f.cg||'').replace(/"/g,'&quot;')}" style="width:100%"></div>
+        <div style="flex:1"><label style="font-size:12px;color:var(--pa-text2)">SETOR</label><input id="ef-st" type="text" value="${(f.st||'').replace(/"/g,'&quot;')}" style="width:100%"></div>
+      </div>
+      <div><label style="font-size:12px;color:var(--pa-text2)">TEXTO</label><textarea id="ef-tx" rows="6" style="width:100%">${f.tx||''}</textarea></div>
+      <button class="btn btn-p" onclick="pa_salvarEdicaoFolha(${f.id})">💾 Salvar alterações</button>
+    </div>
+  `, false);
+}
+
+function pa_salvarEdicaoFolha(id) {
+  const f = pa_folhas.find(x=>x.id===id); if(!f) return;
+  f.num = document.getElementById('ef-n').value;
+  f.data = document.getElementById('ef-dt').value;
+  f.req = document.getElementById('ef-r').value;
+  f.sv = document.getElementById('ef-sv').value;
+  f.cg = document.getElementById('ef-cg').value;
+  f.st = document.getElementById('ef-st').value;
+  f.tx = document.getElementById('ef-tx').value;
+  sbPatch('pa_folhas', f.id, {
+    numero:f.num, data:f.data, requerente:f.req,
+    servidor:f.sv, cargo:f.cg, setor:f.st, texto:f.tx
+  }).catch(e=>console.warn('Erro salvar folha:', e));
+  pa_fm();
+  if(pa_detProcId) pa_verDetalhe(pa_detProcId);
+  toast(`Folha ${f.num} atualizada!`);
+}
+
+// EXCLUIR FOLHA
+async function pa_excluirFolha(id) {
+  if(!isAdmin()) { toast('Apenas administradores podem excluir.'); return; }
+  const f = pa_folhas.find(x=>x.id===id); if(!f) return;
+  if(!confirm(`⚠️ Excluir Folha Nº ${f.num}?\n\nEsta ação NÃO pode ser desfeita.`)) return;
+  try {
+    await sbDelete('pa_folhas', id);
+    pa_folhas = pa_folhas.filter(x=>x.id!==id);
+    if(pa_detProcId) pa_verDetalhe(pa_detProcId);
+    toast(`Folha ${f.num} excluída.`);
+  } catch(e) { alert('Erro ao excluir: ' + e.message); }
+}
+
+// EDITAR RELATÓRIO (livre para autor ou admin, mesmo se já autorizado/rejeitado)
+function pa_editarRelatorio(id) {
+  const r = pa_relatorios.find(x=>x.id===id); if(!r) return;
+  if(!pa_canEdit(r.autorId, r.autorLogin)) { toast('Sem permissão para editar este relatório.'); return; }
+  pa_editRelId = id;
+  if(r.tipo === 'individual') {
+    navegarPara('novo-rel-ind');
+    setTimeout(()=>{
+      document.getElementById('ri-dt').value = r.data||'';
+      document.getElementById('ri-nm').value = r.nm||'';
+      document.getElementById('ri-doc').value = r.doc||'';
+      document.getElementById('ri-desc').value = r.desc||'';
+      document.getElementById('ri-conc').value = r.conc||'';
+      if(r.encParaId) document.getElementById('ri-enc').value = r.encParaId;
+    }, 100);
+  } else {
+    navegarPara('novo-rel-col');
+    setTimeout(()=>{
+      document.getElementById('rc-dt').value = r.data||'';
+      document.getElementById('rc-desc').value = r.desc||'';
+      document.getElementById('rc-conc').value = r.conc||'';
+      if(r.encParaId) document.getElementById('rc-enc').value = r.encParaId;
+    }, 100);
+  }
+  toast(`Editando relatório ${r.num}. Faça as alterações e clique em assinar para reenviar.`);
+}
+
+// EXCLUIR RELATÓRIO
+async function pa_excluirRelatorio(id) {
+  if(!isAdmin()) { toast('Apenas administradores podem excluir.'); return; }
+  const r = pa_relatorios.find(x=>x.id===id); if(!r) return;
+  if(!confirm(`⚠️ Excluir Relatório ${r.num}?\n\nFiscal: ${r.fiscal}\nInteressado: ${r.nm}\n\nEsta ação NÃO pode ser desfeita.`)) return;
+  try {
+    await sbDelete('pa_relatorios', id);
+    pa_relatorios = pa_relatorios.filter(x=>x.id!==id);
+    pa_renderRels();
+    buildUnifiedNav();
+    toast(`Relatório ${r.num} excluído.`);
+  } catch(e) { alert('Erro ao excluir: ' + e.message); }
+}
+
+// EXCLUIR INTIMAÇÃO
+async function pa_excluirIntimacao(id) {
+  if(!isAdmin()) { toast('Apenas administradores podem excluir.'); return; }
+  const i = pa_intimacoes.find(x=>x.id===id); if(!i) return;
+  if(!confirm(`⚠️ Excluir Intimação de ${i.nm}?\n\nEsta ação NÃO pode ser desfeita.`)) return;
+  try {
+    await sbDelete('pa_intimacoes', id);
+    pa_intimacoes = pa_intimacoes.filter(x=>x.id!==id);
+    pa_renderIntimacoes();
+    toast(`Intimação excluída.`);
+  } catch(e) { alert('Erro ao excluir: ' + e.message); }
+}
+
 // ── PERFIS ─────────────────────────────────────────────────────────────────
 
 function pa_renderPerfis() {
@@ -5526,28 +5720,30 @@ async function pa_importarBackup(input) {
       if(!confirmado) { input.value=''; document.getElementById('backup-file-name').textContent='Nenhum arquivo selecionado'; return; }
 
       showLoading && showLoading('Importando dados para o Supabase...');
-      let ok=0, erros=0;
+      let ok=0, duplicados=0, erros=0;
+      const detalhesErros = [];
 
-      // Importar usuarios primeiro (referência para os outros)
-      for(const row of (t.usuarios||[])) {
-        try { const r = await sbPost('usuarios', row); if(r) ok++; else erros++; } catch(e) { erros++; }
+      // Helper: tenta inserir e distingue duplicado de erro real
+      async function tentarInserir(tabela, row) {
+        try {
+          const { data, error } = await _sb.from(tabela).insert(row).select();
+          if (!error) { ok++; return; }
+          // Códigos do Postgres: 23505 = unique violation (duplicado)
+          if (error.code === '23505' || /duplicate key|already exists/i.test(error.message)) {
+            duplicados++;
+          } else {
+            erros++;
+            detalhesErros.push(`${tabela}#${row.id}: ${error.message}`);
+            console.warn(`[Backup] ${tabela}#${row.id}:`, error.message);
+          }
+        } catch(e) { erros++; detalhesErros.push(`${tabela}: ${e.message}`); }
       }
-      // Importar processos
-      for(const row of (t.pa_processos||[])) {
-        try { const r = await sbPost('pa_processos', row); if(r) ok++; else erros++; } catch(e) { erros++; }
-      }
-      // Importar relatórios
-      for(const row of (t.pa_relatorios||[])) {
-        try { const r = await sbPost('pa_relatorios', row); if(r) ok++; else erros++; } catch(e) { erros++; }
-      }
-      // Importar folhas
-      for(const row of (t.pa_folhas||[])) {
-        try { const r = await sbPost('pa_folhas', row); if(r) ok++; else erros++; } catch(e) { erros++; }
-      }
-      // Importar intimações
-      for(const row of (t.pa_intimacoes||[])) {
-        try { const r = await sbPost('pa_intimacoes', row); if(r) ok++; else erros++; } catch(e) { erros++; }
-      }
+
+      for(const row of (t.usuarios||[]))      { await tentarInserir('usuarios', row); }
+      for(const row of (t.pa_processos||[])) { await tentarInserir('pa_processos', row); }
+      for(const row of (t.pa_relatorios||[])){ await tentarInserir('pa_relatorios', row); }
+      for(const row of (t.pa_folhas||[]))    { await tentarInserir('pa_folhas', row); }
+      for(const row of (t.pa_intimacoes||[])){ await tentarInserir('pa_intimacoes', row); }
 
       // Atualizar dados locais (perfis e tributos ficam só em memória)
       if(dados.pa_perfis) pa_perfis = dados.pa_perfis;
@@ -5560,7 +5756,12 @@ async function pa_importarBackup(input) {
       input.value='';
       document.getElementById('backup-file-name').textContent='Nenhum arquivo selecionado';
       if(typeof pa_renderBackupResumo === 'function') pa_renderBackupResumo();
-      alert(`✅ Backup restaurado!\n\n${ok} registros importados\n${erros} ignorados (duplicados ou erros)`);
+      const mensagem = `✅ Backup restaurado!\n\n` +
+        `• ${ok} registro(s) novo(s) importado(s)\n` +
+        `• ${duplicados} já existente(s) (ignorado(s))\n` +
+        `• ${erros} erro(s) real(is)` +
+        (erros > 0 ? `\n\nDetalhes dos erros no console (F12).` : '');
+      alert(mensagem);
     } catch(err) {
       hideLoading && hideLoading();
       alert('❌ Erro ao ler o arquivo. Verifique se é um backup válido.\n\n'+err.message);
@@ -6163,7 +6364,8 @@ function pa_renderIntimacoes() {
     <td style="color:var(--pa-text3)">${pa_fd(i.data)}</td>
     <td style="display:flex;gap:4px">
       <button class="btn btn-g btn-xs" onclick="pa_prevIntimacaoById(${i.id})">Ver</button>
-      ${pa_canEdit(i.autorId, i.autorLogin)?`<button class="btn btn-g btn-xs" onclick="pa_editarIntimacao(${i.id})">Editar</button>`:'<span title="Apenas o autor ou admin pode editar" style="font-size:11px;color:var(--pa-text3);padding:2px 6px">🔒</span>'}
+      ${pa_canEdit(i.autorId, i.autorLogin)?`<button class="btn btn-g btn-xs" onclick="pa_editarIntimacao(${i.id})">✏️ Editar</button>`:''}
+      ${isAdmin()?`<button class="btn btn-xs" style="background:#dc2626;color:#fff" onclick="pa_excluirIntimacao(${i.id})">🗑️</button>`:''}
     </td>
   </tr>`).join('');
 }
