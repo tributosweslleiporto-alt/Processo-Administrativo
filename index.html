@@ -4835,7 +4835,7 @@ function pa_gerarHtmlRelatorio(r) {
       ? '📂 Ver processo ' + _procExist.num + ' — já aberto'
       : 'Abrir processo com esses dados';
     const _btnColor = _jaExiste ? '#4B6272' : '#2A4538';
-    btnProc = '<div style="margin-top:14px"><button onclick="pa_abrirProcDeRel('+r.id+');pa_fm()" ' +
+    btnProc = '<div class="no-print" style="margin-top:14px"><button onclick="pa_abrirProcDeRel('+r.id+');pa_fm()" ' +
       'style="background:'+_btnColor+';color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;width:100%">' +
       _btnLabel + '</button></div>';
   }
