@@ -1206,6 +1206,41 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
         </div>
       </div>
 
+      <!-- AUDITORIA (ADMIN) -->
+      <div id="view-auditoria" class="view">
+        <div class="search-row">
+          <div style="font-size:13px;font-weight:500">📋 Auditoria do Sistema</div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <input type="text" id="aud-q" placeholder="Buscar usuário, ação, registro..." oninput="pa_renderAuditoria()" style="width:240px;padding:5px 9px;font-size:12px">
+            <select id="aud-acao" onchange="pa_renderAuditoria()" style="padding:5px 9px;font-size:12px">
+              <option value="">Todas as ações</option>
+              <option value="LOGIN">Login</option>
+              <option value="CRIAR">Criação</option>
+              <option value="EDITAR">Edição</option>
+              <option value="EXCLUIR">Exclusão</option>
+              <option value="DESPACHAR">Despacho</option>
+              <option value="TRAMITAR">Tramitação</option>
+            </select>
+            <button class="btn btn-g btn-sm" onclick="pa_carregarAuditoria()">🔄 Atualizar</button>
+          </div>
+        </div>
+        <div class="tw" style="max-height:600px;overflow-y:auto">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:130px">Data/Hora</th>
+                <th style="width:140px">Usuário</th>
+                <th style="width:100px">Ação</th>
+                <th style="width:130px">Tabela / Registro</th>
+                <th>Detalhes</th>
+              </tr>
+            </thead>
+            <tbody id="aud-tbody"></tbody>
+          </table>
+        </div>
+        <div id="aud-empty" style="display:none;text-align:center;padding:30px;color:var(--pa-text2);font-size:13px">Nenhum registro de auditoria encontrado.</div>
+      </div>
+
       <!-- TRIBUTOS (ADMIN) -->
       <div id="view-tributos" class="view">
         <div class="search-row">
@@ -2202,6 +2237,7 @@ function navegarPara(destino, btn) {
     'novo-rel-col':   () => pa_initRelCol(),
     notificacoesPa:   () => pa_renderNotificacoes(),
     usuariosPa:       () => pa_renderUsuarios(),
+    auditoria:        () => pa_carregarAuditoria(),
     perfis:           () => pa_renderPerfis(),
     backup:           () => pa_renderBackupResumo(),
     folhas:           () => pa_initFolhas(),
@@ -2245,6 +2281,7 @@ function buildUnifiedNav() {
   if (admin) {
     html += '<hr class="nav-sep">';
     html += navBtn('usuariosPa','users','Usuários');
+    html += navBtn('auditoria','clock','Auditoria');
     html += navBtn('backup','download','Backup');
   }
 
@@ -2273,6 +2310,7 @@ function navIcon(n) {
     doc:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="11" y1="17" x2="8" y2="17"/>',
     users:'<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>',
     download:'<path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>',
+    clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
   };
   return icons[n] || '';
 }
@@ -4594,6 +4632,7 @@ function sv(v, btn) {
   if(v==='novo-rel-col') pa_initRelCol();
   if(v==='notificacoes') pa_renderNotificacoes();
   if(v==='usuariosPa') pa_renderUsuarios();
+  if(v==='auditoria') pa_carregarAuditoria();
   if(v==='pa_perfis') pa_renderPerfis();
   if(v==='pa_tributos') pa_renderTributos();
   if(v==='backup') pa_renderBackupResumo();
@@ -4752,6 +4791,7 @@ function pa_regTram() {
   if(!pa_canEdit(p.autorId)){alert('Você não tem permissão para tramitar este processo.');return;}
   p.trams.push({data,destino:dest,obs:document.getElementById('tr-o').value.trim()});
   p.destino=dest; p.status=document.getElementById('tr-s').value;
+  pa_auditar('TRAMITAR', {tabela:'pa_processos', id:p.id, num:p.num, detalhes:`Processo ${p.num} tramitado para ${dest}`});
   sbPatch('pa_processos', p.id, {destino:p.destino, status:p.status, trams:p.trams})
     .catch(e=>console.warn('Erro salvar tram:',e));
   document.getElementById('tr-d').value=''; document.getElementById('tr-o').value='';
@@ -4794,6 +4834,81 @@ function pa_rfl() {
   if(!pa_folhas.length){c.innerHTML='<p style="color:var(--pa-text2);font-size:13px">Nenhuma folha ainda.</p>';return;}
   c.innerHTML=pa_folhas.map(f=>`<div style="padding:9px 0;border-bottom:1px solid var(--pa-border)"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><strong style="font-size:13px">Folha Nº ${f.num}</strong> · ${pa_processos.find(x=>x.id===f.pid)?.num||''}<div style="font-size:12px;color:var(--pa-text2);margin-top:1px">${f.req} · ${pa_fd(f.data)}</div><div style="font-size:12px;color:var(--pa-text2);margin-top:1px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.tx}</div></div><button class="btn btn-g btn-xs" onclick="pa_prevFolhaById(${f.id})">Ver</button></div></div>`).join('');
 }
+// ═══════════════════════════════════════════════════════════════
+// SISTEMA DE AUDITORIA — registra ações importantes no banco
+// ═══════════════════════════════════════════════════════════════
+// ── AUDITORIA — UI ───────────────────────────────────────────────────────────
+let pa_auditoriaCache = [];
+
+async function pa_carregarAuditoria() {
+  if(!isAdmin()) { toast('Apenas administradores podem ver a auditoria.'); navegarPara('painel'); return; }
+  try {
+    const dados = await sbGet('auditoria', 'order=data_hora.desc&limit=500');
+    pa_auditoriaCache = dados || [];
+    pa_renderAuditoria();
+  } catch(e) {
+    console.warn('Erro carregar auditoria:', e);
+    pa_auditoriaCache = [];
+    pa_renderAuditoria();
+  }
+}
+
+function pa_renderAuditoria() {
+  if(!isAdmin()) return;
+  const q = (document.getElementById('aud-q')?.value || '').toLowerCase();
+  const acao = document.getElementById('aud-acao')?.value || '';
+  let lista = pa_auditoriaCache.filter(r => {
+    if(acao && r.acao !== acao) return false;
+    if(q) {
+      const t = `${r.usuario_login||''} ${r.usuario_nome||''} ${r.acao||''} ${r.tabela||''} ${r.registro_num||''} ${r.detalhes||''}`.toLowerCase();
+      if(!t.includes(q)) return false;
+    }
+    return true;
+  });
+  const tb = document.getElementById('aud-tbody');
+  const em = document.getElementById('aud-empty');
+  if(!tb) return;
+  if(!lista.length) { tb.innerHTML = ''; em.style.display = 'block'; return; }
+  em.style.display = 'none';
+  const corAcao = {
+    LOGIN:'#4b5563', CRIAR:'#16a34a', EDITAR:'#2563eb',
+    EXCLUIR:'#dc2626', DESPACHAR:'#7c3aed', TRAMITAR:'#0891b2'
+  };
+  tb.innerHTML = lista.map(r => {
+    const dt = new Date(r.data_hora);
+    const dtStr = dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+    const cor = corAcao[r.acao] || '#6b7280';
+    return `<tr>
+      <td style="font-size:11px;white-space:nowrap">${dtStr}</td>
+      <td style="font-size:12px"><strong>${r.usuario_nome||r.usuario_login||'—'}</strong><div style="font-size:10px;color:var(--pa-text3)">${r.usuario_login||''}</div></td>
+      <td><span style="background:${cor};color:#fff;font-size:10px;padding:2px 7px;border-radius:9px;font-weight:600">${r.acao}</span></td>
+      <td style="font-size:11px;color:var(--pa-text2)">${r.tabela||'—'}${r.registro_num?'<br><strong>'+r.registro_num+'</strong>':''}</td>
+      <td style="font-size:12px">${r.detalhes||'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function pa_auditar(acao, opts) {
+  opts = opts || {};
+  try {
+    const u = pa_usuarioAtual || {};
+    await _sb.from('auditoria').insert({
+      usuario_id: u.id || null,
+      usuario_login: u.login || 'anônimo',
+      usuario_nome: u.nome || '—',
+      acao: acao,
+      tabela: opts.tabela || null,
+      registro_id: opts.id || null,
+      registro_num: opts.num || null,
+      detalhes: opts.detalhes || null,
+      dados_antes: opts.antes || null,
+      dados_depois: opts.depois || null
+    });
+  } catch(e) {
+    console.warn('[auditar] falhou:', e);
+  }
+}
+
 // Memorização do detalhe de origem para botão "voltar ao processo"
 let pa_voltarParaDetalhe = null;
 
@@ -5554,6 +5669,7 @@ function pa_salvarEdicaoProcesso(id) {
 
   sbPatch('pa_processos', p.id, payload)
     .catch(e=>console.warn('Erro salvar edição processo:', e));
+  pa_auditar('EDITAR', {tabela:'pa_processos', id:p.id, num:p.num, detalhes:`Processo ${p.num} editado`, depois:payload});
   pa_fm();
   pa_verDetalhe(p.id);
   toast(`Processo ${p.num} atualizado!`);
@@ -5584,6 +5700,7 @@ async function pa_excluirProcesso(id) {
     }
     // Apagar processo
     await sbDelete('pa_processos', id);
+    pa_auditar('EXCLUIR', {tabela:'pa_processos', id:p.id, num:p.num, detalhes:`Processo ${p.num} - ${p.nome} excluído (${folhasVinc} folhas, ${intimVinc} intimações)`, antes:{nome:p.nome, status:p.status, data:p.data}});
     // Atualizar memória
     pa_folhas = pa_folhas.filter(f=>f.pid!==id);
     pa_intimacoes = pa_intimacoes.filter(i=>i.procId!==id);
@@ -5640,6 +5757,7 @@ function pa_salvarEdicaoFolha(id) {
   }
   sbPatch('pa_folhas', f.id, payload)
     .catch(e=>console.warn('Erro salvar folha:', e));
+  pa_auditar('EDITAR', {tabela:'pa_folhas', id:f.id, num:`Folha Nº ${f.num}`, detalhes:`Folha editada`, depois:payload});
   pa_fm();
   if(pa_detProcId) pa_verDetalhe(pa_detProcId);
   toast(`Folha ${f.num} atualizada!`);
@@ -5652,6 +5770,7 @@ async function pa_excluirFolha(id) {
   if(!confirm(`⚠️ Excluir Folha Nº ${f.num}?\n\nEsta ação NÃO pode ser desfeita.`)) return;
   try {
     await sbDelete('pa_folhas', id);
+    pa_auditar('EXCLUIR', {tabela:'pa_folhas', id:f.id, num:`Folha Nº ${f.num}`, detalhes:`Folha excluída do processo`, antes:{num:f.num, data:f.data, sv:f.sv}});
     pa_folhas = pa_folhas.filter(x=>x.id!==id);
     if(pa_detProcId) pa_verDetalhe(pa_detProcId);
     toast(`Folha ${f.num} excluída.`);
@@ -5692,6 +5811,7 @@ async function pa_excluirRelatorio(id) {
   if(!confirm(`⚠️ Excluir Relatório ${r.num}?\n\nFiscal: ${r.fiscal}\nInteressado: ${r.nm}\n\nEsta ação NÃO pode ser desfeita.`)) return;
   try {
     await sbDelete('pa_relatorios', id);
+    pa_auditar('EXCLUIR', {tabela:'pa_relatorios', id:r.id, num:r.num, detalhes:`Relatório ${r.num} excluído - Fiscal: ${r.fiscal}, Interessado: ${r.nm}`, antes:{status:r.status, fiscal:r.fiscal, nm:r.nm}});
     pa_relatorios = pa_relatorios.filter(x=>x.id!==id);
     pa_renderRels();
     buildUnifiedNav();
@@ -5706,6 +5826,7 @@ async function pa_excluirIntimacao(id) {
   if(!confirm(`⚠️ Excluir Intimação de ${i.nm}?\n\nEsta ação NÃO pode ser desfeita.`)) return;
   try {
     await sbDelete('pa_intimacoes', id);
+    pa_auditar('EXCLUIR', {tabela:'pa_intimacoes', id:i.id, num:`Intimação ${i.nm||''}`, detalhes:`Intimação excluída`});
     pa_intimacoes = pa_intimacoes.filter(x=>x.id!==id);
     pa_renderIntimacoes();
     toast(`Intimação excluída.`);
