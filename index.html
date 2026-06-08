@@ -5497,8 +5497,21 @@ async function pa_salvarUsuario(id) {
 function pa_editarProcesso(id) {
   const p = pa_processos.find(x=>x.id===id); if(!p) return;
   if(!pa_canEdit(p.autorId, p.autorLogin)) { toast('Sem permissão para editar este processo.'); return; }
+  const admin = isAdmin();
+  const lockHint = admin ? '' : '<span style="font-size:10px;color:var(--pa-text3);margin-left:6px">🔒 só admin</span>';
+  const dataInput = admin
+    ? `<input id="ep-dt" type="date" value="${p.data||''}" style="width:100%">`
+    : `<input id="ep-dt" type="date" value="${p.data||''}" disabled style="width:100%;background:#f0f0f0;cursor:not-allowed">`;
+  const numInput = admin
+    ? `<input id="ep-num" type="text" value="${(p.num||'').replace(/"/g,'&quot;')}" style="width:100%">`
+    : `<input id="ep-num" type="text" value="${(p.num||'').replace(/"/g,'&quot;')}" disabled style="width:100%;background:#f0f0f0;cursor:not-allowed">`;
+
   pa_openModal('Editar Processo ' + p.num, `
     <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;gap:10px">
+        <div style="flex:1"><label style="font-size:12px;color:var(--pa-text2)">NÚMERO ${lockHint}</label>${numInput}</div>
+        <div style="flex:1"><label style="font-size:12px;color:var(--pa-text2)">DATA DE ABERTURA ${lockHint}</label>${dataInput}</div>
+      </div>
       <div><label style="font-size:12px;color:var(--pa-text2)">NOME / RAZÃO SOCIAL</label><input id="ep-nm" type="text" value="${(p.nome||'').replace(/"/g,'&quot;')}" style="width:100%"></div>
       <div style="display:flex;gap:10px">
         <div style="flex:1"><label style="font-size:12px;color:var(--pa-text2)">DOCUMENTO</label><input id="ep-dc" type="text" value="${(p.doc||'').replace(/"/g,'&quot;')}" style="width:100%"></div>
@@ -5517,17 +5530,30 @@ function pa_editarProcesso(id) {
 
 function pa_salvarEdicaoProcesso(id) {
   const p = pa_processos.find(x=>x.id===id); if(!p) return;
-  p.nome = document.getElementById('ep-nm').value.trim();
-  p.doc = document.getElementById('ep-dc').value.trim();
-  p.im = document.getElementById('ep-im').value.trim();
-  p.assunto = document.getElementById('ep-as').value.trim();
-  p.desc = document.getElementById('ep-ds').value.trim();
-  p.destino = document.getElementById('ep-de').value.trim();
-  p.status = document.getElementById('ep-st').value;
-  sbPatch('pa_processos', p.id, {
-    nome:p.nome, documento:p.doc, inscricao_municipal:p.im,
-    assunto:p.assunto, descricao:p.desc, destino:p.destino, status:p.status
-  }).catch(e=>console.warn('Erro salvar edição processo:', e));
+  const admin = isAdmin();
+  const payload = {
+    nome: document.getElementById('ep-nm').value.trim(),
+    documento: document.getElementById('ep-dc').value.trim(),
+    inscricao_municipal: document.getElementById('ep-im').value.trim(),
+    assunto: document.getElementById('ep-as').value.trim(),
+    descricao: document.getElementById('ep-ds').value.trim(),
+    destino: document.getElementById('ep-de').value.trim(),
+    status: document.getElementById('ep-st').value
+  };
+  p.nome = payload.nome; p.doc = payload.documento; p.im = payload.inscricao_municipal;
+  p.assunto = payload.assunto; p.desc = payload.descricao;
+  p.destino = payload.destino; p.status = payload.status;
+
+  // Apenas admin pode mudar número e data
+  if(admin) {
+    const novoNum = document.getElementById('ep-num').value.trim();
+    const novaData = document.getElementById('ep-dt').value;
+    if(novoNum && novoNum !== p.num) { p.num = novoNum; payload.numero = novoNum; }
+    if(novaData && novaData !== p.data) { p.data = novaData; payload.data = novaData; }
+  }
+
+  sbPatch('pa_processos', p.id, payload)
+    .catch(e=>console.warn('Erro salvar edição processo:', e));
   pa_fm();
   pa_verDetalhe(p.id);
   toast(`Processo ${p.num} atualizado!`);
@@ -5578,8 +5604,8 @@ function pa_editarFolha(id) {
   pa_openModal('Editar Folha Nº ' + f.num, `
     <div style="display:flex;flex-direction:column;gap:12px">
       <div style="display:flex;gap:10px">
-        <div style="flex:1"><label style="font-size:12px;color:var(--pa-text2)">NÚMERO</label><input id="ef-n" type="text" value="${f.num||''}" style="width:100%"></div>
-        <div style="flex:1"><label style="font-size:12px;color:var(--pa-text2)">DATA</label><input id="ef-dt" type="date" value="${f.data||''}" style="width:100%"></div>
+        <div style="flex:1"><label style="font-size:12px;color:var(--pa-text2)">NÚMERO ${isAdmin()?'':'<span style=\"font-size:10px;color:var(--pa-text3)\">🔒</span>'}</label><input id="ef-n" type="text" value="${f.num||''}" ${isAdmin()?'':'disabled style="background:#f0f0f0;cursor:not-allowed;width:100%"'} ${isAdmin()?'style="width:100%"':''}></div>
+        <div style="flex:1"><label style="font-size:12px;color:var(--pa-text2)">DATA ${isAdmin()?'':'<span style=\"font-size:10px;color:var(--pa-text3)\">🔒 só admin</span>'}</label><input id="ef-dt" type="date" value="${f.data||''}" ${isAdmin()?'':'disabled style="background:#f0f0f0;cursor:not-allowed;width:100%"'} ${isAdmin()?'style="width:100%"':''}></div>
       </div>
       <div><label style="font-size:12px;color:var(--pa-text2)">REQUERENTE</label><input id="ef-r" type="text" value="${(f.req||'').replace(/"/g,'&quot;')}" style="width:100%"></div>
       <div style="display:flex;gap:10px">
@@ -5595,17 +5621,25 @@ function pa_editarFolha(id) {
 
 function pa_salvarEdicaoFolha(id) {
   const f = pa_folhas.find(x=>x.id===id); if(!f) return;
-  f.num = document.getElementById('ef-n').value;
-  f.data = document.getElementById('ef-dt').value;
+  const admin = isAdmin();
+  // Campos comuns
   f.req = document.getElementById('ef-r').value;
   f.sv = document.getElementById('ef-sv').value;
   f.cg = document.getElementById('ef-cg').value;
   f.st = document.getElementById('ef-st').value;
   f.tx = document.getElementById('ef-tx').value;
-  sbPatch('pa_folhas', f.id, {
-    numero:f.num, data:f.data, requerente:f.req,
-    servidor:f.sv, cargo:f.cg, setor:f.st, texto:f.tx
-  }).catch(e=>console.warn('Erro salvar folha:', e));
+  const payload = {
+    requerente: f.req, servidor: f.sv, cargo: f.cg, setor: f.st, texto: f.tx
+  };
+  // Número e data só pelo admin
+  if(admin) {
+    f.num = document.getElementById('ef-n').value;
+    f.data = document.getElementById('ef-dt').value;
+    payload.numero = f.num;
+    payload.data = f.data;
+  }
+  sbPatch('pa_folhas', f.id, payload)
+    .catch(e=>console.warn('Erro salvar folha:', e));
   pa_fm();
   if(pa_detProcId) pa_verDetalhe(pa_detProcId);
   toast(`Folha ${f.num} atualizada!`);
