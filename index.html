@@ -4124,6 +4124,16 @@ async function importarBackup(input) {
       try { await _sbPost_sdk('notificacoes', row); ok++; } catch(e) { erros++; }
     }
 
+    showLoading('Importando usuários...');
+    for (const row of (backup.dados.usuarios || [])) {
+      try { await _sbPost_sdk('usuarios', row); ok++; } catch(e) { erros++; }
+    }
+
+    showLoading('Importando assuntos...');
+    for (const row of (backup.dados.assuntos || [])) {
+      try { await _sbPost_sdk('assuntos', row); ok++; } catch(e) { erros++; }
+    }
+
     hideLoading();
     input.value = '';
 
@@ -5445,66 +5455,114 @@ function pa_renderBackupResumo() {
     </div>`).join('');
 }
 
-function pa_exportarBackup() {
-  const dados = {
-    versao: '5.0',
-    geradoEm: new Date().toISOString(),
-    pa_processos, pa_nextProcId, pa_nextProcNum,
-    pa_relatorios, pa_nextRelId, pa_nextRelNum,
-    /* usuarios do Supabase */
-    pa_perfis, pa_nextPerfId,
-    pa_tributos, pa_nextTribId,
-    pa_intimacoes,
-    pa_folhas, pa_nextFolhaId,
-  };
-  const json = JSON.stringify(dados, null, 2);
-  const blob = new Blob([json], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const data = new Date().toISOString().slice(0,10);
-  a.href = url;
-  a.download = `backup_sistema_${data}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  toast('✅ Backup exportado com sucesso!');
+async function pa_exportarBackup() {
+  try {
+    showLoading && showLoading('Gerando backup completo...');
+    // Buscar tudo direto do Supabase para garantir consistência
+    const [procs, rels, folhas, intimacoes, usuariosRows] = await Promise.all([
+      sbGet('pa_processos', 'select=*&limit=10000'),
+      sbGet('pa_relatorios', 'select=*&limit=10000'),
+      sbGet('pa_folhas', 'select=*&limit=10000'),
+      sbGet('pa_intimacoes', 'select=*&limit=10000'),
+      sbGet('usuarios', 'select=*&limit=1000')
+    ]);
+    const dados = {
+      versao: '6.0',
+      sistema: 'Sistema de Processos Administrativos',
+      geradoEm: new Date().toISOString(),
+      geradoPor: pa_usuarioAtual?.nome || '—',
+      pa_nextProcId, pa_nextProcNum, pa_nextRelId, pa_nextRelNum,
+      pa_nextFolhaId, pa_nextPerfId, pa_nextTribId,
+      pa_perfis, pa_tributos,
+      tabelas: { pa_processos: procs||[], pa_relatorios: rels||[], pa_folhas: folhas||[], pa_intimacoes: intimacoes||[], usuarios: usuariosRows||[] }
+    };
+    const json = JSON.stringify(dados, null, 2);
+    const blob = new Blob([json], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const data = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = `backup_pa_${data}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    hideLoading && hideLoading();
+    toast(`✅ Backup gerado: ${procs?.length||0} processos, ${rels?.length||0} relatórios, ${folhas?.length||0} folhas, ${intimacoes?.length||0} intimações.`);
+  } catch(e) {
+    hideLoading && hideLoading();
+    alert('Erro ao gerar backup: ' + e.message);
+  }
 }
 
-function pa_importarBackup(input) {
+async function pa_importarBackup(input) {
   const file = input.files[0];
   if(!file) return;
   document.getElementById('backup-file-name').textContent = file.name;
   const reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = async function(e) {
     try {
       const dados = JSON.parse(e.target.result);
-      if(!dados.pa_processos || !dados.pa_relatorios || !dados.paUsuarios()) {
+      // Compatibilidade com formato antigo (v5) e novo (v6)
+      const t = dados.tabelas || {
+        pa_processos: dados.pa_processos || [],
+        pa_relatorios: dados.pa_relatorios || [],
+        pa_folhas: dados.pa_folhas || [],
+        pa_intimacoes: dados.pa_intimacoes || [],
+        usuarios: []
+      };
+      if(!Array.isArray(t.pa_processos) || !Array.isArray(t.pa_relatorios)) {
         alert('❌ Arquivo inválido. Este arquivo não parece ser um backup do sistema.');
         return;
       }
       const confirmado = confirm(
         `⚠️ ATENÇÃO!\n\nVocê está prestes a restaurar um backup de ${dados.geradoEm ? new Date(dados.geradoEm).toLocaleString('pt-BR') : 'data desconhecida'}.\n\n` +
-        `Isso substituirá TODOS os dados atuais:\n` +
-        `• ${dados.pa_processos.length} processo(s)\n` +
-        `• ${dados.pa_relatorios.length} relatório(s)\n` +
-        `• ${dados.paUsuarios().length} usuário(s)\n` +
-        `• ${dados.pa_intimacoes?.length||0} intimação(ões)\n\n` +
+        `Os dados serão ADICIONADOS ao banco (registros com mesmo ID serão ignorados):\n` +
+        `• ${t.pa_processos.length} processo(s)\n` +
+        `• ${t.pa_relatorios.length} relatório(s)\n` +
+        `• ${(t.pa_folhas||[]).length} folha(s)\n` +
+        `• ${(t.pa_intimacoes||[]).length} intimação(ões)\n` +
+        `• ${(t.usuarios||[]).length} usuário(s)\n\n` +
         `Deseja continuar?`
       );
       if(!confirmado) { input.value=''; document.getElementById('backup-file-name').textContent='Nenhum arquivo selecionado'; return; }
 
-      pa_processos = dados.pa_processos; pa_nextProcId = dados.pa_nextProcId||pa_processos.length+1; pa_nextProcNum = dados.pa_nextProcNum||pa_processos.length+1;
-      pa_relatorios = dados.pa_relatorios; pa_nextRelId = dados.pa_nextRelId||pa_relatorios.length+1; pa_nextRelNum = dados.pa_nextRelNum||pa_relatorios.length+1;
-      usuarios = dados.paUsuarios(); pa_nextUsrId = dados.pa_nextUsrId||paUsuarios().length+1;
-      pa_perfis = dados.pa_perfis||pa_perfis; pa_nextPerfId = dados.pa_nextPerfId||pa_perfis.length+1;
-      pa_tributos = dados.pa_tributos||pa_tributos; pa_nextTribId = dados.pa_nextTribId||pa_tributos.length+1;
-      pa_intimacoes = dados.pa_intimacoes||[];
-      pa_folhas = dados.pa_folhas||[]; pa_nextFolhaId = dados.pa_nextFolhaId||1;
+      showLoading && showLoading('Importando dados para o Supabase...');
+      let ok=0, erros=0;
 
+      // Importar usuarios primeiro (referência para os outros)
+      for(const row of (t.usuarios||[])) {
+        try { const r = await sbPost('usuarios', row); if(r) ok++; else erros++; } catch(e) { erros++; }
+      }
+      // Importar processos
+      for(const row of (t.pa_processos||[])) {
+        try { const r = await sbPost('pa_processos', row); if(r) ok++; else erros++; } catch(e) { erros++; }
+      }
+      // Importar relatórios
+      for(const row of (t.pa_relatorios||[])) {
+        try { const r = await sbPost('pa_relatorios', row); if(r) ok++; else erros++; } catch(e) { erros++; }
+      }
+      // Importar folhas
+      for(const row of (t.pa_folhas||[])) {
+        try { const r = await sbPost('pa_folhas', row); if(r) ok++; else erros++; } catch(e) { erros++; }
+      }
+      // Importar intimações
+      for(const row of (t.pa_intimacoes||[])) {
+        try { const r = await sbPost('pa_intimacoes', row); if(r) ok++; else erros++; } catch(e) { erros++; }
+      }
+
+      // Atualizar dados locais (perfis e tributos ficam só em memória)
+      if(dados.pa_perfis) pa_perfis = dados.pa_perfis;
+      if(dados.pa_tributos) pa_tributos = dados.pa_tributos;
+
+      // Recarregar todos os dados do Supabase
+      await carregarDadosPA();
+
+      hideLoading && hideLoading();
       input.value='';
       document.getElementById('backup-file-name').textContent='Nenhum arquivo selecionado';
-      pa_renderBackupResumo();
-      toast('✅ Backup restaurado com sucesso! Dados atualizados.');
+      if(typeof pa_renderBackupResumo === 'function') pa_renderBackupResumo();
+      alert(`✅ Backup restaurado!\n\n${ok} registros importados\n${erros} ignorados (duplicados ou erros)`);
     } catch(err) {
+      hideLoading && hideLoading();
       alert('❌ Erro ao ler o arquivo. Verifique se é um backup válido.\n\n'+err.message);
     }
   };
