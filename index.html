@@ -4753,6 +4753,7 @@ function pa_cadProc() {
     autor_id:pa_usuarioAtual?.id||null, autor_login:pa_usuarioAtual?.login||'',
     coletivo:false, empresas:[], trams:p.trams
   }).catch(e=>console.warn('Erro salvar processo:',e));
+  pa_auditar('CRIAR', {tabela:'pa_processos', id:p.id, num:p.num, detalhes:`Processo ${p.num} aberto - ${p.nome}${p.assunto?' ('+p.assunto+')':''}`});
   // Vincula o relatório de origem ao processo recém criado
   const relId = parseInt(document.getElementById('np-form')?.dataset?.relId||'0');
   if(relId) {
@@ -4833,6 +4834,7 @@ function pa_salvarFolha() {
   }).catch(e=>console.warn('Erro salvar folha:',e));
   document.getElementById('fi-n').value=parseInt(f.num)+1;
   document.getElementById('fi-tx').value='';
+  pa_auditar('CRIAR', {tabela:'pa_folhas', id:f.id, num:`Folha Nº ${f.num}`, detalhes:`Folha emitida no processo ${pa_processos.find(x=>x.id===f.pid)?.num||''} - ${f.req}`});
   pa_rfl(); toast(`Folha Nº ${f.num} emitida`); pa_prevFolhaById(f.id);
   // Se veio do detalhe do processo, voltar para lá após salvar
   if(pa_voltarParaDetalhe) {
@@ -5137,6 +5139,7 @@ function pa_enviarRelInd() {
       empresas:r.empresas||[], assinfiscal:r.assinFiscal||null
     }).then(res => { if(!res) console.warn('Falha ao salvar relatório individual no Supabase'); })
       .catch(e=>console.warn('Erro salvar relatorio:', e));
+    pa_auditar('CRIAR', {tabela:'pa_relatorios', id:r.id, num:r.num, detalhes:`Relatório ${r.num} criado - Fiscal: ${r.fiscal}, Interessado: ${r.nm}`});
     // Notificar o destinatário (sino)
     gerarNotificacao(
       'parecer',
@@ -5254,6 +5257,7 @@ function pa_enviarRelCol() {
       empresas:r.empresas||[], assinfiscal:r.assinFiscal||null
     }).then(res => { if(!res) console.warn('Falha ao salvar relatório coletivo no Supabase'); })
       .catch(e=>console.warn('Erro salvar relatorio coletivo:', e));
+    pa_auditar('CRIAR', {tabela:'pa_relatorios', id:r.id, num:r.num, detalhes:`Relatório coletivo ${r.num} criado - Fiscal: ${r.fiscal}, ${r.empresas?.length||0} empresa(s)`});
     // Notificar o destinatário (sino)
     gerarNotificacao(
       'parecer',
@@ -6598,6 +6602,7 @@ function pa_salvarIntimacao() {
     linhas_agrupado:int.linhasAgrupado||[], proc_id:int.procId||null,
     autor_login:pa_usuarioAtual?.login||''
   }).catch(e=>console.warn('Erro salvar intimacao:',e));
+  pa_auditar('CRIAR', {tabela:'pa_intimacoes', id:int.id, num:'Intimação - '+(int.nm||''), detalhes:`Intimação gerada para ${int.nm||''}${int.procNum?' (Processo '+int.procNum+')':''}`});
   toast('Intimação gerada para ' + nm);
   // Ir para o processo se vinculado
   const procObj2 = pa_processos.find(x=>x.num===int.procNum);
