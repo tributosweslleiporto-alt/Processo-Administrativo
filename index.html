@@ -1481,7 +1481,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
     </div>
     <div class="modal-foot">
       <button class="btn btn-outline" onclick="fecharModal('modalUsuario')">Cancelar</button>
-      <button class="btn btn-primary" onclick="pa_salvarUsuario()">Salvar</button>
+      <button class="btn btn-primary" onclick="salvarNovoUsuarioConfig()">Salvar</button>
     </div>
   </div>
 </div>
@@ -2971,7 +2971,10 @@ function renderConfiguracoes() {
         <strong>${u.nome}</strong>
         <span>${u.login} — ${labelPerfil(u.perfil)}</span>
       </div>
-      ${u.id !== usuarioLogado.id ? `<button class="btn btn-danger btn-sm" onclick="removerUsuario(${u.id})">Remover</button>` : ''}
+      <div style="display:flex;gap:6px">
+        ${usuarioLogado.perfil === 'admin' ? `<button class="btn btn-primary btn-sm" onclick="abrirEditarUsuario(${u.id})">✏️ Editar</button>` : ''}
+        ${u.id !== usuarioLogado.id && usuarioLogado.perfil === 'admin' ? `<button class="btn btn-danger btn-sm" onclick="removerUsuario(${u.id})">Remover</button>` : ''}
+      </div>
     </div>
   `).join('');
 
@@ -3466,8 +3469,9 @@ async function salvarEdicaoUsuario() {
   try {
     await _sbPatchWhere_sdk('usuarios', 'id', id, updates);
     hideLoading();
-    fecharModal('modalEditUser');
-    pa_renderUsuarios();
+    fecharModalEditarUsuario();
+    renderConfiguracoes();
+    pa_renderUsuarios && pa_renderUsuarios();
     alert('Usuário atualizado!');
   } catch(e) { hideLoading(); alert('Erro: ' + e.message); }
 }
@@ -5666,6 +5670,61 @@ function pa_renderUsuarios() {
       </div>
     </div>`).join('');
 }
+async function salvarNovoUsuarioConfig() {
+  const nome = document.getElementById('uNome').value.trim();
+  const login = document.getElementById('uLogin').value.trim().toLowerCase();
+  const senha = document.getElementById('uSenha').value;
+  const perfil = document.getElementById('uPerfil').value;
+  const cargo = document.getElementById('uCargo')?.value?.trim() || '';
+
+  if (!nome || !login || !senha || !perfil) {
+    alert('Preencha todos os campos obrigatórios (nome, login, senha e perfil).');
+    return;
+  }
+  if (senha.length < 4) {
+    alert('A senha deve ter pelo menos 4 caracteres.');
+    return;
+  }
+  // Verificar se login já existe
+  if (DB.usuarios.find(u => u.login === login)) {
+    alert('Já existe um usuário com este login. Escolha outro.');
+    return;
+  }
+
+  showLoading('Criando usuário...');
+  try {
+    const novoId = (DB.usuarios.reduce((m,u)=>Math.max(m,u.id||0),0) || 0) + 1;
+    // Cores aleatórias bonitas para o avatar
+    const cores = ['#0a3d62','#16a34a','#dc2626','#7c3aed','#d97706','#0891b2','#be185d','#4b5563'];
+    const cor = cores[novoId % cores.length];
+
+    const novoUser = {
+      id: novoId, nome, login, senha,
+      perfil, cargo, cor, ativo: true
+    };
+    const res = await _sb.from('usuarios').insert(novoUser).select();
+    if (res.error) throw new Error(res.error.message);
+
+    DB.usuarios.push(novoUser);
+    pa_auditar('CRIAR', {tabela:'usuarios', id:novoId, num:login, detalhes:`Novo usuário criado: ${nome} (${login}) - perfil ${perfil}`});
+
+    // Limpar campos
+    document.getElementById('uNome').value = '';
+    document.getElementById('uLogin').value = '';
+    document.getElementById('uSenha').value = '';
+    if (document.getElementById('uCargo')) document.getElementById('uCargo').value = '';
+
+    hideLoading();
+    fecharModal('modalUsuario');
+    renderConfiguracoes();
+    if (typeof pa_renderUsuarios === 'function') pa_renderUsuarios();
+    alert(`✅ Usuário criado!\n\nNome: ${nome}\nLogin: ${login}\nSenha: ${senha}\n\nInforme essas credenciais ao usuário.`);
+  } catch(e) {
+    hideLoading();
+    alert('Erro ao criar usuário: ' + e.message);
+  }
+}
+
 async function pa_toggleAtivo(id) {
   const u = DB.usuarios.find(x => x.id === id); if(!u) return;
   const novoEstado = !(u.ativo !== false);
