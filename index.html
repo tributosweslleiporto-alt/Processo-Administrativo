@@ -2739,6 +2739,7 @@ async function salvarProtocolo() {
     DB.sequencial++;
     limparFormulario();
     gerarNumeroProtocolo();
+    pa_auditar('CRIAR', {tabela:'protocolos', id:protocolo.id, num:protocolo.numero, detalhes:`Protocolo ${protocolo.numero} registrado — ${protocolo.nome} (${protocolo.assuntoNome||'sem assunto'})`});
     hideLoading();
     renderDashboard();
     // Alerta obrigatório de movimentação
@@ -3180,6 +3181,7 @@ async function salvarMovimentacao() {
     obs
   });
   showLoading('Salvando movimentação...');
+  pa_auditar('TRAMITAR', {tabela:'protocolos', id:p.id, num:p.numero, detalhes:`Protocolo ${p.numero} movimentado para ${sit}${obs?' — '+obs.slice(0,80):''}`});
   try {
     await _sbPatchWhere_sdk('protocolos', 'id', p.id, { situacao: sit, atualizado_em: agora.toISOString() });
     await _sbPost_sdk('historico', {
@@ -4194,6 +4196,7 @@ async function salvarParecer() {
         `O processo ${p.numero} foi encaminhado à Procuradoria. Despacho: ${despacho}`, p.id, destinatariosAdmin());
     }
 
+    pa_auditar('CRIAR', {tabela:'pareceres', id:parecer.id||null, num:`Parecer Nº ${parecer.numero||''}`, detalhes:`Parecer registrado no protocolo ${p.numero} — ${parecer.conclusao||''}`});
     hideLoading();
     fecharParecer();
     abrirDetalhes(p.id);
@@ -4362,6 +4365,7 @@ Clique OK apenas se tiver certeza absoluta.`);
   showLoading('Excluindo protocolo...');
   try {
     // Supabase cascata apaga historico e pareceres automaticamente (ON DELETE CASCADE)
+    pa_auditar('EXCLUIR', {tabela:'protocolos', id:p.id, num:p.numero, detalhes:`Protocolo ${p.numero} excluído — ${p.nome}`, antes:{situacao:p.situacao, nome:p.nome}});
     await _sbDelete_sdk('protocolos', p.id);
     DB.protocolos = DB.protocolos.filter(x => x.id !== p.id);
     fecharModal('modalDetalhes');
@@ -5026,7 +5030,10 @@ function pa_renderAuditoria() {
 async function pa_auditar(acao, opts) {
   opts = opts || {};
   try {
-    const u = pa_usuarioAtual || {};
+    // Tenta usar pa_usuarioAtual (PA) ou usuarioLogado (protocolos) — o que estiver disponível
+    const u = (typeof pa_usuarioAtual !== 'undefined' && pa_usuarioAtual) ? pa_usuarioAtual
+            : (typeof usuarioLogado !== 'undefined' && usuarioLogado) ? usuarioLogado
+            : {};
     await _sb.from('auditoria').insert({
       usuario_id: u.id || null,
       usuario_login: u.login || 'anônimo',
