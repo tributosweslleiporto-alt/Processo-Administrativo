@@ -3150,6 +3150,24 @@ function abrirMovimentacao() {
 async function salvarMovimentacao() {
   const p = DB.protocolos.find(x => x.id === protocoloAtualId);
   if (!p) return;
+
+  // ── VERIFICAÇÃO DE PERMISSÃO ─────────────────────────────────
+  const isAdmin = usuarioLogado.perfil === 'admin';
+  const respAtual = obterResponsavelAtual(p);
+  const sou_responsavel = respAtual && (
+    respAtual === usuarioLogado.login ||
+    respAtual === usuarioLogado.nome
+  );
+  if (!isAdmin && !sou_responsavel) {
+    if (['concluido','arquivado'].includes(p.situacao)) {
+      alert('⛔ Este protocolo está '+p.situacao+'. Apenas administradores podem movimentá-lo.');
+    } else {
+      alert('⛔ Você não pode movimentar este protocolo.\n\nEste protocolo está com: ' + (respAtual||'—') + '\nSomente o responsável atual ou o administrador podem movimentar.');
+    }
+    fecharModal('modalMov');
+    return;
+  }
+
   const sit = document.getElementById('movSituacao').value;
   const obs = document.getElementById('movObs').value.trim();
   const agora = new Date();
@@ -4057,6 +4075,26 @@ function selecionarDespacho(val) {
 }
 
 async function salvarParecer() {
+  // ── VERIFICAÇÃO DE PERMISSÃO ─────────────────────────────────
+  const _p_guard = DB.protocolos.find(x => x.id === protocoloAtualId);
+  if (_p_guard) {
+    const _isAdmin_g = usuarioLogado.perfil === 'admin';
+    const _respAtual_g = obterResponsavelAtual(_p_guard);
+    const _sou_resp_g = _respAtual_g && (
+      _respAtual_g === usuarioLogado.login ||
+      _respAtual_g === usuarioLogado.nome
+    );
+    if (!_isAdmin_g && !_sou_resp_g) {
+      if (['concluido','arquivado'].includes(_p_guard.situacao)) {
+        alert('⛔ Este protocolo está '+_p_guard.situacao+'. Apenas administradores podem registrar pareceres.');
+      } else {
+        alert('⛔ Você não pode registrar parecer neste protocolo.\n\nEste protocolo está com: ' + (_respAtual_g||'—'));
+      }
+      fecharParecer && fecharParecer();
+      return;
+    }
+  }
+
   const p = DB.protocolos.find(x => x.id === parecerProtocoloId);
   if (!p) return;
 
