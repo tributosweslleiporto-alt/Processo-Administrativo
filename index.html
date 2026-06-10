@@ -2972,8 +2972,8 @@ function renderConfiguracoes() {
         <span>${u.login} — ${labelPerfil(u.perfil)}</span>
       </div>
       <div style="display:flex;gap:6px">
-        ${usuarioLogado.perfil === 'admin' ? `<button class="btn btn-primary btn-sm" onclick="abrirEditarUsuario(${u.id})">✏️ Editar</button>` : ''}
-        ${u.id !== usuarioLogado.id && usuarioLogado.perfil === 'admin' ? `<button class="btn btn-danger btn-sm" onclick="removerUsuario(${u.id})">Remover</button>` : ''}
+        <button class="btn btn-primary btn-sm" onclick="abrirEditarUsuario(${u.id})">✏️ Editar</button>
+        ${u.id !== usuarioLogado.id ? `<button class="btn btn-danger btn-sm" onclick="removerUsuario(${u.id})">Remover</button>` : ''}
       </div>
     </div>
   `).join('');
