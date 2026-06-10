@@ -1414,7 +1414,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
     <div class="modal-foot">
       <button class="btn btn-outline" onclick="imprimirComprovante()">🖨️ Imprimir Comprovante</button>
       <button class="btn btn-warning" onclick="verificarAcessoParecer(protocoloAtualId)" id="btnGerarParecer">📄 Gerar Parecer</button>
-      <button class="btn btn-primary" onclick="abrirMovimentacao()">+ Movimentar</button>
+      <button class="btn btn-primary" onclick="abrirMovimentacao()" id="btnMovimentar">+ Movimentar</button>
       <button class="btn btn-danger" onclick="confirmarExcluirProtocolo()" id="btnExcluirProtocolo" style="display:none;background:#c0392b;border-color:#c0392b;">🗑️ Excluir</button>
     </div>
   </div>
@@ -2740,8 +2740,10 @@ async function salvarProtocolo() {
     limparFormulario();
     gerarNumeroProtocolo();
     hideLoading();
-    alert(`Protocolo ${numero} registrado com sucesso!`);
     renderDashboard();
+    // Alerta obrigatório de movimentação
+    alertarMovimentar(protocolo.id, `Protocolo ${numero} registrado com sucesso!`);
+    return;
   } catch(e) {
     hideLoading();
     alert('Erro ao salvar protocolo: ' + e.message);
@@ -3040,11 +3042,54 @@ function abrirDetalhes(id) {
     <div style="font-size:13px;font-weight:700;color:#0a3d62;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.04em;">Histórico de Tramitação</div>
     <div class="historico-list">${hist}</div>
   `;
+  // ── CONTROLE DE ACESSO POR RESPONSÁVEL ─────────────────────
+  // Identifica o responsável atual (último item válido do histórico)
+  const respAtual = obterResponsavelAtual(p);
+  const isAdmin = usuarioLogado.perfil === 'admin';
+  const sou_responsavel = respAtual && (
+    respAtual === usuarioLogado.login ||
+    respAtual === usuarioLogado.nome
+  );
+  const podeAgir = isAdmin || sou_responsavel;
+
   // Botão excluir — somente admin
   const btnExc = document.getElementById('btnExcluirProtocolo');
-  if (btnExc) btnExc.style.display = usuarioLogado.perfil === 'admin' ? '' : 'none';
+  if (btnExc) btnExc.style.display = isAdmin ? '' : 'none';
+
+  // Botões Movimentar e Parecer — só para responsável atual ou admin
+  const btnMov = document.getElementById('btnMovimentar');
+  const btnPar = document.getElementById('btnGerarParecer');
+  if (btnMov) btnMov.style.display = podeAgir ? '' : 'none';
+  if (btnPar) btnPar.style.display = podeAgir ? '' : 'none';
+
+  // Aviso de somente leitura
+  if (!podeAgir) {
+    const body = document.getElementById('modalDetalhesBody');
+    const aviso = document.createElement('div');
+    aviso.style.cssText = 'background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px';
+    aviso.innerHTML = `<span style="font-size:20px">🔒</span><div><div style="font-size:13px;font-weight:700;color:#b45309">Protocolo com outro responsável</div><div style="font-size:12px;color:#78350f;margin-top:2px">Este protocolo está com <strong>${respAtual||'—'}</strong>. Você pode visualizar mas não pode movimentar ou alterar.</div></div>`;
+    body.insertBefore(aviso, body.firstChild);
+  }
 
   document.getElementById('modalDetalhes').classList.add('open');
+}
+
+// Identifica o responsável atual analisando o histórico de tramitação
+function obterResponsavelAtual(protocolo) {
+  if (!protocolo) return null;
+  const hist = protocolo.historico || [];
+  // Procurar de trás para frente o último usuário que tramitou
+  // (situações terminais como concluido/arquivado também travam)
+  if (['concluido','arquivado'].includes(protocolo.situacao)) {
+    return null; // ninguém pode mexer em protocolo finalizado (só admin via override)
+  }
+  // Último item do histórico = quem está com o protocolo agora
+  for (let i = hist.length - 1; i >= 0; i--) {
+    const h = hist[i];
+    if (h && h.usuario) return h.usuario;
+  }
+  // Se não tem histórico, o responsável é quem criou
+  return protocolo.responsavel || null;
 }
 
 function iconeSituacao(s) {
@@ -3055,6 +3100,45 @@ function iconeSituacao(s) {
     concluido:'✅', arquivado:'🗂️'
   };
   return m[s] || '📄';
+}
+
+// ── ALERTA OBRIGATÓRIO DE MOVIMENTAÇÃO ─────────────────────────────────────
+function alertarMovimentar(protocoloId, mensagemSucesso) {
+  let ov = document.getElementById('alertaMovimentar');
+  if(ov) ov.remove();
+  ov = document.createElement('div');
+  ov.id = 'alertaMovimentar';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.innerHTML = `
+    <div style="background:#fff;border-radius:12px;padding:28px 32px;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);border-top:6px solid #f59e0b">
+      <div style="font-size:18px;font-weight:700;color:#16a34a;margin-bottom:10px;display:flex;align-items:center;gap:8px">
+        <span style="font-size:22px">✅</span> ${mensagemSucesso}
+      </div>
+      <div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:14px;margin-top:14px">
+        <div style="font-size:14px;font-weight:700;color:#b45309;margin-bottom:6px;display:flex;align-items:center;gap:6px">
+          <span style="font-size:18px">⚠️</span> AÇÃO OBRIGATÓRIA
+        </div>
+        <div style="font-size:13px;color:#78350f;line-height:1.5">
+          Você precisa <strong>movimentar este protocolo agora</strong> para o próximo responsável.
+          O protocolo não pode ficar parado sem encaminhamento.
+        </div>
+      </div>
+      <div style="margin-top:18px;display:flex;justify-content:flex-end">
+        <button onclick="confirmarMovimentar(${protocoloId})" style="background:#16a34a;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px">
+          ➡️ Movimentar agora
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(ov);
+}
+
+function confirmarMovimentar(protocoloId) {
+  const ov = document.getElementById('alertaMovimentar');
+  if(ov) ov.remove();
+  protocoloAtualId = protocoloId;
+  abrirDetalhes(protocoloId);
+  setTimeout(()=>abrirMovimentacao(), 300);
 }
 
 function abrirMovimentacao() {
@@ -4073,9 +4157,10 @@ async function salvarParecer() {
     }
 
     hideLoading();
-    alert('Parecer salvo com sucesso!');
     fecharParecer();
     abrirDetalhes(p.id);
+    // Alerta obrigatório de movimentação
+    alertarMovimentar(p.id, 'Parecer salvo com sucesso!');
     renderDashboard();
   } catch(e) {
     hideLoading();
@@ -4717,7 +4802,7 @@ function pa_verDetalhe(id) {
     <button class="btn btn-g btn-sm" onclick="pa_impCartao()">⎙ Cartão</button>
     <button class="btn btn-g btn-sm" onclick="pa_impCapa()">⎙ Capa</button>
     ${relBtn}
-    ${ativo && canE ? `<button class="btn btn-g btn-sm" onclick="pa_novaFolhaDet()">+ Folha</button>` : ''}
+    ${ativo ? `<button class="btn btn-g btn-sm" onclick="pa_novaFolhaDet()">+ Folha</button>` : ''}
     ${ativo ? `<button class="btn btn-p btn-sm" onclick="pa_novaIntimacaoDet()">+ Intimação</button>` : ''}
     ${canE ? `<button class="btn btn-g btn-sm" onclick="pa_editarProcesso(${p.id})" title="Editar processo">✏️ Editar</button>` : ''}
     ${canAdmin ? `<button class="btn btn-sm" style="background:#dc2626;color:#fff" onclick="pa_excluirProcesso(${p.id})" title="Excluir processo (somente admin)">🗑️ Excluir</button>` : ''}
