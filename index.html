@@ -1842,6 +1842,7 @@ function mapearUsuarioParaPA(u) {
     login: u.login,
     iniciais: iniciais.toUpperCase(),
     cargo: u.cargo || u.perfil,
+    matricula: u.matricula || '',
     perfilId: mapearPerfilId(u.perfil),
     cor: c.cor,
     bg: c.bg,
