@@ -1777,6 +1777,7 @@ let pa_processos = [], pa_relatorios = [], pa_folhas = [], pa_intimacoes = [];
 let pa_nextProcId = 1, pa_nextProcNum = 1;
 let pa_nextRelId  = 1, pa_nextRelNum  = 1;
 let pa_nextFolhaId= 1, pa_nextIntId   = 1;
+let pa_salvando_intimacao = false;
 let pa_nextUsrId  = 1, pa_nextPerfId  = 6, pa_nextTribId = 7;
 let pa_detProcId  = null, pa_despRelId = null, pa_editRelId = null;
 let pa_intTipo    = 'juridica', pa_intProcIdAtual = null;
@@ -6740,8 +6741,12 @@ function pa_coletarSocios() {
 }
 
 function pa_salvarIntimacao() {
+  if(pa_salvando_intimacao) return; // previne double-click
   const nm = document.getElementById('int-nm').value.trim();
   if(!nm) { alert('Preencha o nome do contribuinte.'); return; }
+  pa_salvando_intimacao = true;
+  // Recalcular o próximo ID baseado em todas as intimações atuais (evita duplicação)
+  pa_nextIntId = pa_intimacoes.length ? Math.max(...pa_intimacoes.map(p=>p.id)) + 1 : 1;
   const procNum = document.getElementById('int-proc-num').value.trim();
   const procObj = pa_processos.find(x=>x.num===procNum);
   const int = {
@@ -6806,6 +6811,7 @@ function pa_salvarIntimacao() {
   if(pa_voltarParaDetalhe) {
     setTimeout(() => pa_voltarAoDetalhe(), 1500);
   }
+  setTimeout(() => { pa_salvando_intimacao = false; }, 1000);
 }
 
 function pa_renderIntimacoes() {
@@ -7123,20 +7129,8 @@ function pa_prevIntimacao() {
     debitoTipo: (document.querySelector('input[name="int-debito-tipo"]:checked')?.value || 'simples'),
     linhasAgrupado: (document.querySelector('input[name="int-debito-tipo"]:checked')?.value === 'agrupado') ? pa_coletarLinhasAgrupado() : [],
   };
+  // Prévia: apenas mostra o documento sem salvar no banco
   pa_intimacoes.push(int);
-  sbPost('pa_intimacoes', {
-    id:int.id, tipo:int.tipo, nm:int.nm, documento:int.doc,
-    inscricao:int.inscr, endereco:int.end, endnum:int.endnum,
-    complemento:int.comp, bairro:int.bairro, cidade:int.cidade,
-    uf:int.uf, cep:int.cep, socios:int.socios||[],
-    origem:int.origem, natureza:int.natureza, inscr_da:int.inscrDA,
-    livro:int.livro, folha:int.folha, dt_inscr:int.dtInscr,
-    proc_num:int.procNum, exercicio:int.exercicio, venc:int.venc,
-    vp:int.vp, cm:int.cm, multa:int.multa, juros:int.juros,
-    total:int.total, data:int.data, debito_tipo:int.debitoTipo||'simples',
-    linhas_agrupado:int.linhasAgrupado||[], proc_id:int.procId||null,
-    autor_login:pa_usuarioAtual?.login||''
-  }).catch(e=>console.warn('Erro salvar intimacao:',e));
   pa_prevIntimacaoById(0);
   pa_intimacoes.pop();
 }
