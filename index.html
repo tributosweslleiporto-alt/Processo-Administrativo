@@ -2089,11 +2089,45 @@ async function carregarDadosPA() {
   pa_nextFolhaId = pa_folhas.length     ? Math.max(...pa_folhas.map(p=>p.id)) + 1 : 1;
   pa_nextIntId   = pa_intimacoes.length ? Math.max(...pa_intimacoes.map(p=>p.id)) + 1 : 1;
   // Calcular próximos números sequenciais (para exibição)
+  // CORREÇÃO: usar campos corretos (num/numero) e pegar MAX em vez de length
   const ano = new Date().getFullYear();
-  const procsAno = pa_processos.filter(p => p.numero && p.numero.endsWith('/'+ano));
-  pa_nextProcNum = procsAno.length + 1;
-  const relsAno = pa_relatorios.filter(r => r.numero && r.numero.includes('/'+ano));
-  pa_nextRelNum = relsAno.length + 1;
+  // Processos: campo é 'num' (formato "0001/2026")
+  const procsAno = pa_processos
+    .filter(p => p.num && p.num.endsWith('/'+ano))
+    .map(p => parseInt(p.num.split('/')[0]) || 0);
+  pa_nextProcNum = procsAno.length ? Math.max(...procsAno) + 1 : 1;
+  // Relatórios: campo é 'num' (formato "REL-0001/2026")
+  const relsAno = pa_relatorios
+    .filter(r => r.num && r.num.includes('/'+ano))
+    .map(r => {
+      const m = r.num.match(/(\d+)\/\d+/);
+      return m ? parseInt(m[1]) : 0;
+    });
+  pa_nextRelNum = relsAno.length ? Math.max(...relsAno) + 1 : 1;
+}
+
+
+// ── Recalcula contadores sequenciais (chamado antes de criar processo/relatório) ──
+function pa_recalcularNumeros() {
+  const ano = new Date().getFullYear();
+  // Processos
+  const procsAno = pa_processos
+    .filter(p => p.num && p.num.endsWith('/'+ano))
+    .map(p => parseInt(p.num.split('/')[0]) || 0);
+  pa_nextProcNum = procsAno.length ? Math.max(...procsAno) + 1 : 1;
+  // Relatórios
+  const relsAno = pa_relatorios
+    .filter(r => r.num && r.num.includes('/'+ano))
+    .map(r => {
+      const m = r.num.match(/(\d+)\/\d+/);
+      return m ? parseInt(m[1]) : 0;
+    });
+  pa_nextRelNum = relsAno.length ? Math.max(...relsAno) + 1 : 1;
+  // IDs (também recalcular)
+  pa_nextProcId  = pa_processos.length  ? Math.max(...pa_processos.map(p=>p.id||0)) + 1 : 1;
+  pa_nextRelId   = pa_relatorios.length ? Math.max(...pa_relatorios.map(p=>p.id||0)) + 1 : 1;
+  pa_nextFolhaId = pa_folhas.length     ? Math.max(...pa_folhas.map(p=>p.id||0)) + 1 : 1;
+  pa_nextIntId   = pa_intimacoes.length ? Math.max(...pa_intimacoes.map(p=>p.id||0)) + 1 : 1;
 }
 
 async function iniciarApp() {
@@ -4863,7 +4897,7 @@ function pa_verDetalhe(id) {
 
 // ── NOVO PROCESSO ──────────────────────────────────────────────────────────
 function pa_initNovoProcesso() {
-  document.getElementById('np-num').value=String(pa_nextProcNum).padStart(4,'0')+'/'+new Date().getFullYear();
+  pa_recalcularNumeros(); document.getElementById('np-num').value=String(pa_nextProcNum).padStart(4,'0')+'/'+new Date().getFullYear();
   document.getElementById('np-dt').value=new Date().toISOString().slice(0,10);
   document.getElementById('np-at').value=pa_usuarioAtual?.nome||'';
   document.getElementById('np-ok').style.display='none';
@@ -5214,7 +5248,7 @@ function pa_verRelatorio(id) {
 function pa_initRelInd() {
   pa_editRelId = null;
   document.getElementById('ri-nm').value=''; document.getElementById('ri-doc').value=''; document.getElementById('ri-desc').value=''; document.getElementById('ri-conc').value=''; 
-  document.getElementById('ri-num').value=`REL-${String(pa_nextRelNum).padStart(4,'0')}/`+new Date().getFullYear();
+  pa_recalcularNumeros(); document.getElementById('ri-num').value=`REL-${String(pa_nextRelNum).padStart(4,'0')}/`+new Date().getFullYear();
   document.getElementById('ri-dt').value=new Date().toISOString().slice(0,10);
   document.getElementById('ri-fiscal').value=pa_usuarioAtual?.nome||'';
   const enc=document.getElementById('ri-enc');
@@ -5292,7 +5326,7 @@ function pa_enviarRelInd() {
 function pa_initRelCol() {
   pa_editRelId = null;
   document.getElementById('rc-desc').value=''; document.getElementById('rc-conc').value=''; document.getElementById('rc-interessado').value=''; document.getElementById('rc-cnpj').value='';
-  document.getElementById('rc-num').value=`REL-${String(pa_nextRelNum).padStart(4,'0')}/`+new Date().getFullYear();
+  pa_recalcularNumeros(); document.getElementById('rc-num').value=`REL-${String(pa_nextRelNum).padStart(4,'0')}/`+new Date().getFullYear();
   document.getElementById('rc-dt').value=new Date().toISOString().slice(0,10);
   document.getElementById('rc-fiscal').value=pa_usuarioAtual?.nome||'';
   const enc=document.getElementById('rc-enc');
@@ -6476,8 +6510,10 @@ function pa_processarBoleto(input) {
   const reader = new FileReader();
   reader.onload = function(e) {
     function runPdfExtract() {
-      // Usar fake worker para evitar bloqueio file:// do Chrome
-      pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+      // Configurar worker do PDF.js (versão correta da biblioteca)
+      if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      }
       const typedarray = new Uint8Array(e.target.result);
       pdfjsLib.getDocument({data: typedarray, useWorkerFetch: false, isEvalSupported: false, useSystemFonts: true}).promise.then(function(pdf) {
         const pagePromises = [];
