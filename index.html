@@ -4478,10 +4478,11 @@ async function abrirNotif(notifId, protocoloId) {
   const pid = parseInt(protocoloId);
   if (pid) {
     protocoloAtualId = pid; abrirDetalhes(pid);
-  } else if (n && n.titulo) {
+  } else if (n && (n.titulo || n.descricao)) {
     // Notificações do sistema de processos administrativos
-    // Detecta o número do relatório no título e navega inteligentemente
-    const matchRel = n.titulo.match(/REL-\d{4}\/\d{4}/);
+    // Detecta o número do relatório no título OU descrição e navega inteligentemente
+    const textoCompleto = (n.titulo||'') + ' ' + (n.descricao||'');
+    const matchRel = textoCompleto.match(/REL-\d{4}\/\d{4}/);
     if (matchRel) {
       const rel = pa_relatorios.find(r => r.num === matchRel[0]);
       if (rel) {
@@ -4489,6 +4490,9 @@ async function abrirNotif(notifId, protocoloId) {
       } else {
         navegarPara('notificacoesPa');
       }
+    } else if (typeof pa_usuarioAtual !== 'undefined' && pa_usuarioAtual) {
+      // Não conseguiu detectar o número — só leva para a tela de notificações PA
+      navegarPara('notificacoesPa');
     }
   }
 }
