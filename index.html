@@ -1477,6 +1477,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
           <option value="diretor">Diretor do Setor</option>
           <option value="admin">Administrador do Sistema</option>
         </select>
+          <div class="form-group" style="margin-top:8px"><label>Matrícula / Decreto</label><input type="text" id="uMatricula" placeholder="Ex: 230118 ou Decreto nº 248..." style="width:100%"></div>
       </div>
     </div>
     <div class="modal-foot">
@@ -1678,6 +1679,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
           <option value="diretor">Diretor do Setor</option>
           <option value="admin">Administrador do Sistema</option>
         </select></div>
+          <div class="form-group" style="margin-top:8px"><label>Matrícula / Decreto</label><input type="text" id="editMatricula" placeholder="Ex: 230118 ou Decreto nº 248..." style="width:100%"></div>
     </div>
     <div style="padding:1rem 1.5rem;border-top:1px solid #eee;display:flex;gap:10px;justify-content:flex-end;">
       <button class="btn btn-outline" onclick="fecharModalEditarUsuario()">Cancelar</button>
@@ -1806,7 +1808,8 @@ function paUsuarios() {
     id: u.id,
     nome: u.nome,
     login: u.login,
-    cargo: u.cargo || '',
+    cargo: u.cargo,
+      matricula: u.matricula || '' || '',
     perfil: u.perfil || 'fiscal',
     perfilId: pa_perfis.find(p => p.nome.toLowerCase() === (u.perfil||'fiscal').toLowerCase())?.id || 2,
     iniciais: u.nome.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase(),
@@ -2497,7 +2500,8 @@ function rowToProtocolo(row, historico=[], pareceres=[]) {
 }
 
 function rowToUsuario(row) {
-  return { id: row.id, nome: row.nome, login: row.login, senha: row.senha, perfil: row.perfil, cargo: row.cargo, cor: row.cor || '#0a3d62', ativo: row.ativo !== false };
+  return { id: row.id, nome: row.nome, login: row.login, senha: row.senha, perfil: row.perfil, cargo: row.cargo,
+    matricula: row.matricula || '', cor: row.cor || '#0a3d62', ativo: row.ativo !== false };
 }
 
 // ═══════════════════════════════════════════════════════
@@ -3465,6 +3469,7 @@ function abrirEditarUsuario(id) {
   document.getElementById('editSenha').value = '';
   document.getElementById('editSenhaConf').value = '';
   document.getElementById('editPerfil').value = u.perfil;
+  if (document.getElementById('editMatricula')) document.getElementById('editMatricula').value = u.matricula || '';
   document.getElementById('pa-m-title').textContent = 'Editar — ' + u.nome;
   const el = document.getElementById('modalEditarUsuario');
   el.style.display = 'flex';
@@ -4979,6 +4984,7 @@ function pa_salvarFolha() {
   const _assinatura = {
     nome: pa_usuarioAtual?.nome || '',
     cargo: pa_usuarioAtual?.cargo || '',
+    matricula: pa_usuarioAtual?.matricula || '',
     hora: _ag.toTimeString().slice(0,5),
     hash: btoa((pa_usuarioAtual?.nome||'') + _ag.toISOString() + Math.random()).slice(0,16).toUpperCase()
   };
@@ -5210,12 +5216,15 @@ function pa_gerarHtmlRelatorio(r) {
     '<div style="border:1px solid #ccc;border-radius:3px;padding:10px 12px;font-size:12px;line-height:1.8;margin-bottom:14px">'+r.desc+'</div>' +
     '<div style="font-weight:700;font-size:12px;margin-bottom:6px;text-transform:uppercase">Conclusão</div>' +
     '<div style="border:1px solid #ccc;border-radius:3px;padding:10px 12px;font-size:12px;line-height:1.8;margin-bottom:14px">'+(r.conc||'—')+'</div>' +
-    // Assinatura eletrônica do fiscal
+    // DESPACHO primeiro
+    despachoHtml +
+    // ASSINATURAS depois — sempre na parte de baixo após tudo
     (r.assinFiscal ? `<div style="margin-top:18px;display:flex;gap:16px;flex-wrap:wrap">
       <div style="flex:1;min-width:220px;border:1px solid #ccc;border-radius:4px;padding:10px 14px;background:#f9f9f9">
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#555;margin-bottom:6px">Assinatura Eletrônica</div>
         <div style="font-size:12px;font-weight:600">${r.assinFiscal.nome}</div>
         <div style="font-size:11px;color:#666">${r.assinFiscal.cargo}</div>
+        ${r.assinFiscal.matricula ? `<div style="font-size:11px;color:#666">${r.assinFiscal.matricula}</div>` : ''}
         <div style="font-size:10px;color:#888;margin-top:4px">${pa_fd(r.assinFiscal.data)} às ${r.assinFiscal.hora}</div>
         <div style="font-size:9px;color:#aaa;margin-top:3px;font-family:monospace">Cód: ${r.assinFiscal.hash}</div>
       </div>
@@ -5223,11 +5232,12 @@ function pa_gerarHtmlRelatorio(r) {
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#2a4538;margin-bottom:6px">Assinatura Eletrônica</div>
         <div style="font-size:12px;font-weight:600">${r.despacho.assin.nome}</div>
         <div style="font-size:11px;color:#3d6b55">${r.despacho.assin.cargo}</div>
+        ${r.despacho.assin.matricula ? `<div style="font-size:11px;color:#3d6b55">${r.despacho.assin.matricula}</div>` : ''}
         <div style="font-size:10px;color:#555;margin-top:4px">${pa_fd(r.despacho.assin.data)} às ${r.despacho.assin.hora}</div>
         <div style="font-size:9px;color:#888;margin-top:3px;font-family:monospace">Cód: ${r.despacho.assin.hash}</div>
       </div>` : ''}
     </div>` : '') +
-    despachoHtml + btnProc +
+    btnProc +
     '</div>';
 }
 
@@ -5255,6 +5265,7 @@ function pa_enviarRelInd() {
   const assinFiscal = {
     nome: pa_usuarioAtual.nome,
     cargo: pa_usuarioAtual.cargo,
+    matricula: pa_usuarioAtual.matricula || '',
     data: agora.toISOString().slice(0,10),
     hora: agora.toTimeString().slice(0,5),
     hash: btoa(pa_usuarioAtual.nome + agora.toISOString() + Math.random()).slice(0,16).toUpperCase()
@@ -5371,6 +5382,7 @@ function pa_enviarRelCol() {
   const assinFiscal = {
     nome: pa_usuarioAtual.nome,
     cargo: pa_usuarioAtual.cargo,
+    matricula: pa_usuarioAtual.matricula || '',
     data: agora.toISOString().slice(0,10),
     hora: agora.toTimeString().slice(0,5),
     hash: btoa(pa_usuarioAtual.nome + agora.toISOString() + Math.random()).slice(0,16).toUpperCase()
@@ -5733,9 +5745,10 @@ async function salvarNovoUsuarioConfig() {
     const cores = ['#0a3d62','#16a34a','#dc2626','#7c3aed','#d97706','#0891b2','#be185d','#4b5563'];
     const cor = cores[novoId % cores.length];
 
+    const matricula = document.getElementById('uMatricula')?.value?.trim() || '';
     const novoUser = {
       id: novoId, nome, login, senha,
-      perfil, cargo, cor, ativo: true
+      perfil, cargo, cor, ativo: true, matricula
     };
     const res = await _sb.from('usuarios').insert(novoUser).select();
     if (res.error) throw new Error(res.error.message);
@@ -5747,6 +5760,7 @@ async function salvarNovoUsuarioConfig() {
     document.getElementById('uNome').value = '';
     document.getElementById('uLogin').value = '';
     document.getElementById('uSenha').value = '';
+    if (document.getElementById('uMatricula')) document.getElementById('uMatricula').value = '';
     if (document.getElementById('uCargo')) document.getElementById('uCargo').value = '';
 
     hideLoading();
@@ -5781,6 +5795,7 @@ function pa_abrirModalUsuario(id) {
           <select id="mu-pf">${pa_perfis.map(p=>`<option value="${p.id}" ${u?.perfilId===p.id?'selected':''}>${p.nome}</option>`).join('')}</select>
         </div>
         <input type="hidden" id="mu-cor" value="#ffffff">
+        <div class="fgg full"><label>Matrícula / Decreto (aparece nas assinaturas)</label><input type="text" id="mu-mat" value="${(u?.matricula||'').replace(/"/g,'&quot;')}" placeholder="Ex: 230118 ou Decreto nº 248 de 01/08/2025" style="width:100%"></div>
         <div class="fgg full"><label>Cor do badge (identidade visual)</label><input type="color" id="mu-bg" value="${pa_normalizarHex(u?.bg||u?.cor, '#1A3A5C')}" style="height:36px;padding:2px;width:140px"></div>
       </div>
       <div style="display:flex;gap:8px">
@@ -5817,7 +5832,8 @@ async function pa_salvarUsuario(id) {
     if(id) {
       // EDITAR — apenas campos que existem na tabela: nome, cargo, perfil, cor
       const r = await sbPatch('usuarios', id, {
-        nome: nm, cargo: cg, perfil: perfilStr, cor: bg
+        nome: nm, cargo: cg, perfil: perfilStr, cor: bg,
+        matricula: document.getElementById('mu-mat')?.value?.trim() || ''
       });
       if(r === null) { alert('Erro ao salvar no banco. Veja o console.'); return; }
       // Atualizar memória (DB.usuarios é a fonte real)
