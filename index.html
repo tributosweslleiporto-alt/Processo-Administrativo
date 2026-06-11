@@ -2068,19 +2068,7 @@ async function carregarDadosPA() {
     sbGet('pa_intimacoes','select=*&limit=500'),
   ]);
   pa_processos   = (procs   || []).map(rowToProcesso);
-  // Auto-reparo: vincular relatórios autorizados que perderam o procId em sessões antigas
-  setTimeout(() => {
-    if (typeof pa_relatorios !== 'undefined' && pa_relatorios.length) {
-      pa_relatorios.filter(r => r.status === 'autorizado' && !r.procId).forEach(r => {
-        const proc = pa_relativaProcVinculado(r);
-        if (proc) {
-          r.procId = proc.id;
-          sbPatch('pa_relatorios', r.id, { proc_id: proc.id })
-            .catch(e => console.warn('Erro reparo vínculo:', e));
-        }
-      });
-    }
-  }, 500);
+  // (auto-reparo automático removido — vínculo agora é criado apenas via ação manual do usuário)
   pa_relatorios  = (rels    || []).map(rowToRelatorio);
   pa_folhas      = (folhas  || []).map(rowToFolha);
   pa_intimacoes  = (ints    || []).map(rowToIntimacao);
