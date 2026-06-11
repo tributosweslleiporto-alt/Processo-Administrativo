@@ -5557,8 +5557,15 @@ function pa_relativaProcVinculado(r) {
   const docNorm = (r.doc||'').replace(/\D/g,'');
   const nomeNorm = (r.nm||'').trim().toLowerCase();
   if(!nomeNorm) return null;
-  // Buscar processo com mesmo nome E (documento ou autor)
+  // IDs de processos que já estão vinculados a OUTROS relatórios (não devem ser usados)
+  const procsJaVinculados = new Set(
+    pa_relatorios
+      .filter(x => x.procId && x.id !== r.id)
+      .map(x => x.procId)
+  );
+  // Buscar processo livre com mesmo nome E (documento ou autor)
   const matches = pa_processos.filter(p => {
+    if (procsJaVinculados.has(p.id)) return false; // ignora se já está com outro relatório
     const pNome = (p.nome||'').trim().toLowerCase();
     const pDoc = (p.doc||'').replace(/\D/g,'');
     const mesmoAutor = (r.autorLogin && p.autorLogin && r.autorLogin === p.autorLogin) ||
@@ -5656,18 +5663,19 @@ function pa_abrirRelParaCorrigir(rid) {
 }
 
 function pa_irParaRelatorio(rid) {
-  navegarPara('notificacoesPa');
-  setTimeout(() => {
-    const r = pa_relatorios.find(x => x.id === rid);
-    if (!r) return;
-    if (r.status === 'complementar' && r.autorLogin === pa_usuarioAtual?.login) {
-      pa_abrirRelParaCorrigir(rid);
-    } else if (r.status === 'aguardando' && r.encParaLogin === pa_usuarioAtual?.login) {
-      pa_abrirDespacho(rid);
-    } else {
-      pa_verRelatorio(rid);
-    }
-  }, 150);
+  const r = pa_relatorios.find(x => x.id === rid);
+  if (!r) { toast('Relatório não encontrado.'); return; }
+  // Decide ação conforme contexto do usuário
+  if (r.status === 'complementar' && r.autorLogin === pa_usuarioAtual?.login) {
+    navegarPara('notificacoesPa');
+    setTimeout(() => pa_abrirRelParaCorrigir(rid), 150);
+  } else if (r.status === 'aguardando' && r.encParaLogin === pa_usuarioAtual?.login) {
+    navegarPara('notificacoesPa');
+    setTimeout(() => pa_abrirDespacho(rid), 150);
+  } else {
+    // Para qualquer outro caso (gerente, admin, espectador), abre o relatório direto
+    pa_verRelatorio(rid);
+  }
 }
 
 function pa_reencaminharRel(rid) {
