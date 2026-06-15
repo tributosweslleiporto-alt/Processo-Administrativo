@@ -4823,7 +4823,7 @@ function pa_renderPainel() {
   const _adm = isAdmin();
   document.getElementById('st-proc').textContent = pa_processos.length;
   document.getElementById('st-and').textContent = pa_processos.filter(p=>p.status==='em-andamento').length;
-  document.getElementById('st-rel').textContent = pa_relatorios.length;
+  document.getElementById('st-rel').textContent = pa_relatorios.filter(r => !r.procId && r.status !== 'rejeitado').length;
   document.getElementById('st-desp').textContent = pa_relatorios.filter(r=>r.status==='aguardando').length;
   document.getElementById('painel-procs').innerHTML = [...pa_processos].sort((a,b)=>b.id-a.id).slice(0,5).map(p=>`<tr style="cursor:pointer" onclick="pa_verDetalhe(${p.id})" title="Abrir processo ${p.num}"><td style="font-weight:500;white-space:nowrap">${p.num}</td><td>${p.nome}</td><td>${pa_bdg(p.status)}</td></tr>`).join('');
   const notifs = [];
