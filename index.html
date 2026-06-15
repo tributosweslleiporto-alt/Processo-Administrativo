@@ -5511,7 +5511,8 @@ function pa_abrirDespacho(rid) {
       <div><span style="color:var(--pa-text2)">Tipo:</span> ${r.tipo==='coletivo'?`<span class="badge b-new">Coletivo</span>`:'Individual'}</div>
       ${r.tipo==='individual'?`<div><span style="color:var(--pa-text2)">Interessado:</span> <strong>${r.nm}</strong></div>`:''}
     </div>
-    <div style="font-size:13px;line-height:1.7"><strong>Fatos:</strong> ${r.desc}</div>
+    <div style="font-size:13px;line-height:1.7;margin-bottom:8px"><strong>Fatos:</strong> ${r.desc}</div>
+    ${r.conc?`<div style="font-size:13px;line-height:1.7;margin-top:8px;padding-top:8px;border-top:1px solid #e5e5e5"><strong>Conclusão:</strong> ${r.conc}</div>`:''}
     ${empresasHtml}`;
   const texto = r.tipo==='coletivo'
     ? `Ciente da informação prestada. Conferidos os dados dos débitos relacionados e não havendo pendência aparente, autorizo a abertura do processo administrativo coletivo para inscrição dos ${r.empresas.length} devedores listados em dívida ativa.`
