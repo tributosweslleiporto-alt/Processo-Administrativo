@@ -1663,7 +1663,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
       <input type="hidden" id="editUserId">
       <div class="field" style="margin-bottom:12px;"><label>Nome Completo *</label><input type="text" id="editNome" placeholder="Nome do servidor"></div>
       <div class="field" style="margin-bottom:12px;"><label>Cargo Real</label><input type="text" id="editCargo" placeholder="Ex: Fiscal Tributário, Supervisor..."></div>
-      <div class="field" style="margin-bottom:12px;"><label>Login</label><input type="text" id="editLogin" readonly style="background:#f5f7fa;color:#666;"></div>
+      <div class="field" style="margin-bottom:12px;"><label>Login <span style="font-size:10px;color:#aaa;">(cuidado: alterar pode quebrar histórico se não atualizado em outras tabelas)</span></label><input type="text" id="editLogin"></div>
       <div class="field" style="margin-bottom:12px;"><label>Nova Senha <span style="font-size:10px;color:#aaa;">(deixe em branco para manter)</span></label>
         <div style="position:relative;"><input type="password" id="editSenha" placeholder="Mínimo 4 caracteres" style="width:100%;padding-right:38px;">
           <button onclick="toggleSenhaModal('editSenha',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:14px;color:#aaa;">👁</button></div></div>
@@ -3486,20 +3486,32 @@ function fecharModalEditarUsuario() {
 async function salvarEdicaoUsuario() {
   const id = parseInt(document.getElementById('editUserId').value);
   const nome = document.getElementById('editNome').value.trim();
+  const cargo = document.getElementById('editCargo')?.value?.trim() || '';
+  const loginNovo = document.getElementById('editLogin').value.trim().toLowerCase();
   const senha = document.getElementById('editSenha').value;
   const conf = document.getElementById('editSenhaConf').value;
   const perfil = document.getElementById('editPerfil').value;
+  const matricula = document.getElementById('editMatricula')?.value?.trim() || '';
   if (!nome) { alert('Preencha o nome.'); return; }
+  if (!loginNovo) { alert('Preencha o login.'); return; }
   if (senha && senha !== conf) { alert('Senhas não conferem.'); return; }
   const u = DB.usuarios.find(x => x.id === id);
   if (!u) return;
-  const updates = { nome, perfil };
+  // Verificar duplicidade de login (se mudou)
+  const loginAntigo = u.login;
+  if (loginNovo !== loginAntigo) {
+    const dup = DB.usuarios.find(x => x.id !== id && x.login === loginNovo);
+    if (dup) { alert('Já existe outro usuário com este login. Escolha outro.'); return; }
+    if (!confirm(`Alterar login de "${loginAntigo}" para "${loginNovo}"?\n\nAtenção: o usuário precisará entrar com o novo login. Confirma?`)) return;
+  }
+  const updates = { nome, cargo, login: loginNovo, perfil, matricula };
   if (senha) updates.senha = senha;
-  u.nome = nome; u.perfil = perfil;
+  u.nome = nome; u.cargo = cargo; u.login = loginNovo; u.perfil = perfil; u.matricula = matricula;
   if (senha) u.senha = senha;
   showLoading('Salvando usuário...');
   try {
     await _sbPatchWhere_sdk('usuarios', 'id', id, updates);
+    pa_auditar('EDITAR', {tabela:'usuarios', id:id, num:loginNovo, detalhes:`Usuário ${nome} atualizado${loginNovo!==loginAntigo?' (login: '+loginAntigo+' → '+loginNovo+')':''}`});
     hideLoading();
     fecharModalEditarUsuario();
     renderConfiguracoes();
