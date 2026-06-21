@@ -971,11 +971,11 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
           <div class="modal-header"><h3 style="margin:0">📎 Anexar Documento</h3><button onclick="fecharModalAnexo()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888">×</button></div>
           <div style="padding:20px">
             <div style="background:#fff8e1;border:1px solid #f59e0b;border-radius:6px;padding:10px;margin-bottom:14px;font-size:12px;color:#78350f">
-              <strong>Regras:</strong> Tamanho máx. 3 MB. Tipos permitidos: PDF, JPG, PNG, DOC, DOCX, XLS, XLSX.
+              <strong>Regras:</strong> Tamanho máx. 1 MB. Tipos permitidos: PDF, DOC, DOCX, XLS, XLSX. Comprima PDFs grandes antes (use smallpdf.com ou ilovepdf.com).
             </div>
             <div style="margin-bottom:12px">
               <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Arquivo *</label>
-              <input type="file" id="anexoFile" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx" style="width:100%">
+              <input type="file" id="anexoFile" accept=".pdf,.doc,.docx,.xls,.xlsx" style="width:100%">
               <div id="anexoFileInfo" style="font-size:11px;color:#666;margin-top:4px"></div>
             </div>
             <div style="margin-bottom:12px">
@@ -4312,6 +4312,13 @@ async function exportarBackup() {
   showLoading('Gerando backup completo...');
   try {
     // Fetch all data from Supabase
+    // Buscar anexos do Sistema A
+    let anexosA = [];
+    try {
+      const r = await _sb.from('anexos').select('*').eq('tabela_origem', 'protocolos');
+      if (!r.error) anexosA = r.data || [];
+    } catch(e) { console.warn('Anexos não disponíveis:', e); }
+
     const [protocolos, historico, pareceres, usuarios, notificacoes, sequencial, assuntos, feriados] = await Promise.all([
       _sbGet_sdk('protocolos', 'order=data_hora.desc&limit=5000'),
       _sbGet_sdk('historico',  'order=data.asc&limit=50000'),
@@ -4324,11 +4331,12 @@ async function exportarBackup() {
     ]);
 
     const backup = {
-      versao:    '1.0',
+      versao:    '1.1',
       sistema:   'Sistema de Protocolos Tributários — Prefeitura de Caetité',
       geradoEm:  new Date().toLocaleString('pt-BR', {timeZone:'America/Sao_Paulo'}),
       geradoPor: usuarioLogado.nome,
-      dados: { protocolos, historico, pareceres, usuarios, notificacoes, sequencial, assuntos, feriados }
+      observacao: 'Anexos: backup contém apenas METADADOS (nomes, descrições, autores). Os arquivos físicos ficam no Supabase Storage (bucket anexos).',
+      dados: { protocolos, historico, pareceres, usuarios, notificacoes, sequencial, assuntos, feriados, anexos: anexosA }
     };
 
     const json    = JSON.stringify(backup, null, 2);
@@ -6231,6 +6239,13 @@ async function pa_exportarBackup() {
   try {
     showLoading && showLoading('Gerando backup completo...');
     // Buscar tudo direto do Supabase para garantir consistência
+    // Buscar anexos do Sistema B (pa_processos)
+    let anexosB = [];
+    try {
+      const r = await _sb.from('anexos').select('*').eq('tabela_origem', 'pa_processos');
+      if (!r.error) anexosB = r.data || [];
+    } catch(e) { console.warn('Anexos não disponíveis:', e); }
+
     const [procs, rels, folhas, intimacoes, usuariosRows] = await Promise.all([
       sbGet('pa_processos', 'select=*&limit=10000'),
       sbGet('pa_relatorios', 'select=*&limit=10000'),
@@ -6239,14 +6254,15 @@ async function pa_exportarBackup() {
       sbGet('usuarios', 'select=*&limit=1000')
     ]);
     const dados = {
-      versao: '6.0',
+      versao: '6.1',
       sistema: 'Sistema de Processos Administrativos',
       geradoEm: new Date().toISOString(),
       geradoPor: pa_usuarioAtual?.nome || '—',
+      observacao: 'Anexos: backup contém apenas METADADOS. Os arquivos físicos ficam no Supabase Storage (bucket anexos).',
       pa_nextProcId, pa_nextProcNum, pa_nextRelId, pa_nextRelNum,
       pa_nextFolhaId, pa_nextPerfId, pa_nextTribId,
       pa_perfis, pa_tributos,
-      tabelas: { pa_processos: procs||[], pa_relatorios: rels||[], pa_folhas: folhas||[], pa_intimacoes: intimacoes||[], usuarios: usuariosRows||[] }
+      tabelas: { pa_processos: procs||[], pa_relatorios: rels||[], pa_folhas: folhas||[], pa_intimacoes: intimacoes||[], usuarios: usuariosRows||[], anexos: anexosB }
     };
     const json = JSON.stringify(dados, null, 2);
     const blob = new Blob([json], {type:'application/json'});
@@ -6258,7 +6274,7 @@ async function pa_exportarBackup() {
     a.click();
     URL.revokeObjectURL(url);
     hideLoading && hideLoading();
-    toast(`✅ Backup gerado: ${procs?.length||0} processos, ${rels?.length||0} relatórios, ${folhas?.length||0} folhas, ${intimacoes?.length||0} intimações.`);
+    toast(`✅ Backup gerado: ${procs?.length||0} processos, ${rels?.length||0} relatórios, ${folhas?.length||0} folhas, ${intimacoes?.length||0} intimações, ${anexosB?.length||0} anexos (metadados).`);
   } catch(e) {
     hideLoading && hideLoading();
     alert('Erro ao gerar backup: ' + e.message);
@@ -7288,10 +7304,9 @@ if (typeof pdfjsLib !== 'undefined') {
 // ═══════════════════════════════════════════════════════════════
 // ANEXOS — Upload, listagem, download e exclusão
 // ═══════════════════════════════════════════════════════════════
-const ANEXO_TAMANHO_MAX = 3 * 1024 * 1024; // 3 MB
+const ANEXO_TAMANHO_MAX = 1 * 1024 * 1024; // 1 MB
 const ANEXO_TIPOS_PERMITIDOS = [
   'application/pdf',
-  'image/jpeg', 'image/jpg', 'image/png',
   'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/vnd.ms-excel',
@@ -7316,8 +7331,8 @@ function abrirModalAnexo(tabela, registroId) {
     const tamanhoMB = (f.size / 1024 / 1024).toFixed(2);
     const info = document.getElementById('anexoFileInfo');
     if (f.size > ANEXO_TAMANHO_MAX) {
-      info.innerHTML = '<span style="color:#dc2626">⚠ Arquivo muito grande: ' + tamanhoMB + ' MB (máximo 3 MB)</span>';
-    } else if (!ANEXO_TIPOS_PERMITIDOS.includes(f.type) && !f.name.match(/\.(pdf|jpg|jpeg|png|doc|docx|xls|xlsx)$/i)) {
+      info.innerHTML = '<span style="color:#dc2626">⚠ Arquivo muito grande: ' + tamanhoMB + ' MB (máximo 1 MB). Comprima o arquivo antes em smallpdf.com ou ilovepdf.com</span>';
+    } else if (!ANEXO_TIPOS_PERMITIDOS.includes(f.type) && !f.name.match(/\.(pdf|doc|docx|xls|xlsx)$/i)) {
       info.innerHTML = '<span style="color:#dc2626">⚠ Tipo não permitido: ' + f.type + '</span>';
     } else {
       info.innerHTML = '<span style="color:#16a34a">✓ ' + f.name + ' (' + tamanhoMB + ' MB)</span>';
@@ -7336,12 +7351,12 @@ async function enviarAnexo() {
   const file = document.getElementById('anexoFile').files[0];
   if (!file) { alert('Selecione um arquivo.'); return; }
   if (file.size > ANEXO_TAMANHO_MAX) {
-    alert('Arquivo muito grande. Máximo permitido: 3 MB.');
+    alert('Arquivo muito grande. Máximo permitido: 1 MB.\n\nDica: comprima o PDF em smallpdf.com ou ilovepdf.com antes de anexar.');
     return;
   }
   const extOK = file.name.match(/\.(pdf|jpg|jpeg|png|doc|docx|xls|xlsx)$/i);
   if (!extOK) {
-    alert('Tipo de arquivo não permitido. Use PDF, JPG, PNG, DOC, DOCX, XLS ou XLSX.');
+    alert('Tipo de arquivo não permitido. Use PDF, DOC, DOCX, XLS ou XLSX.');
     return;
   }
   const usuario = (typeof pa_usuarioAtual !== 'undefined' && pa_usuarioAtual) ? pa_usuarioAtual : usuarioLogado;
@@ -7418,7 +7433,6 @@ function formatarTamanho(bytes) {
 function iconePorTipo(nome) {
   const ext = (nome.match(/\.(\w+)$/) || [])[1]?.toLowerCase();
   if (ext === 'pdf') return '📕';
-  if (['jpg','jpeg','png'].includes(ext)) return '🖼️';
   if (['doc','docx'].includes(ext)) return '📘';
   if (['xls','xlsx'].includes(ext)) return '📗';
   return '📄';
