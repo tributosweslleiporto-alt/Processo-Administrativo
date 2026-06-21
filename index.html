@@ -956,6 +956,41 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
         </div>
         <div class="card"><div class="card-title">Folhas de informação</div><div id="det-folhas"></div></div>
       <div id="det-int-container"></div>
+      <div class="card" id="det-anexos-card">
+        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+          <span>📎 Documentos Anexos</span>
+          <button class="btn btn-p btn-sm" onclick="abrirModalAnexo('pa_processos', pa_detProcId)">+ Anexar documento</button>
+        </div>
+        <div id="det-anexos"></div>
+      </div>
+      </div>
+
+      <!-- MODAL ANEXO -->
+      <div id="modalAnexo" class="modal" style="display:none">
+        <div class="modal-content" style="max-width:520px">
+          <div class="modal-header"><h3 style="margin:0">📎 Anexar Documento</h3><button onclick="fecharModalAnexo()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888">×</button></div>
+          <div style="padding:20px">
+            <div style="background:#fff8e1;border:1px solid #f59e0b;border-radius:6px;padding:10px;margin-bottom:14px;font-size:12px;color:#78350f">
+              <strong>Regras:</strong> Tamanho máx. 3 MB. Tipos permitidos: PDF, JPG, PNG, DOC, DOCX, XLS, XLSX.
+            </div>
+            <div style="margin-bottom:12px">
+              <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Arquivo *</label>
+              <input type="file" id="anexoFile" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx" style="width:100%">
+              <div id="anexoFileInfo" style="font-size:11px;color:#666;margin-top:4px"></div>
+            </div>
+            <div style="margin-bottom:12px">
+              <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Descrição (opcional)</label>
+              <input type="text" id="anexoDesc" placeholder="Ex: CDA nº 001/2026, AR da intimação, comprovante de pagamento..." style="width:100%">
+            </div>
+            <input type="hidden" id="anexoTabela">
+            <input type="hidden" id="anexoRegistroId">
+            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px">
+              <button class="btn btn-g btn-sm" onclick="fecharModalAnexo()">Cancelar</button>
+              <button class="btn btn-p btn-sm" id="btnEnviarAnexo" onclick="enviarAnexo()">📤 Enviar</button>
+            </div>
+            <div id="anexoProgresso" style="display:none;margin-top:12px;font-size:12px;color:#0a3d62"></div>
+          </div>
+        </div>
       </div>
 
       <!-- NOVO PROCESSO -->
@@ -1410,7 +1445,15 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
       <h3 id="modalNumero">Protocolo</h3>
       <button class="modal-close" onclick="fecharModal('modalDetalhes')">×</button>
     </div>
-    <div class="modal-body" id="modalDetalhesBody"></div>
+    <div class="modal-body" id="modalDetalhesBody">
+        <div id="protocolo-anexos-card" class="card" style="margin-top:14px;border:1px solid #e5e7eb;border-radius:8px;padding:14px;background:#fafbfc">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <h3 style="margin:0;font-size:14px;color:#0a3d62;font-weight:600">📎 Documentos Anexos</h3>
+            <button class="btn btn-primary btn-sm" onclick="abrirModalAnexo('protocolos', protocoloAtualId)" style="font-size:12px;padding:5px 10px">+ Anexar</button>
+          </div>
+          <div id="protocolo-anexos-lista"></div>
+        </div>
+      </div>
     <div class="modal-foot">
       <button class="btn btn-outline" onclick="imprimirComprovante()">🖨️ Imprimir Comprovante</button>
       <button class="btn btn-warning" onclick="verificarAcessoParecer(protocoloAtualId)" id="btnGerarParecer">📄 Gerar Parecer</button>
@@ -3106,6 +3149,8 @@ function abrirDetalhes(id) {
   }
 
   document.getElementById('modalDetalhes').classList.add('open');
+  // Carregar anexos do protocolo
+  if (typeof renderAnexosProtocolo === 'function') renderAnexosProtocolo(id);
 }
 
 // Identifica o responsável atual analisando o histórico de tramitação
@@ -4913,6 +4958,8 @@ function pa_verDetalhe(id) {
   const intContainer = document.getElementById('det-int-container');
   if(intContainer) intContainer.innerHTML = pa_renderIntimacoesDet(id);
   navegarPara('detalhe');
+  // Carregar anexos do processo
+  if (typeof renderAnexosPA === 'function') renderAnexosPA(id);
 }
 
 // ── NOVO PROCESSO ──────────────────────────────────────────────────────────
@@ -7235,6 +7282,223 @@ function pa_prevIntimacaoById(id) {
 // Configurar pdfjsLib para boletos
 if (typeof pdfjsLib !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// ANEXOS — Upload, listagem, download e exclusão
+// ═══════════════════════════════════════════════════════════════
+const ANEXO_TAMANHO_MAX = 3 * 1024 * 1024; // 3 MB
+const ANEXO_TIPOS_PERMITIDOS = [
+  'application/pdf',
+  'image/jpeg', 'image/jpg', 'image/png',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+];
+
+function abrirModalAnexo(tabela, registroId) {
+  if (!registroId) { alert('Selecione um registro primeiro.'); return; }
+  document.getElementById('anexoTabela').value = tabela;
+  document.getElementById('anexoRegistroId').value = registroId;
+  document.getElementById('anexoFile').value = '';
+  document.getElementById('anexoDesc').value = '';
+  document.getElementById('anexoFileInfo').textContent = '';
+  document.getElementById('anexoProgresso').style.display = 'none';
+  document.getElementById('btnEnviarAnexo').disabled = false;
+  document.getElementById('modalAnexo').style.display = 'flex';
+  // Listener para mostrar info do arquivo selecionado
+  const inp = document.getElementById('anexoFile');
+  inp.onchange = function() {
+    if (!inp.files || !inp.files[0]) return;
+    const f = inp.files[0];
+    const tamanhoMB = (f.size / 1024 / 1024).toFixed(2);
+    const info = document.getElementById('anexoFileInfo');
+    if (f.size > ANEXO_TAMANHO_MAX) {
+      info.innerHTML = '<span style="color:#dc2626">⚠ Arquivo muito grande: ' + tamanhoMB + ' MB (máximo 3 MB)</span>';
+    } else if (!ANEXO_TIPOS_PERMITIDOS.includes(f.type) && !f.name.match(/\.(pdf|jpg|jpeg|png|doc|docx|xls|xlsx)$/i)) {
+      info.innerHTML = '<span style="color:#dc2626">⚠ Tipo não permitido: ' + f.type + '</span>';
+    } else {
+      info.innerHTML = '<span style="color:#16a34a">✓ ' + f.name + ' (' + tamanhoMB + ' MB)</span>';
+    }
+  };
+}
+
+function fecharModalAnexo() {
+  document.getElementById('modalAnexo').style.display = 'none';
+}
+
+async function enviarAnexo() {
+  const tabela = document.getElementById('anexoTabela').value;
+  const registroId = parseInt(document.getElementById('anexoRegistroId').value);
+  const desc = document.getElementById('anexoDesc').value.trim();
+  const file = document.getElementById('anexoFile').files[0];
+  if (!file) { alert('Selecione um arquivo.'); return; }
+  if (file.size > ANEXO_TAMANHO_MAX) {
+    alert('Arquivo muito grande. Máximo permitido: 3 MB.');
+    return;
+  }
+  const extOK = file.name.match(/\.(pdf|jpg|jpeg|png|doc|docx|xls|xlsx)$/i);
+  if (!extOK) {
+    alert('Tipo de arquivo não permitido. Use PDF, JPG, PNG, DOC, DOCX, XLS ou XLSX.');
+    return;
+  }
+  const usuario = (typeof pa_usuarioAtual !== 'undefined' && pa_usuarioAtual) ? pa_usuarioAtual : usuarioLogado;
+  document.getElementById('btnEnviarAnexo').disabled = true;
+  const prog = document.getElementById('anexoProgresso');
+  prog.style.display = 'block';
+  prog.textContent = '⏳ Enviando arquivo...';
+
+  try {
+    // 1. Upload para Supabase Storage
+    const ts = Date.now();
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path = tabela + '/' + registroId + '/' + ts + '_' + safeName;
+    const { data: upData, error: upErr } = await _sb.storage.from('anexos').upload(path, file, { upsert: false });
+    if (upErr) throw upErr;
+
+    // 2. Inserir metadados na tabela anexos
+    const metadata = {
+      tabela_origem: tabela,
+      registro_id: registroId,
+      nome_arquivo: file.name,
+      tipo_mime: file.type || 'application/octet-stream',
+      tamanho_bytes: file.size,
+      storage_path: path,
+      descricao: desc,
+      autor_id: usuario?.id || null,
+      autor_login: usuario?.login || '',
+      autor_nome: usuario?.nome || ''
+    };
+    const { data: insData, error: insErr } = await _sb.from('anexos').insert(metadata).select();
+    if (insErr) {
+      // rollback do upload
+      await _sb.storage.from('anexos').remove([path]);
+      throw insErr;
+    }
+
+    pa_auditar && pa_auditar('CRIAR', {tabela:'anexos', id: insData?.[0]?.id, num: file.name, detalhes: 'Anexo enviado para ' + tabela + ' #' + registroId + (desc ? ' — ' + desc : '')});
+
+    prog.innerHTML = '<span style="color:#16a34a">✓ Documento enviado com sucesso!</span>';
+    setTimeout(() => {
+      fecharModalAnexo();
+      // Recarregar a lista
+      if (tabela === 'pa_processos') renderAnexosPA(registroId);
+      else if (tabela === 'protocolos') renderAnexosProtocolo(registroId);
+    }, 800);
+  } catch(e) {
+    prog.innerHTML = '<span style="color:#dc2626">❌ Erro: ' + (e.message || e) + '</span>';
+    document.getElementById('btnEnviarAnexo').disabled = false;
+  }
+}
+
+async function listarAnexos(tabela, registroId) {
+  try {
+    const { data, error } = await _sb.from('anexos')
+      .select('*')
+      .eq('tabela_origem', tabela)
+      .eq('registro_id', registroId)
+      .order('id', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  } catch(e) {
+    console.warn('Erro ao listar anexos:', e);
+    return [];
+  }
+}
+
+function formatarTamanho(bytes) {
+  if (!bytes) return '0 B';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/1024/1024).toFixed(2) + ' MB';
+}
+
+function iconePorTipo(nome) {
+  const ext = (nome.match(/\.(\w+)$/) || [])[1]?.toLowerCase();
+  if (ext === 'pdf') return '📕';
+  if (['jpg','jpeg','png'].includes(ext)) return '🖼️';
+  if (['doc','docx'].includes(ext)) return '📘';
+  if (['xls','xlsx'].includes(ext)) return '📗';
+  return '📄';
+}
+
+async function renderAnexosPA(registroId) {
+  const div = document.getElementById('det-anexos');
+  if (!div) return;
+  div.innerHTML = '<div style="color:#888;font-size:12px">Carregando anexos...</div>';
+  const anexos = await listarAnexos('pa_processos', registroId);
+  renderListaAnexos(div, anexos, 'pa_processos');
+}
+
+async function renderAnexosProtocolo(registroId) {
+  const div = document.getElementById('protocolo-anexos-lista');
+  if (!div) return;
+  div.innerHTML = '<div style="color:#888;font-size:12px">Carregando anexos...</div>';
+  const anexos = await listarAnexos('protocolos', registroId);
+  renderListaAnexos(div, anexos, 'protocolos');
+}
+
+function renderListaAnexos(div, anexos, tabela) {
+  if (!anexos.length) {
+    div.innerHTML = '<p style="color:#888;font-size:13px;margin:8px 0 0">Nenhum documento anexado.</p>';
+    return;
+  }
+  const usuario = (typeof pa_usuarioAtual !== 'undefined' && pa_usuarioAtual) ? pa_usuarioAtual : usuarioLogado;
+  const ehAdmin = (usuario?.perfil === 'admin') || (usuario?.perfilId === 'admin') || (typeof isAdmin === 'function' && isAdmin());
+  div.innerHTML = anexos.map(a => {
+    const podeExcluir = ehAdmin || a.autor_login === usuario?.login;
+    const dataFmt = a.created_at ? new Date(a.created_at).toLocaleString('pt-BR') : '';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;margin-bottom:6px;font-size:13px">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:20px">${iconePorTipo(a.nome_arquivo)}</span>
+          <div style="min-width:0;flex:1">
+            <div style="font-weight:600;color:#0a3d62;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.nome_arquivo}</div>
+            ${a.descricao ? `<div style="font-size:11px;color:#666;margin-top:1px">${a.descricao}</div>` : ''}
+            <div style="font-size:10px;color:#999;margin-top:2px">${formatarTamanho(a.tamanho_bytes)} · ${a.autor_nome || a.autor_login} · ${dataFmt}</div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:4px;flex-shrink:0;margin-left:8px">
+        <button class="btn btn-g btn-xs" onclick="baixarAnexo(${a.id})" title="Baixar/Visualizar">⬇️</button>
+        ${podeExcluir ? `<button class="btn btn-xs" style="background:#dc2626;color:#fff" onclick="excluirAnexo(${a.id}, '${tabela}', ${a.registro_id})" title="Excluir">🗑️</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function baixarAnexo(anexoId) {
+  try {
+    const { data: anexo, error } = await _sb.from('anexos').select('*').eq('id', anexoId).single();
+    if (error) throw error;
+    // Gerar URL pública/assinada
+    const { data: urlData, error: urlErr } = await _sb.storage.from('anexos').createSignedUrl(anexo.storage_path, 60);
+    if (urlErr) throw urlErr;
+    window.open(urlData.signedUrl, '_blank');
+  } catch(e) {
+    alert('Erro ao baixar anexo: ' + (e.message || e));
+  }
+}
+
+async function excluirAnexo(anexoId, tabela, registroId) {
+  if (!confirm('Excluir este documento anexo permanentemente? Esta ação não pode ser desfeita.')) return;
+  try {
+    const { data: anexo, error: errSel } = await _sb.from('anexos').select('*').eq('id', anexoId).single();
+    if (errSel) throw errSel;
+    // Remover do Storage
+    await _sb.storage.from('anexos').remove([anexo.storage_path]);
+    // Remover da tabela
+    const { error: errDel } = await _sb.from('anexos').delete().eq('id', anexoId);
+    if (errDel) throw errDel;
+    pa_auditar && pa_auditar('EXCLUIR', {tabela:'anexos', id:anexoId, num:anexo.nome_arquivo, detalhes:'Anexo removido de ' + tabela + ' #' + registroId});
+    // Recarregar lista
+    if (tabela === 'pa_processos') renderAnexosPA(registroId);
+    else if (tabela === 'protocolos') renderAnexosProtocolo(registroId);
+  } catch(e) {
+    alert('Erro ao excluir: ' + (e.message || e));
+  }
 }
 
 </script>
