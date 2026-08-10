@@ -619,7 +619,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
         <div class="card-body" style="padding:0;">
           <table id="tabelaRecentes">
             <thead><tr>
-              <th>Número</th><th>Requerente</th><th>Assunto</th><th>Origem</th><th>Situação</th><th>Prazo</th><th>Ações</th>
+              <th>Número</th><th>Data</th><th>Requerente</th><th>Inscrição Munic.</th><th>Assunto</th><th>Origem</th><th>Situação</th><th>Prazo</th><th>Ações</th>
             </tr></thead>
             <tbody id="bodyRecentes"></tbody>
           </table>
@@ -694,6 +694,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
                 <select id="fAssunto" onchange="atualizarPrazo()">
                   <option value="">Selecione...</option>
                 </select>
+                <div id="badgeLei" style="display:none;margin-top:6px;font-size:11px;padding:4px 10px;border-radius:12px;font-weight:600;text-align:center;"></div>
               </div>
               <div class="field">
                 <label>Prazo Legal (dias úteis)</label>
@@ -703,6 +704,23 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
                 <label>Data Prevista de Resposta</label>
                 <input type="text" id="fPrazoVista" readonly placeholder="Calculada ao selecionar o assunto">
                 <div id="avisoFeriado" style="display:none;background:#e8f4fd;border:1px solid #b8d8f0;border-radius:6px;padding:6px 10px;font-size:11px;color:#1a5276;margin-top:4px;">⚠ Prazo ajustado por feriado (Art. 261 LC 5/2025).</div>
+              </div>
+
+              <!-- CAMPOS EXTRAS PARA "OUTROS" — só aparecem quando o assunto selecionado é Outros -->
+              <div class="field form-full" id="wrapAssuntoCustom" style="display:none;background:#fffef5;border:1px solid #f5d76e;border-radius:8px;padding:12px;grid-column:1/-1;">
+                <div style="font-size:12px;font-weight:700;color:#8a6d3b;margin-bottom:8px;">
+                  📝 Detalhes específicos do assunto (obrigatório para "Outros")
+                </div>
+                <div class="form-grid" style="margin-top:6px;">
+                  <div class="field form-full">
+                    <label>Descrição do assunto *</label>
+                    <input type="text" id="fAssuntoCustom" placeholder="Ex: Requerimento de X — Portaria 45/2024" maxlength="200">
+                  </div>
+                  <div class="field">
+                    <label>Prazo legal (dias úteis) *</label>
+                    <input type="number" id="fPrazoCustom" min="1" max="365" placeholder="Ex: 30" oninput="atualizarPrazoCustom()">
+                  </div>
+                </div>
               </div>
               <div class="field">
                 <label>Referência / Inscrição</label>
@@ -721,6 +739,10 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
                 <textarea id="fDescricao" placeholder="Descreva o pedido com detalhes relevantes..."></textarea>
               </div>
             </div>
+          </div>
+          <div style="background:#eef6ff;border:1px solid #bcdcfc;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#1a5276;display:flex;align-items:center;gap:8px;">
+            <span style="font-size:16px">💡</span>
+            <span>Após registrar, você poderá anexar documentos (PDF, Word, Excel) na tela de detalhes deste protocolo.</span>
           </div>
           <div class="btn-row">
             <button class="btn btn-success" onclick="salvarProtocolo()">✓ Registrar Protocolo</button>
@@ -892,6 +914,53 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
           <div class="card-body" id="listaPrazos"></div>
         </div>
 
+        <div class="card">
+          <div class="card-head">
+            <h3>Modelos de Parecer <span style="background:#d4edda;color:#155724;font-size:10px;padding:2px 6px;border-radius:10px;margin-left:4px;font-weight:700;">EDITÁVEL</span></h3>
+            <span style="font-size:11px;color:#888;">32 modelos (16 LC 5/2025 + 16 LC 001/2001)</span>
+          </div>
+          <div class="card-body" id="listaModelosParecer" style="max-height:500px;overflow-y:auto"></div>
+        </div>
+
+      <!-- MODAL EDITAR MODELO DE PARECER -->
+      <div id="modalModeloParecer" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;padding:20px">
+        <div style="background:#fff;border-radius:12px;padding:20px;max-width:820px;width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #e5e7eb">
+            <div>
+              <h3 style="margin:0;color:#0a3d62;font-size:16px" id="mmpTitulo">Editar Modelo de Parecer</h3>
+              <p style="margin:4px 0 0;font-size:11px;color:#888" id="mmpSubtitulo"></p>
+            </div>
+            <button onclick="fecharModalModeloParecer()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888">×</button>
+          </div>
+          <div style="background:#fffbeb;border:1px solid #f5d76e;border-radius:6px;padding:8px 12px;font-size:11px;color:#78350f;margin-bottom:14px" id="mmpAviso"></div>
+          <div style="margin-bottom:12px">
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Relatório (usa {p.dataHora}, {p.nome}, etc.)</label>
+            <textarea id="mmpRelatorio" rows="4" style="width:100%;font-family:inherit;font-size:12px;padding:8px;border:1px solid #ddd;border-radius:6px"></textarea>
+          </div>
+          <div style="margin-bottom:12px">
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Fundamentação</label>
+            <textarea id="mmpFundamentacao" rows="8" style="width:100%;font-family:inherit;font-size:12px;padding:8px;border:1px solid #ddd;border-radius:6px"></textarea>
+          </div>
+          <div style="margin-bottom:12px">
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Análise</label>
+            <textarea id="mmpAnalise" rows="5" style="width:100%;font-family:inherit;font-size:12px;padding:8px;border:1px solid #ddd;border-radius:6px"></textarea>
+          </div>
+          <div style="margin-bottom:14px">
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Conclusão</label>
+            <textarea id="mmpConclusao" rows="4" style="width:100%;font-family:inherit;font-size:12px;padding:8px;border:1px solid #ddd;border-radius:6px"></textarea>
+          </div>
+          <input type="hidden" id="mmpAssuntoId">
+          <input type="hidden" id="mmpLei">
+          <div style="display:flex;justify-content:space-between;gap:8px;border-top:1px solid #e5e7eb;padding-top:12px">
+            <button class="btn btn-sm" style="background:#f59e0b;color:#fff" onclick="restaurarModeloPadrao()">↺ Restaurar padrão original</button>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-g btn-sm" onclick="fecharModalModeloParecer()">Cancelar</button>
+              <button class="btn btn-p btn-sm" onclick="salvarModeloParecer()">💾 Salvar alterações</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
 
       
     </div>
@@ -965,10 +1034,36 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
       </div>
       </div>
 
+      <!-- MODAL — ESCOLHA DE LEI APLICÁVEL -->
+      <div id="modalLeiAplicavel" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;padding:20px">
+        <div style="background:#fff;border-radius:12px;padding:24px;max-width:540px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+          <div style="text-align:center;margin-bottom:16px;">
+            <div style="font-size:28px;margin-bottom:6px">⚖️</div>
+            <h3 style="margin:0;color:#0a3d62;font-size:18px;font-weight:700">Qual lei se aplica a este débito?</h3>
+            <p style="margin:6px 0 0;font-size:12px;color:#666;">Escolha conforme a data do fato gerador do tributo</p>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px">
+            <button onclick="escolherLei('lc001')" style="border:2px solid #f59e0b;background:#fffbeb;padding:16px 12px;border-radius:10px;cursor:pointer;font-family:inherit;transition:all .15s">
+              <div style="font-size:24px;margin-bottom:6px">📙</div>
+              <div style="font-weight:700;color:#78350f;font-size:14px;margin-bottom:4px">LC 001/2001</div>
+              <div style="font-size:11px;color:#8a6d3b;line-height:1.4">Fato gerador anterior a<br><strong>26/03/2026</strong></div>
+            </button>
+            <button onclick="escolherLei('lc5')" style="border:2px solid #16a34a;background:#f0fdf4;padding:16px 12px;border-radius:10px;cursor:pointer;font-family:inherit;transition:all .15s">
+              <div style="font-size:24px;margin-bottom:6px">📗</div>
+              <div style="font-weight:700;color:#14532d;font-size:14px;margin-bottom:4px">LC 5/2025</div>
+              <div style="font-size:11px;color:#166534;line-height:1.4">Fato gerador a partir de<br><strong>26/03/2026</strong></div>
+            </button>
+          </div>
+          <div style="text-align:center;margin-top:16px;">
+            <button onclick="cancelarEscolhaLei()" style="background:none;border:none;color:#888;font-size:12px;cursor:pointer;text-decoration:underline">Cancelar (voltar sem escolher assunto)</button>
+          </div>
+        </div>
+      </div>
+
       <!-- MODAL ANEXO -->
-      <div id="modalAnexo" class="modal" style="display:none">
-        <div class="modal-content" style="max-width:520px">
-          <div class="modal-header"><h3 style="margin:0">📎 Anexar Documento</h3><button onclick="fecharModalAnexo()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888">×</button></div>
+      <div id="modalAnexo" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;padding:20px">
+        <div style="background:#fff;border-radius:12px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #e5e7eb"><h3 style="margin:0;font-size:16px;color:#0a3d62">📎 Anexar Documento</h3><button onclick="fecharModalAnexo()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888">×</button></div>
           <div style="padding:20px">
             <div style="background:#fff8e1;border:1px solid #f59e0b;border-radius:6px;padding:10px;margin-bottom:14px;font-size:12px;color:#78350f">
               <strong>Regras:</strong> Tamanho máx. 1 MB. Tipos permitidos: PDF, DOC, DOCX, XLS, XLSX. Comprima PDFs grandes antes (use smallpdf.com ou ilovepdf.com).
@@ -1018,6 +1113,10 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
             <div class="fgg"><label>Destino inicial</label><input type="text" id="np-de" value="Protocolo Geral"></div>
             <div class="fgg"><label>Status</label><select id="np-st"><option value="em-andamento">Em andamento</option><option value="pendente">Pendente</option></select></div>
           </div>
+        </div>
+        <div style="background:#eef6ff;border:1px solid #bcdcfc;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#1a5276;display:flex;align-items:center;gap:8px;">
+          <span style="font-size:16px">💡</span>
+          <span>Após abrir o processo, você poderá anexar documentos (PDF, Word, Excel) na tela de detalhes.</span>
         </div>
         <div style="display:flex;gap:10px">
           <button class="btn btn-p" onclick="pa_cadProc()">✓ Abrir processo</button>
@@ -1446,14 +1545,14 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
       <button class="modal-close" onclick="fecharModal('modalDetalhes')">×</button>
     </div>
     <div class="modal-body" id="modalDetalhesBody">
-        <div id="protocolo-anexos-card" class="card" style="margin-top:14px;border:1px solid #e5e7eb;border-radius:8px;padding:14px;background:#fafbfc">
+      </div>
+        <div id="protocolo-anexos-card" class="card" style="margin:0 20px 14px;border:1px solid #e5e7eb;border-radius:8px;padding:14px;background:#fafbfc">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
             <h3 style="margin:0;font-size:14px;color:#0a3d62;font-weight:600">📎 Documentos Anexos</h3>
             <button class="btn btn-primary btn-sm" onclick="abrirModalAnexo('protocolos', protocoloAtualId)" style="font-size:12px;padding:5px 10px">+ Anexar</button>
           </div>
           <div id="protocolo-anexos-lista"></div>
         </div>
-      </div>
     <div class="modal-foot">
       <button class="btn btn-outline" onclick="imprimirComprovante()">🖨️ Imprimir Comprovante</button>
       <button class="btn btn-warning" onclick="verificarAcessoParecer(protocoloAtualId)" id="btnGerarParecer">📄 Gerar Parecer</button>
@@ -1474,17 +1573,21 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
       <div class="field" style="margin-bottom:12px;">
         <label>Nova Situação</label>
         <select id="movSituacao">
-          <option value="recebido">Recebido</option>
           <option value="analise">Em Análise (servidor)</option>
-          <option value="gerente">Encaminhado ao Gerente</option>
-          <option value="diretor">Encaminhado ao Diretor</option>
-          <option value="secretaria">Encaminhado à Secretaria</option>
-          <option value="aguardando_conclusao">Aguardando Conclusão (Diretor concordou)</option>
-          <option value="aguardando">Aguardando Documentos</option>
-          <option value="concluido">Concluído</option>
-          <option value="procuradoria">Encaminhar à Procuradoria</option>
-          <option value="devolvido">Devolver ao Servidor Responsável</option>
-          <option value="arquivado">Arquivado</option>
+          <optgroup label="Encaminhar para Fiscal específico" id="movFiscaisGroup"></optgroup>
+          <optgroup label="Outras opções" id="movOutrasOpcoes">
+            <option value="recebido">Recebido</option>
+            <option value="gerente">Encaminhado ao Gerente</option>
+            <option value="diretor">Encaminhado ao Diretor</option>
+            <option value="secretaria">Encaminhado à Secretaria</option>
+            <option value="aguardando">Aguardando Documentos</option>
+            <option value="concluido">Concluído</option>
+            <option value="procuradoria">Encaminhar à Procuradoria</option>
+            <option value="coord_arrecadacao">Encaminhado ao Coordenador de Arrecadação</option>
+            <option value="coord_cadastro">Encaminhado ao Coordenador de Cadastro Tributário</option>
+            <option value="devolvido">Devolver ao Servidor Responsável</option>
+            <option value="arquivado">Arquivado</option>
+          </optgroup>
         </select>
       </div>
       <div class="field">
@@ -1587,7 +1690,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
       </div>
       <div class="parecer-secao">
         <div class="parecer-secao-titulo">VI — CONCLUSÃO E ENCAMINHAMENTO</div>
-        <div style="background:#fff3e0;border:1px solid #ffb74d;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#e65100;">
+        <div id="conclusaoAvisoObrig" style="background:#fff3e0;border:1px solid #ffb74d;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#e65100;">
           <b>⚠ Obrigatório:</b> Clique em uma das opções abaixo para selecionar a conclusão.
         </div>
         <div class="conclusao-opts" id="conclusaoOpts">
@@ -2189,6 +2292,8 @@ async function iniciarApp() {
   if (topC) topC.textContent = usuarioLogado?.cargo || '';
   // Carregar dados do Sistema B
   await carregarDadosPA();
+  // Carregar modelos de parecer editados (fallback silencioso se tabela não existir)
+  try { await carregarPareceresModelo(); } catch(e) { console.warn('modelos:', e); }
   // Inicializar Sistema A (popula selects, formata datas, etc.)
   try { inicializar(); } catch(e) { console.warn('inicializar:', e); }
   // Construir nav
@@ -2246,6 +2351,19 @@ const TITULOS = {
 let secaoAtiva = 'protocolo';
 
 function navegarPara(destino, btn) {
+  // Segurança extra: bloqueia acesso direto às Configurações para quem não é admin
+  if (destino === 'configuracoes' && !isAdmin()) {
+    alert('⛔ Apenas o administrador pode acessar as Configurações.');
+    return;
+  }
+  // Segurança extra: Auxiliar Administrativo não tem acesso ao Sistema B (ProcessAdmin)
+  const TELAS_SISTEMA_B = ['painel','processos','tram','relatoriosPa','notificacoesPa','intimacoes',
+    'usuariosPa','auditoria','backup','novo-proc','detalhe','folhas','nova-intimacao','despacho',
+    'relatorioInd','relatorioCol','novoRelInd','novoRelCol'];
+  if (TELAS_SISTEMA_B.includes(destino) && usuarioLogado?.perfil === 'auxiliar_adm') {
+    alert('⛔ Este perfil não tem acesso ao módulo de Processos Administrativos.');
+    return;
+  }
   // Limpar contexto de "voltar ao detalhe" ao sair de folhas/nova-intimacao
   if(typeof pa_voltarParaDetalhe !== 'undefined' && pa_voltarParaDetalhe &&
      destino !== 'folhas' && destino !== 'nova-intimacao' && destino !== 'detalhe') {
@@ -2325,7 +2443,10 @@ function buildUnifiedNav() {
   const admin = isAdmin();
   const perf  = pa_perfis.find(p => p.id === u?.perfilId);
   const notifProt = (DB.notificacoes||[]).filter(n=>!n.lida&&n.destinatario_login===usuarioLogado?.login).length;
-  const notifPA   = isAdmin() ? pa_relatorios.filter(r=>r.status==='aguardando').length : pa_relatorios.filter(r=>r.encParaLogin===u?.login&&r.status==='aguardando').length;
+  const notifPA   = isAdmin()
+    ? pa_relatorios.filter(r=>r.status==='aguardando').length
+    : pa_relatorios.filter(r=>r.encParaLogin===u?.login&&r.status==='aguardando').length
+      + pa_relatorios.filter(r=>r.autorLogin===u?.login&&['autorizado','rejeitado','complementar'].includes(r.status)&&!r.visto).length;
 
   let html = '';
 
@@ -2335,20 +2456,25 @@ function buildUnifiedNav() {
   html += navBtn('novoProtocolo','plus','Novo Protocolo');
   html += navBtn('protocolos','search','Consultar');
   html += navBtn('relatorios','bar-chart','Relatórios');
-  if (admin || usuarioLogado?.perfil === 'diretor' || usuarioLogado?.perfil === 'gerente' || usuarioLogado?.perfil === 'supervisor')
+  if (admin)
     html += navBtn('configuracoes','settings','Configurações');
   html += '<hr class="nav-sep">';
 
   // ── SEÇÃO PROCESSADMIN ──
-  html += '<div class="nav-group-label">ProcessAdmin</div>';
-  html += navBtn('painel','grid','Painel');
-  html += navBtn('processos','file','Processos');
-  const canTram = admin || perf?.perms?.despacho || perf?.perms?.processo;
-  if (canTram) html += navBtn('tram','arrow-right','Tramitação');
-  const canRel = admin || perf?.perms?.relatorio || perf?.perms?.despacho || perf?.perms?.processo;
-  if (canRel) html += navBtn('relatoriosPa','clipboard','Relatórios Fisc.',0);
-  html += navBtn('notificacoesPa','bell','Notificações',notifPA);
-  html += navBtn('intimacoes','doc','Intimações');
+  // O perfil "Auxiliar Administrativo" não tem acesso ao Sistema B
+  // (Processos Administrativos) — trabalha só com Protocolos.
+  const ehAuxiliarAdm = usuarioLogado?.perfil === 'auxiliar_adm';
+  if (!ehAuxiliarAdm) {
+    html += '<div class="nav-group-label">ProcessAdmin</div>';
+    html += navBtn('painel','grid','Painel');
+    html += navBtn('processos','file','Processos');
+    const canTram = admin || perf?.perms?.despacho || perf?.perms?.processo;
+    if (canTram) html += navBtn('tram','arrow-right','Tramitação');
+    const canRel = admin || perf?.perms?.relatorio || perf?.perms?.despacho || perf?.perms?.processo;
+    if (canRel) html += navBtn('relatoriosPa','clipboard','Relatórios Fisc.',0);
+    html += navBtn('notificacoesPa','bell','Notificações',notifPA);
+    html += navBtn('intimacoes','doc','Intimações');
+  }
   if (admin) {
     html += '<hr class="nav-sep">';
     html += navBtn('usuariosPa','users','Usuários');
@@ -2508,12 +2634,16 @@ function rowToProtocolo(row, historico=[], pareceres=[]) {
     assuntoNome:  row.assunto_nome,
     prazo:        row.prazo,
     baseLegal:    row.base_legal,
+    leiAplicavel: row.lei_aplicavel || null,
+    assuntoCustom:row.assunto_custom || '',
+    prazoCustom:  row.prazo_custom || null,
     prazoData:    row.prazo_data,
     referencia:   row.referencia,
     responsavel:  row.responsavel,
     documentos:   row.documentos,
     descricao:    row.descricao,
     situacao:     row.situacao,
+    destinatarioLogin: row.destinatario_login || null,
     representante:row.representante,
     historico:    historico.map(h => ({
       data:     h.data,
@@ -2701,18 +2831,162 @@ function atualizarDataHora() {
   document.getElementById('fDataHora').value = agora.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 }
 
+// ═══════════════════════════════════════════════════════════
+// LEI APLICÁVEL — Mapeamento das bases legais antigas
+// ═══════════════════════════════════════════════════════════
+// Mapa: assuntoId → { base_lc001, prazo_lc001 }
+// Se prazo_lc001 é null, usa o prazo padrão do assunto (regra do "quando depende de decreto usa o novo")
+const BASES_LC001 = {
+  1:  { base: 'Art. 141 LC 001/2001',            prazo: null },  // Cancelamento/Revisão TFF
+  2:  { base: 'Art. 141 LC 001/2001',            prazo: null },  // Baixa da Inscrição
+  3:  { base: 'Art. 4º LC 001/2001',             prazo: null },  // Suspensão da Inscrição
+  4:  { base: 'Art. 42 LC 001/2001',             prazo: 30 },    // Impugnação (prazo específico da lei antiga)
+  5:  { base: 'Arts. 43-45 LC 001/2001',         prazo: null },  // Julgamento 1ª Instância
+  6:  { base: 'Art. 45 LC 001/2001',             prazo: null },  // Recurso 2ª Instância
+  7:  { base: 'Art. 47 LC 001/2001',             prazo: null },  // Consulta Tributária
+  8:  { base: 'Art. 67 LC 001/2001',             prazo: null },  // Revisão Dados Cadastrais
+  9:  { base: 'Art. 221 LC 001/2001',            prazo: null },  // CND
+  10: { base: 'Art. 8º LC 001/2001',             prazo: null },  // Parcelamento
+  11: { base: 'Art. 172 CTN',                    prazo: null },  // Remissão
+  12: { base: 'Art. 63 LC 001/2001',             prazo: null },  // Isenção IPTU
+  13: { base: 'Arts. 42-45 LC 001/2001',         prazo: null },  // Revisão Lançamento IPTU
+  14: { base: 'Art. 87 LC 001/2001',             prazo: null },  // Alvará
+  15: { base: 'Art. 174 CTN',                    prazo: null }   // Prescrição/Decadência
+  // 16 (Outros) — não pergunta a lei, é editável
+};
+
+// Estado global da escolha durante o cadastro (limpo ao trocar de assunto)
+let _leiEscolhida = null; // 'lc001' | 'lc5' | null
+let _assuntoIdPendente = null;
+
 function atualizarPrazo() {
   const id = parseInt(document.getElementById('fAssunto').value);
   const a = DB.assuntos.find(a => a.id === id);
   const avisoEl = document.getElementById('avisoFeriado');
+  const wrapCustom = document.getElementById('wrapAssuntoCustom');
+  const fAssCustom = document.getElementById('fAssuntoCustom');
+  const fPrzCustom = document.getElementById('fPrazoCustom');
+  const badgeLei = document.getElementById('badgeLei');
+
+  // Limpa estado ao trocar de assunto
+  _leiEscolhida = null;
+  if (badgeLei) badgeLei.style.display = 'none';
+
   if (!a) {
     document.getElementById('fPrazo').value = '';
     if (document.getElementById('fPrazoVista')) document.getElementById('fPrazoVista').value = '';
     if (avisoEl) avisoEl.style.display = 'none';
+    if (wrapCustom) wrapCustom.style.display = 'none';
     return;
   }
-  document.getElementById('fPrazo').value = `${a.prazo} dias úteis — ${a.base}`;
-  const prazo = calcularPrazoUtil(new Date(), a.prazo);
+
+  const ehOutros = (a.nome || '').toLowerCase().includes('outros');
+  // "Pedido de Inscrição Municipal" só existe na lei nova (é ato de cadastro
+  // inicial, sem equivalente formal específico na lei antiga) — por isso
+  // aplica direto a LC 5/2025, sem perguntar qual lei usar.
+  const ehInscricaoNova = (a.nome || '').toLowerCase().includes('inscrição municipal') && (a.nome || '').toLowerCase().includes('cadastro mobiliário');
+
+  // Se "Outros" — mesma lógica de antes (editável, sem modal de lei)
+  if (ehOutros) {
+    if (wrapCustom) wrapCustom.style.display = '';
+    document.getElementById('fPrazo').value = `A definir — ${a.base}`;
+    if (document.getElementById('fPrazoVista')) document.getElementById('fPrazoVista').value = '';
+    if (avisoEl) avisoEl.style.display = 'none';
+    return;
+  }
+
+  // Se "Pedido de Inscrição Municipal" — aplica LC 5/2025 direto, sem modal
+  if (ehInscricaoNova) {
+    _leiEscolhida = 'lc5';
+    if (wrapCustom) wrapCustom.style.display = 'none';
+    document.getElementById('fPrazo').value = `${a.prazo} dias úteis — ${a.base}`;
+    const prazo = calcularPrazoUtil(new Date(), a.prazo);
+    if (document.getElementById('fPrazoVista'))
+      document.getElementById('fPrazoVista').value = prazo.toLocaleDateString('pt-BR');
+    if (avisoEl) avisoEl.style.display = prazo._ajustouFeriado ? 'block' : 'none';
+    if (badgeLei) {
+      badgeLei.style.display = '';
+      badgeLei.style.background = '#dcfce7';
+      badgeLei.style.color = '#14532d';
+      badgeLei.style.border = '1px solid #16a34a';
+      badgeLei.innerHTML = '📗 LC 5/2025 (único regime aplicável)';
+    }
+    return;
+  }
+
+  // Assunto normal — pergunta qual lei aplicar
+  if (wrapCustom) wrapCustom.style.display = 'none';
+  if (fAssCustom) fAssCustom.value = '';
+  if (fPrzCustom) fPrzCustom.value = '';
+
+  _assuntoIdPendente = id;
+  document.getElementById('modalLeiAplicavel').style.display = 'flex';
+}
+
+// Função chamada quando o usuário escolhe a lei no modal
+function escolherLei(lei) {
+  const id = _assuntoIdPendente;
+  const a = DB.assuntos.find(a => a.id === id);
+  if (!a) { cancelarEscolhaLei(); return; }
+
+  _leiEscolhida = lei;
+  document.getElementById('modalLeiAplicavel').style.display = 'none';
+
+  const avisoEl = document.getElementById('avisoFeriado');
+  const badgeLei = document.getElementById('badgeLei');
+
+  let baseEfetiva, prazoEfetivo;
+  if (lei === 'lc001') {
+    const mapa = BASES_LC001[id];
+    baseEfetiva = (mapa && mapa.base) ? mapa.base : a.base;
+    prazoEfetivo = (mapa && mapa.prazo) ? mapa.prazo : a.prazo;
+    if (badgeLei) {
+      badgeLei.style.display = '';
+      badgeLei.style.background = '#fef3c7';
+      badgeLei.style.color = '#78350f';
+      badgeLei.style.border = '1px solid #f59e0b';
+      badgeLei.innerHTML = '📙 LC 001/2001 (débito antigo)';
+    }
+  } else {
+    baseEfetiva = a.base;
+    prazoEfetivo = a.prazo;
+    if (badgeLei) {
+      badgeLei.style.display = '';
+      badgeLei.style.background = '#dcfce7';
+      badgeLei.style.color = '#14532d';
+      badgeLei.style.border = '1px solid #16a34a';
+      badgeLei.innerHTML = '📗 LC 5/2025 (débito novo)';
+    }
+  }
+
+  document.getElementById('fPrazo').value = `${prazoEfetivo} dias úteis — ${baseEfetiva}`;
+  const prazo = calcularPrazoUtil(new Date(), prazoEfetivo);
+  if (document.getElementById('fPrazoVista'))
+    document.getElementById('fPrazoVista').value = prazo.toLocaleDateString('pt-BR');
+  if (avisoEl) avisoEl.style.display = prazo._ajustouFeriado ? 'block' : 'none';
+}
+
+function cancelarEscolhaLei() {
+  document.getElementById('modalLeiAplicavel').style.display = 'none';
+  document.getElementById('fAssunto').value = '';
+  _leiEscolhida = null;
+  _assuntoIdPendente = null;
+  const badgeLei = document.getElementById('badgeLei');
+  if (badgeLei) badgeLei.style.display = 'none';
+  document.getElementById('fPrazo').value = '';
+  if (document.getElementById('fPrazoVista')) document.getElementById('fPrazoVista').value = '';
+}
+
+// Recalcula a data prevista quando o prazo customizado é digitado
+function atualizarPrazoCustom() {
+  const p = parseInt(document.getElementById('fPrazoCustom').value);
+  const avisoEl = document.getElementById('avisoFeriado');
+  if (!p || p < 1 || p > 365) {
+    if (document.getElementById('fPrazoVista')) document.getElementById('fPrazoVista').value = '';
+    if (avisoEl) avisoEl.style.display = 'none';
+    return;
+  }
+  const prazo = calcularPrazoUtil(new Date(), p);
   if (document.getElementById('fPrazoVista'))
     document.getElementById('fPrazoVista').value = prazo.toLocaleDateString('pt-BR');
   if (avisoEl) avisoEl.style.display = prazo._ajustouFeriado ? 'block' : 'none';
@@ -2731,8 +3005,48 @@ async function salvarProtocolo() {
   }
 
   const assunto = DB.assuntos.find(a => a.id === assuntoId);
+
+  // Validação especial para assunto "Outros"
+  const ehOutros = (assunto.nome || '').toLowerCase().includes('outros');
+  let assuntoCustom = '';
+  let prazoCustom = null;
+  if (ehOutros) {
+    assuntoCustom = document.getElementById('fAssuntoCustom')?.value?.trim() || '';
+    prazoCustom = parseInt(document.getElementById('fPrazoCustom')?.value) || 0;
+    if (!assuntoCustom) {
+      alert('⚠️ Como o assunto é "Outros", preencha o campo "Descrição do assunto".');
+      document.getElementById('fAssuntoCustom').focus();
+      return;
+    }
+    if (!prazoCustom || prazoCustom < 1 || prazoCustom > 365) {
+      alert('⚠️ Como o assunto é "Outros", preencha o campo "Prazo legal" com um valor entre 1 e 365 dias úteis.');
+      document.getElementById('fPrazoCustom').focus();
+      return;
+    }
+  } else {
+    // Assunto normal: exige que a lei tenha sido escolhida
+    if (!_leiEscolhida) {
+      alert('⚠️ Escolha qual lei se aplica a este débito (LC 001/2001 ou LC 5/2025) antes de salvar.');
+      // Reabrir o modal para o usuário escolher
+      _assuntoIdPendente = assuntoId;
+      document.getElementById('modalLeiAplicavel').style.display = 'flex';
+      return;
+    }
+  }
+
+  // Determinar base e prazo efetivos considerando a lei escolhida
+  let baseEfetiva = assunto.base;
+  let prazoEfetivo = ehOutros ? prazoCustom : assunto.prazo;
+  if (!ehOutros && _leiEscolhida === 'lc001') {
+    const mapa = BASES_LC001[assuntoId];
+    if (mapa) {
+      baseEfetiva = mapa.base;
+      if (mapa.prazo) prazoEfetivo = mapa.prazo;
+    }
+  }
+
   const agora = new Date();
-  const prazoData = calcularPrazoUtil(agora, assunto.prazo);
+  const prazoData = calcularPrazoUtil(agora, prazoEfetivo);
   const numero = document.getElementById('fNumero').value;
 
   const protocolo = {
@@ -2749,8 +3063,11 @@ async function salvarProtocolo() {
     endereco: document.getElementById('fEndereco').value,
     assuntoId,
     assuntoNome: assunto.nome,
-    prazo: assunto.prazo,
-    baseLegal: assunto.base,
+    assuntoCustom,
+    prazoCustom,
+    prazo: prazoEfetivo,
+    baseLegal: baseEfetiva,
+    leiAplicavel: ehOutros ? null : _leiEscolhida,
     prazoData: prazoData.toISOString(),
     referencia: document.getElementById('fReferencia').value,
     responsavel: usuarioLogado.nome,
@@ -2783,6 +3100,9 @@ async function salvarProtocolo() {
       endereco:      protocolo.endereco,
       assunto_id:    protocolo.assuntoId,
       assunto_nome:  protocolo.assuntoNome,
+      assunto_custom: protocolo.assuntoCustom || null,
+      prazo_custom:  protocolo.prazoCustom || null,
+      lei_aplicavel: protocolo.leiAplicavel || null,
       prazo:         protocolo.prazo,
       base_legal:    protocolo.baseLegal,
       prazo_data:    protocolo.prazoData,
@@ -2857,10 +3177,17 @@ function calcularPrazoUtil(data, diasUteis) {
 }
 
 function limparFormulario() {
-  ['fOrigem','fNome','fDocumento','fInscricao','fTelefone','fEmail','fEndereco','fAssunto','fReferencia','fDocumentos','fDescricao'].forEach(id => {
-    document.getElementById(id).value = '';
+  ['fOrigem','fNome','fDocumento','fInscricao','fTelefone','fEmail','fEndereco','fAssunto','fReferencia','fDocumentos','fDescricao','fAssuntoCustom','fPrazoCustom'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
   });
   document.getElementById('fPrazo').value = '';
+  const wrapCustom = document.getElementById('wrapAssuntoCustom');
+  if (wrapCustom) wrapCustom.style.display = 'none';
+  const badgeLei = document.getElementById('badgeLei');
+  if (badgeLei) badgeLei.style.display = 'none';
+  _leiEscolhida = null;
+  _assuntoIdPendente = null;
   atualizarDataHora();
   gerarNumeroProtocolo();
   document.getElementById('fResponsavel').value = usuarioLogado.nome;
@@ -2899,11 +3226,14 @@ function renderDashboard() {
   });
   document.getElementById('alertasPrazo').innerHTML = alertasHtml;
 
-  // Tabela recentes
-  const recentes = DB.protocolos.slice(0, 10);
+  // Tabela recentes — ordena sempre pela data mais recente primeiro,
+  // independente da ordem em que os dados estão na memória
+  const recentes = [...DB.protocolos]
+    .sort((a, b) => new Date(b.dataHora) - new Date(a.dataHora))
+    .slice(0, 10);
   document.getElementById('bodyRecentes').innerHTML = recentes.length
     ? recentes.map(p => linhaTabela(p)).join('')
-    : '<tr><td colspan="7" style="text-align:center;padding:2rem;color:#aaa;">Nenhum protocolo registrado ainda.</td></tr>';
+    : '<tr><td colspan="9" style="text-align:center;padding:2rem;color:#aaa;">Nenhum protocolo registrado ainda.</td></tr>';
 }
 
 function renderConsulta() {
@@ -2921,9 +3251,9 @@ function linhaTabela(p) {
     <td>${new Date(p.dataHora).toLocaleDateString('pt-BR')}</td>
     <td>${p.nome}<br><span style="font-size:11px;color:#999;">${p.documento}</span></td>
     <td>${p.inscricao || '—'}</td>
-    <td>${p.assuntoNome}</td>
+    <td>${p.assuntoCustom || p.assuntoNome}</td>
     <td><span class="badge badge-${p.origem}">${p.origem === 'balcao' ? 'Balcão' : p.origem === 'email' ? 'E-mail' : 'Ofício'}</span></td>
-    <td><span class="badge ${sitBadge}">${labelSituacao(p.situacao)}</span></td>
+    <td><span class="badge ${sitBadge}">${labelSituacaoDetalhado(p)}</span></td>
     <td>${vencido ? `<span class="alerta-prazo">⚠ ${prazoStr}</span>` : prazoStr}</td>
     <td><button class="link-btn" onclick="abrirDetalhes(${p.id})">Abrir</button></td>
   </tr>`;
@@ -2936,16 +3266,29 @@ function labelSituacao(s) {
     gerente:             'Com Gerente',
     diretor:             'Com Diretor',
     secretaria:          'Com Secretaria',
+    coord_arrecadacao:   'Com Coord. Arrecadação',
+    coord_cadastro:      'Com Coord. Cadastro',
     procuradoria:        'Com Procuradoria',
     devolvido:           'Devolvido ao Servidor',
     aguardando_conclusao:'Aguard. Conclusão',
     aguardando:          'Aguard. Docs',
+    fiscal:              'Com Fiscal',
     concluido:           'Concluído',
     arquivado:           'Arquivado',
     procuradoria:        'Com Procuradoria',
     devolvido:           'Devolvido ao Servidor'
   };
   return m[s] || s;
+}
+
+// Versão que usa o protocolo completo — mostra o nome do fiscal quando é
+// encaminhamento nominal (situação 'fiscal'), em vez do texto genérico.
+function labelSituacaoDetalhado(p) {
+  if (p && p.situacao === 'fiscal' && p.destinatarioLogin) {
+    const u = DB.usuarios.find(x => x.login === p.destinatarioLogin);
+    return u ? `Com ${u.nome}` : 'Com Fiscal';
+  }
+  return labelSituacao(p ? p.situacao : '');
 }
 
 function filtrarProtocolos() {
@@ -2964,7 +3307,7 @@ function filtrarProtocolos() {
     if (de && new Date(p.dataHora) < new Date(de)) return false;
     if (ate && new Date(p.dataHora) > new Date(ate + 'T23:59:59')) return false;
     return true;
-  });
+  }).sort((a, b) => new Date(b.dataHora) - new Date(a.dataHora));
 
   document.getElementById('totalFiltrado').textContent = `${lista.length} protocolo(s) encontrado(s)`;
   const tbody = document.getElementById('bodyTodos');
@@ -3026,7 +3369,7 @@ function renderRelatorios() {
       return `<tr>
         <td><span class="num-protocolo">${p.numero}</span></td>
         <td>${p.nome}</td>
-        <td>${p.assuntoNome}</td>
+        <td>${p.assuntoCustom || p.assuntoNome}</td>
         <td>${new Date(p.prazoData).toLocaleDateString('pt-BR')}</td>
         <td><span style="color:#c0392b;font-weight:700;">${dias} dias</span></td>
         <td><button class="link-btn" onclick="abrirDetalhes(${p.id})">Abrir</button></td>
@@ -3060,6 +3403,9 @@ function renderConfiguracoes() {
       <button class="btn btn-danger btn-sm" onclick="removerAssunto(${a.id})">✕</button>
     </div>
   `).join('');
+
+  // Modelos de parecer
+  if (typeof renderModelosParecer === 'function') renderModelosParecer();
 }
 
 function labelPerfil(p) {
@@ -3092,7 +3438,7 @@ function abrirDetalhes(id) {
   document.getElementById('modalDetalhesBody').innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem;">
       <div><span style="font-size:11px;text-transform:uppercase;color:#888;font-weight:700;">Situação</span><br>
-        <span class="badge badge-${p.situacao}" style="margin-top:4px;display:inline-block;">${labelSituacao(p.situacao)}</span>
+        <span class="badge badge-${p.situacao}" style="margin-top:4px;display:inline-block;">${labelSituacaoDetalhado(p)}</span>
       </div>
       <div><span style="font-size:11px;text-transform:uppercase;color:#888;font-weight:700;">Prazo Legal</span><br>
         <span style="font-size:13px;font-weight:600;color:${vencido?'#c0392b':diasPrazo<=5?'#856404':'#1e8449'};">
@@ -3106,7 +3452,7 @@ function abrirDetalhes(id) {
         <div><span style="color:#888;">CPF/CNPJ:</span> ${p.documento}</div>
         <div><span style="color:#888;">Telefone:</span> ${p.telefone||'—'}</div>
         <div><span style="color:#888;">E-mail:</span> ${p.email||'—'}</div>
-        <div><span style="color:#888;">Assunto:</span> ${p.assuntoNome}</div>
+        <div><span style="color:#888;">Assunto:</span> ${p.assuntoCustom || p.assuntoNome}${p.leiAplicavel === 'lc001' ? ' <span style="background:#fef3c7;color:#78350f;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:600;">📙 LC 001/2001</span>' : (p.leiAplicavel === 'lc5' ? ' <span style="background:#dcfce7;color:#14532d;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:600;">📗 LC 5/2025</span>' : '')}</div>
         <div><span style="color:#888;">Origem:</span> ${p.origem === 'balcao' ? 'Balcão' : p.origem === 'email' ? 'E-mail' : 'Ofício'}</div>
         <div><span style="color:#888;">Data/Hora:</span> ${p.dataHoraStr}</div>
         <div><span style="color:#888;">Responsável:</span> ${p.responsavel}</div>
@@ -3120,14 +3466,11 @@ function abrirDetalhes(id) {
     <div class="historico-list">${hist}</div>
   `;
   // ── CONTROLE DE ACESSO POR RESPONSÁVEL ─────────────────────
-  // Identifica o responsável atual (último item válido do histórico)
-  const respAtual = obterResponsavelAtual(p);
   const isAdmin = usuarioLogado.perfil === 'admin';
-  const sou_responsavel = respAtual && (
-    respAtual === usuarioLogado.login ||
-    respAtual === usuarioLogado.nome
-  );
-  const podeAgir = isAdmin || sou_responsavel;
+  const podeAgir = usuarioPodeAgirNoProtocolo(p);
+  const respAtualDesc = descricaoResponsavelAtual(p);
+  // Auxiliar Administrativo nunca tem acesso a Parecer (só triagem/movimentação)
+  const ehAuxiliarAdm = usuarioLogado.perfil === 'auxiliar_adm';
 
   // Botão excluir — somente admin
   const btnExc = document.getElementById('btnExcluirProtocolo');
@@ -3137,14 +3480,46 @@ function abrirDetalhes(id) {
   const btnMov = document.getElementById('btnMovimentar');
   const btnPar = document.getElementById('btnGerarParecer');
   if (btnMov) btnMov.style.display = podeAgir ? '' : 'none';
-  if (btnPar) btnPar.style.display = podeAgir ? '' : 'none';
+
+  // O botão de Parecer também aparece (em modo "visualização") para quem já
+  // mexeu no parecer (autor do texto OU autor do despacho), mesmo que essa
+  // pessoa não seja mais o responsável atual — assim ela pode conferir o que
+  // escreveu/despachou sem poder editar.
+  const temParecerReg = p.pareceres && p.pareceres.length > 0;
+  const parecerReg    = temParecerReg ? p.pareceres[0] : null;
+  const souAutorParecer = parecerReg && (parecerReg.autor === usuarioLogado.nome);
+  const souAutorDespacho = parecerReg && (parecerReg.despachoAutor === usuarioLogado.nome);
+  const podeVerParecerEnviado = !podeAgir && (souAutorParecer || souAutorDespacho) && temParecerReg;
+
+  if (btnPar) {
+    if (ehAuxiliarAdm) {
+      // Auxiliar Administrativo nunca vê o botão de parecer
+      btnPar.style.display = 'none';
+    } else if (podeAgir) {
+      btnPar.style.display = '';
+      // Se já existe parecer mas quem está vendo NÃO é o autor (ex: diretor
+      // recebendo pela primeira vez), mostra "Gerar Parecer" para deixar claro
+      // que ele ainda não fez nada — evita a falsa impressão de que já mexeu.
+      const jaMexeuNisso = temParecerReg && (souAutorParecer || souAutorDespacho);
+      btnPar.textContent = (temParecerReg && jaMexeuNisso) ? '📄 Ver/Editar Parecer' : '📄 Gerar Parecer';
+      btnPar.classList.remove('btn-outline');
+      btnPar.classList.add('btn-warning');
+    } else if (podeVerParecerEnviado) {
+      btnPar.style.display = '';
+      btnPar.textContent = '✓ Parecer Enviado';
+      btnPar.classList.remove('btn-warning');
+      btnPar.classList.add('btn-outline');
+    } else {
+      btnPar.style.display = 'none';
+    }
+  }
 
   // Aviso de somente leitura
   if (!podeAgir) {
     const body = document.getElementById('modalDetalhesBody');
     const aviso = document.createElement('div');
     aviso.style.cssText = 'background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px';
-    aviso.innerHTML = `<span style="font-size:20px">🔒</span><div><div style="font-size:13px;font-weight:700;color:#b45309">Protocolo com outro responsável</div><div style="font-size:12px;color:#78350f;margin-top:2px">Este protocolo está com <strong>${respAtual||'—'}</strong>. Você pode visualizar mas não pode movimentar ou alterar.</div></div>`;
+    aviso.innerHTML = `<span style="font-size:20px">🔒</span><div><div style="font-size:13px;font-weight:700;color:#b45309">Protocolo com outro responsável</div><div style="font-size:12px;color:#78350f;margin-top:2px">Este protocolo está com <strong>${respAtualDesc}</strong>. Você pode visualizar mas não pode movimentar ou alterar.</div></div>`;
     body.insertBefore(aviso, body.firstChild);
   }
 
@@ -3169,6 +3544,78 @@ function obterResponsavelAtual(protocolo) {
   }
   // Se não tem histórico, o responsável é quem criou
   return protocolo.responsavel || null;
+}
+
+// ═══════════════════════════════════════════════════════════
+// CONTROLE DE ACESSO CENTRALIZADO
+// ═══════════════════════════════════════════════════════════
+// IMPORTANTE: o histórico registra sempre quem EXECUTOU a movimentação
+// (ex: o servidor que clicou "Encaminhar ao Diretor"), não para quem foi
+// destinado. Por isso, para situações de destino por CARGO/FUNÇÃO
+// (diretor, gerente, secretaria, etc.), a permissão é verificada pelo
+// PERFIL do usuário logado, e não pelo nome de quem fez a última ação.
+// Para situações "normais" (com um servidor específico responsável),
+// a permissão continua sendo por nome (obterResponsavelAtual).
+
+// Situações cujo responsável é definido por CARGO (perfil), não por nome
+const SITUACOES_POR_CARGO = {
+  diretor:               ['diretor','gerente'],
+  gerente:                ['diretor','gerente'],
+  aguardando_conclusao:  ['diretor','gerente'],
+  secretaria:            [], // destino externo — ninguém do sistema interno age aqui (só admin)
+  procuradoria:          [], // destino externo — ninguém do sistema interno age aqui (só admin)
+  coord_arrecadacao:     [], // coordenadores ainda não implementados (só admin)
+  coord_cadastro:        []  // coordenadores ainda não implementados (só admin)
+};
+
+// Retorna true se o usuário logado pode agir (movimentar/dar parecer) neste protocolo
+function usuarioPodeAgirNoProtocolo(p) {
+  if (!p) return false;
+  const isAdmin = usuarioLogado.perfil === 'admin';
+  if (isAdmin) return true;
+  if (['concluido','arquivado'].includes(p.situacao)) return false;
+
+  // Situação "devolvido": a responsabilidade volta para o SERVIDOR ORIGINAL
+  // do protocolo (campo p.responsavel), não para quem executou a devolução
+  // (o histórico registra quem agiu, não para quem foi destinado).
+  if (p.situacao === 'devolvido') {
+    return p.responsavel === usuarioLogado.nome;
+  }
+
+  // Situação "fiscal": encaminhamento nominal para um fiscal específico
+  // (campo p.destinatarioLogin guarda para quem foi destinado).
+  if (p.situacao === 'fiscal') {
+    return p.destinatarioLogin === usuarioLogado.login;
+  }
+
+  // Situação de destino por cargo (diretor, gerente, secretaria, etc.)
+  if (Object.prototype.hasOwnProperty.call(SITUACOES_POR_CARGO, p.situacao)) {
+    const perfisPermitidos = SITUACOES_POR_CARGO[p.situacao];
+    return perfisPermitidos.includes(usuarioLogado.perfil);
+  }
+
+  // Situação "normal" — responsável específico por nome (último no histórico)
+  const respAtual = obterResponsavelAtual(p);
+  return !!(respAtual && (respAtual === usuarioLogado.login || respAtual === usuarioLogado.nome));
+}
+
+// Retorna um texto legível de quem está com o protocolo agora (para avisos)
+function descricaoResponsavelAtual(p) {
+  if (!p) return '—';
+  if (p.situacao === 'devolvido') return p.responsavel || '—';
+  if (p.situacao === 'fiscal') {
+    const u = DB.usuarios.find(x => x.login === p.destinatarioLogin);
+    return u ? `${u.nome} (Fiscal)` : 'Fiscal designado';
+  }
+  const labelsCargo = {
+    diretor: 'Diretoria/Gerência', gerente: 'Diretoria/Gerência',
+    aguardando_conclusao: 'Diretoria/Gerência (aguardando conclusão)',
+    secretaria: 'Secretaria (fora do sistema)', procuradoria: 'Procuradoria (fora do sistema)',
+    coord_arrecadacao: 'Coordenação de Arrecadação',
+    coord_cadastro: 'Coordenação de Cadastro Tributário'
+  };
+  if (labelsCargo[p.situacao]) return labelsCargo[p.situacao];
+  return obterResponsavelAtual(p) || '—';
 }
 
 function iconeSituacao(s) {
@@ -3212,10 +3659,15 @@ function alertarMovimentar(protocoloId, mensagemSucesso) {
   document.body.appendChild(ov);
 }
 
+// Controla se a movimentação em curso é a obrigatória logo após criar um
+// protocolo (usado para decidir para onde voltar depois de salvar).
+let _movimentacaoPosCriacao = false;
+
 function confirmarMovimentar(protocoloId) {
   const ov = document.getElementById('alertaMovimentar');
   if(ov) ov.remove();
   protocoloAtualId = protocoloId;
+  _movimentacaoPosCriacao = true;
   abrirDetalhes(protocoloId);
   setTimeout(()=>abrirMovimentacao(), 300);
 }
@@ -3223,6 +3675,20 @@ function confirmarMovimentar(protocoloId) {
 function abrirMovimentacao() {
   document.getElementById('movSituacao').value = 'analise';
   document.getElementById('movObs').value = '';
+  // Popular dinamicamente a lista de fiscais ativos para encaminhamento nominal
+  const grupo = document.getElementById('movFiscaisGroup');
+  if (grupo) {
+    const fiscais = DB.usuarios.filter(u => u.ativo && u.perfil === 'fiscal' && u.login !== usuarioLogado.login);
+    grupo.innerHTML = fiscais.map(u => `<option value="enc_fiscal:${u.login}">Encaminhar para ${u.nome}</option>`).join('');
+  }
+  // Auxiliar Administrativo: só pode deixar "Em Análise" ou encaminhar a um
+  // fiscal específico — as demais opções (Gerente, Diretor, Secretaria,
+  // Coordenadores, Procuradoria, Devolver, Arquivar, Concluir) ficam ocultas,
+  // já que o auxiliar apenas faz a triagem inicial do protocolo.
+  const outrasOpcoes = document.getElementById('movOutrasOpcoes');
+  if (outrasOpcoes) {
+    outrasOpcoes.style.display = (usuarioLogado.perfil === 'auxiliar_adm') ? 'none' : '';
+  }
   document.getElementById('modalMov').classList.add('open');
 }
 
@@ -3232,48 +3698,69 @@ async function salvarMovimentacao() {
 
   // ── VERIFICAÇÃO DE PERMISSÃO ─────────────────────────────────
   const isAdmin = usuarioLogado.perfil === 'admin';
-  const respAtual = obterResponsavelAtual(p);
-  const sou_responsavel = respAtual && (
-    respAtual === usuarioLogado.login ||
-    respAtual === usuarioLogado.nome
-  );
-  if (!isAdmin && !sou_responsavel) {
+  const podeMovimentar = usuarioPodeAgirNoProtocolo(p);
+  if (!podeMovimentar) {
     if (['concluido','arquivado'].includes(p.situacao)) {
       alert('⛔ Este protocolo está '+p.situacao+'. Apenas administradores podem movimentá-lo.');
     } else {
-      alert('⛔ Você não pode movimentar este protocolo.\n\nEste protocolo está com: ' + (respAtual||'—') + '\nSomente o responsável atual ou o administrador podem movimentar.');
+      alert('⛔ Você não pode movimentar este protocolo.\n\nEste protocolo está com: ' + descricaoResponsavelAtual(p) + '\nSomente o responsável atual ou o administrador podem movimentar.');
     }
     fecharModal('modalMov');
     return;
   }
 
-  const sit = document.getElementById('movSituacao').value;
+  const sitRaw = document.getElementById('movSituacao').value;
   const obs = document.getElementById('movObs').value.trim();
   const agora = new Date();
+
+  // Segurança extra: Auxiliar Administrativo só pode escolher "Em Análise"
+  // ou encaminhar a um fiscal específico, mesmo que tente burlar a tela.
+  if (usuarioLogado.perfil === 'auxiliar_adm' && sitRaw !== 'analise' && !sitRaw.startsWith('enc_fiscal:')) {
+    alert('⛔ Este perfil só pode manter o protocolo "Em Análise" ou encaminhar diretamente a um fiscal.');
+    return;
+  }
+
+  // Detectar encaminhamento nominal para um fiscal específico (value: "enc_fiscal:<login>")
+  let sit = sitRaw;
+  let destFiscalLogin = null;
+  let destFiscalNome = null;
+  if (sitRaw.startsWith('enc_fiscal:')) {
+    destFiscalLogin = sitRaw.split(':')[1];
+    const destUser = DB.usuarios.find(u => u.login === destFiscalLogin);
+    destFiscalNome = destUser ? destUser.nome : destFiscalLogin;
+    sit = 'fiscal'; // situação genérica salva no protocolo
+  }
+
   p.situacao = sit;
+  p.destinatarioLogin = destFiscalLogin; // null quando não é encaminhamento nominal
   p.historico.push({
     data: agora.toISOString(),
     dataStr: agora.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
     usuario: usuarioLogado.nome,
     situacao: sit,
-    obs
+    obs: destFiscalNome ? `Encaminhado para ${destFiscalNome} (Fiscal).${obs?' '+obs:''}` : obs
   });
   showLoading('Salvando movimentação...');
-  pa_auditar('TRAMITAR', {tabela:'protocolos', id:p.id, num:p.numero, detalhes:`Protocolo ${p.numero} movimentado para ${sit}${obs?' — '+obs.slice(0,80):''}`});
+  pa_auditar('TRAMITAR', {tabela:'protocolos', id:p.id, num:p.numero, detalhes:`Protocolo ${p.numero} movimentado para ${sit}${destFiscalNome?' ('+destFiscalNome+')':''}${obs?' — '+obs.slice(0,80):''}`});
   try {
-    await _sbPatchWhere_sdk('protocolos', 'id', p.id, { situacao: sit, atualizado_em: agora.toISOString() });
+    await _sbPatchWhere_sdk('protocolos', 'id', p.id, { situacao: sit, destinatario_login: destFiscalLogin, atualizado_em: agora.toISOString() });
     await _sbPost_sdk('historico', {
       protocolo_id: p.id,
       data:     agora.toISOString(),
       data_str: agora.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
       usuario:  usuarioLogado.nome,
       situacao: sit,
-      obs
+      obs: destFiscalNome ? `Encaminhado para ${destFiscalNome} (Fiscal).${obs?' '+obs:''}` : obs
     });
   } catch(e) { console.error('Erro ao salvar movimentação:', e); }
   finally { hideLoading(); }
   // Notificações por situação
-  if (sit === 'devolvido') {
+  if (destFiscalLogin) {
+    // Encaminhamento nominal para fiscal específico
+    await gerarNotificacao('parecer', '📋 Protocolo Encaminhado para Análise',
+      `O protocolo ${p.numero} foi encaminhado para você por ${usuarioLogado.nome}.${obs?' Obs: '+obs:''}`,
+      protocoloAtualId, [destFiscalLogin]);
+  } else if (sit === 'devolvido') {
     // Notificar o responsável pelo protocolo
     const proto = DB.protocolos.find(x => x.id === protocoloAtualId);
     if (proto) {
@@ -3299,6 +3786,14 @@ async function salvarMovimentacao() {
     await gerarNotificacao('secretaria', '🏛️ Processo Encaminhado à Secretaria',
       `O processo ${p.numero} foi encaminhado à Secretaria por ${usuarioLogado.nome}.`,
       protocoloAtualId, destinatariosAdmin());
+  } else if (sit === 'coord_arrecadacao') {
+    await gerarNotificacao('parecer', '📋 Processo Encaminhado ao Coordenador de Arrecadação',
+      `O processo ${p.numero} foi encaminhado ao Coordenador de Arrecadação por ${usuarioLogado.nome}.${obs?' Obs: '+obs:''}`,
+      protocoloAtualId, destinatariosAdmin());
+  } else if (sit === 'coord_cadastro') {
+    await gerarNotificacao('parecer', '📋 Processo Encaminhado ao Coordenador de Cadastro Tributário',
+      `O processo ${p.numero} foi encaminhado ao Coordenador de Cadastro Tributário por ${usuarioLogado.nome}.${obs?' Obs: '+obs:''}`,
+      protocoloAtualId, destinatariosAdmin());
   } else if (sit === 'concluido') {
     const proto = DB.protocolos.find(x => x.id === protocoloAtualId);
     if (proto) {
@@ -3309,7 +3804,17 @@ async function salvarMovimentacao() {
     }
   }
   fecharModal('modalMov');
-  abrirDetalhes(protocoloAtualId);
+  // Auxiliar Administrativo: após a movimentação obrigatória logo depois de
+  // criar o protocolo, volta direto ao Dashboard (não fica com o protocolo
+  // aberto na tela — evita confusão sobre o que fazer em seguida).
+  if (_movimentacaoPosCriacao && usuarioLogado.perfil === 'auxiliar_adm') {
+    _movimentacaoPosCriacao = false;
+    fecharModal('modalDetalhes');
+    navegarPara('dashboard');
+  } else {
+    _movimentacaoPosCriacao = false;
+    abrirDetalhes(protocoloAtualId);
+  }
   renderDashboard();
 }
 
@@ -3366,12 +3871,12 @@ function imprimirComprovante() {
       <tr><td class="lbl">Telefone</td><td>${p.telefone || '—'}</td></tr>
       <tr><td class="lbl">E-mail</td><td>${p.email || '—'}</td></tr>
       <tr><td class="lbl">Endereço</td><td>${p.endereco || '—'}</td></tr>
-      <tr><td class="lbl">Assunto / Requerimento</td><td>${p.assuntoNome}</td></tr>
-      <tr><td class="lbl">Base Legal</td><td>${p.baseLegal || '—'}</td></tr>
+      <tr><td class="lbl">Assunto / Requerimento</td><td>${p.assuntoCustom || p.assuntoNome}</td></tr>
+      <tr><td class="lbl">Base Legal</td><td>${p.baseLegal || '—'}${p.leiAplicavel === 'lc001' ? ' <span style="background:#fef3c7;color:#78350f;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;margin-left:6px;">📙 LC 001/2001</span>' : (p.leiAplicavel === 'lc5' ? ' <span style="background:#dcfce7;color:#14532d;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;margin-left:6px;">📗 LC 5/2025</span>' : '')}</td></tr>
       <tr><td class="lbl">Documentos Apresentados</td><td>${p.documentos || '—'}</td></tr>
       <tr><td class="lbl">Referência / Inscrição</td><td>${p.referencia || '—'}</td></tr>
       <tr><td class="lbl">Descrição / Observações</td><td>${p.descricao || '—'}</td></tr>
-      <tr><td class="lbl">Prazo para Resposta</td><td>${p.prazo} dias úteis (${p.baseLegal})</td></tr>
+      <tr><td class="lbl">Prazo para Resposta</td><td>${p.prazoCustom || p.prazo} dias úteis (${p.baseLegal})</td></tr>
       <tr><td class="lbl">Situação Atual</td><td>${{recebido:'Recebido',analise:'Em Análise',gerente:'Com Gerente',diretor:'Com Diretor',secretaria:'Com Secretaria',aguardando_conclusao:'Aguard. Conclusão',aguardando:'Aguard. Docs',concluido:'Concluído',arquivado:'Arquivado'}[p.situacao] || p.situacao}</td></tr>
       <tr><td class="lbl">Atendente Responsável</td><td>${p.responsavel}</td></tr>
     </table>
@@ -3421,11 +3926,18 @@ function salvarUsuarioProtocolo() {
   renderConfiguracoes();
 }
 
-function removerUsuario(id) {
+async function removerUsuario(id) {
   if (!confirm('Remover este usuário?')) return;
-  DB.usuarios = DB.usuarios.filter(u => u.id !== id);
-  salvarDB();
+  const u = DB.usuarios.find(x => x.id === id);
+  DB.usuarios = DB.usuarios.filter(x => x.id !== id);
   renderConfiguracoes();
+  try {
+    await _sb.from('usuarios').delete().eq('id', id);
+    if (u) pa_auditar && pa_auditar('EXCLUIR', {tabela:'usuarios', id, num:u.login, detalhes:`Usuário ${u.nome} removido`});
+  } catch(e) {
+    console.error('Erro ao remover usuário no Supabase:', e);
+    alert('⚠️ O usuário foi removido da tela, mas houve um erro ao remover do banco de dados. Ele pode reaparecer ao recarregar. Erro: ' + (e.message||e));
+  }
 }
 
 function abrirModalNovoAssunto() {
@@ -3449,17 +3961,29 @@ function salvarAssunto() {
   popularSelectAssuntos();
 }
 
-function removerAssunto(id) {
+async function removerAssunto(id) {
   if (!confirm('Remover este tipo de assunto?')) return;
   DB.assuntos = DB.assuntos.filter(a => a.id !== id);
-  salvarDB();
   renderConfiguracoes();
   popularSelectAssuntos();
+  try {
+    await _sb.from('assuntos').delete().eq('id', id);
+  } catch(e) {
+    console.error('Erro ao remover assunto no Supabase:', e);
+    alert('⚠️ O assunto foi removido da tela, mas houve um erro ao remover do banco de dados. Ele pode reaparecer ao recarregar. Erro: ' + (e.message||e));
+  }
 }
 
-function atualizarPrazoAssunto(id, val) {
+async function atualizarPrazoAssunto(id, val) {
   const a = DB.assuntos.find(x => x.id === id);
-  if (a) { a.prazo = parseInt(val); salvarDB(); }
+  if (!a) return;
+  a.prazo = parseInt(val);
+  try {
+    await sbPatch('assuntos', id, { prazo: a.prazo });
+  } catch(e) {
+    console.error('Erro ao salvar prazo do assunto:', e);
+    alert('⚠️ Erro ao salvar o novo prazo. Tente novamente.');
+  }
 }
 
 // ========== NAVEGAÇÃO ==========
@@ -3961,9 +4485,533 @@ Os pedidos apresentados ao Setor de Tributos deverão ser respondidos no prazo m
 
 O servidor responsável pela análise deverá identificar o fundamento legal específico aplicável ao pedido, instruir o processo com os elementos necessários e emitir manifestação fundamentada.`,
     conclusaoTexto: `Pelo exposto, após análise do caso concreto à luz da legislação tributária municipal vigente (LC n° 5, de 26/12/2025), encaminho o presente processo com a manifestação técnica fundamentada para as providências cabíveis. Submeto à apreciação do Sr. Diretor do Setor de Tributos para ciência, visto e encaminhamento.`
+  },
+
+  // 17 — Pedido de Inscrição Municipal (Cadastro Mobiliário)
+  17: {
+    relatorio: (p) => {
+      const ehPessoaFisica = (p.documento || '').replace(/\D/g,'').length === 11;
+      const qualificacao = ehPessoaFisica
+        ? `pessoa física, na qualidade de profissional autônomo/prestador de serviço`
+        : `pessoa jurídica, na qualidade de titular/representante legal do estabelecimento`;
+      return `Em ${new Date(p.dataHora).toLocaleDateString('pt-BR')}, compareceu a este Setor de Tributos o(a) Sr(a). ${p.representante||p.nome}, ${qualificacao}, CPF/CNPJ n° ${p.documento}, requerendo a INSCRIÇÃO MUNICIPAL no Cadastro Mobiliário do Município de Caetité, referente ao exercício de atividade ${ehPessoaFisica?'autônoma/profissional':'econômica'} neste Município, apresentando os documentos listados nos autos.`;
+    },
+    fundamentacao: `Art. 280 — LC n° 5, de 26/12/2025:
+O cadastro fiscal do Município é constituído de sujeitos passivos de obrigações tributárias e quaisquer pessoas, físicas ou jurídicas, privadas ou públicas, que se relacionam com a Administração Pública no recolhimento de preços públicos ou outras rendas municipais.
+
+Art. 281, II — LC n° 5, de 26/12/2025:
+O cadastro mobiliário subdivide-se em: a) cadastro dos estabelecimentos em geral; b) cadastro das atividades exercidas nos logradouros públicos; c) cadastro de profissionais autônomos; d) cadastro de sociedades uniprofissionais.
+
+Art. 281, §2° — LC n° 5, de 26/12/2025:
+O cadastro mobiliário tem por objetivo o registro de dados de pessoa física ou jurídica que desenvolva atividade econômica, associativa, cooperativa e congêneres em estabelecimento localizado neste Município, ou que seja sujeito passivo de obrigação tributária municipal.
+
+Art. 282 — LC n° 5, de 26/12/2025:
+O sujeito passivo é obrigado a se inscrever no cadastro fiscal do Município e comunicar as alterações dos dados constantes da ficha cadastral, sendo as informações de sua inteira responsabilidade, não implicando na aceitação como verdadeiras pela Administração Tributária. Parágrafo único — O prazo para inscrição cadastral é de 20 (vinte) dias úteis, a contar do ato ou fato que lhes deu origem.
+
+Observação: a legislação não estabelece prazo específico para a Administração conceder a inscrição municipal (diferente do que ocorre, por exemplo, com a Baixa Cadastral — 40 dias, Art. 268). O prazo de 20 (vinte) dias úteis adotado neste procedimento corresponde ao prazo interno de análise definido pelo Setor de Tributos, por analogia ao prazo do Art. 282 (que trata do prazo do contribuinte para requerer a inscrição), e não constitui, portanto, prazo legal oponível à Administração.`,
+    analise: `O pedido de inscrição municipal é procedimento obrigatório para toda pessoa física ou jurídica que exerça atividade econômica, autônoma, associativa ou cooperativa no território do Município, nos termos do Art. 280 e seguintes da LC n° 5/2025.
+
+Cabe verificar: a) a completude da documentação apresentada (documento de identificação e comprovante de endereço, acrescidos de comprovante de habilitação profissional quando pessoa física exercendo atividade regulamentada, ou contrato social/ato constitutivo e CNPJ quando pessoa jurídica); b) a compatibilidade da atividade pretendida com a Lei de Uso e Ocupação do Solo; c) a inexistência de impedimentos cadastrais.
+
+A inscrição, uma vez deferida, gera o número de Inscrição Municipal e viabiliza a posterior expedição do Alvará de Licença de Funcionamento, sujeito ao pagamento das taxas municipais cabíveis.`,
+    conclusaoTexto: `Pelo exposto, opino pelo DEFERIMENTO do pedido de Inscrição Municipal no Cadastro Mobiliário, nos termos dos Arts. 280 a 284 da LC n° 5, de 26/12/2025, condicionado à regularidade da documentação apresentada e à compatibilidade da atividade com a legislação de uso e ocupação do solo. Encaminhe-se ao setor de cadastro para geração do número de inscrição e posterior orientação quanto ao Alvará de Funcionamento. Submeto à apreciação do Sr. Diretor do Setor de Tributos para ciência, visto e encaminhamento.`
   }
 }
-const MAPA_ASSUNTO_PARECER = { 1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8, 9:9, 10:10, 11:11, 12:12, 13:13, 14:14, 15:15, 16:16 };
+
+// Mapeia o ID do assunto para a chave do modelo de parecer (relação 1:1)
+const MAPA_ASSUNTO_PARECER = { 1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8, 9:9, 10:10, 11:11, 12:12, 13:13, 14:14, 15:15, 16:16, 17:17 };
+
+// ═══════════════════════════════════════════════════════════
+// MODELOS DE PARECER — LC 001/2001 (Lei Antiga)
+// Usados quando o protocolo é regido pela lei antiga (débito com fato gerador anterior a 26/03/2026)
+// ═══════════════════════════════════════════════════════════
+const TEXTOS_PARECER_LC001 = {
+
+  // 1 — Cancelamento / Revisão de TFF
+  1: {
+    relatorio: (p) => `Em ${new Date(p.dataHora).toLocaleDateString('pt-BR')}, compareceu a este Setor de Tributos o(a) Sr(a). ${p.representante||p.nome}, na qualidade de ${p.representante?'representante legal':'titular'} da empresa/contribuinte ${p.nome}, CPF/CNPJ n° ${p.documento}, inscrita no cadastro municipal sob o n° ${p.inscricao||'___________'}, solicitando o cancelamento/revisão da Taxa de Fiscalização do Funcionamento — TFF, referente a débito com fato gerador anterior a 26/03/2026 (regido pela LC n° 001/2001). O requerente alega ausência de movimentação financeira/operacional, permanecendo com a inscrição municipal ativa e sem pedido formal de baixa até a presente data.`,
+    fundamentacao: `Art. 146 — LC n° 001/2001:
+A Taxa de Fiscalização do Funcionamento dos estabelecimentos em geral, fundada no poder de polícia do Município, tem como fato gerador a fiscalização do cumprimento da legislação disciplinadora do uso e ocupação do solo, segurança, ordem, tranquilidade pública e cumprimento de normas municipais, a que se submete qualquer pessoa física ou jurídica em razão do funcionamento de quaisquer atividades no Município.
+
+Art. 147 — LC n° 001/2001:
+A taxa será devida anualmente, calculada com base na Tabela III anexa a esta Lei, e cobrada como disposto em regulamento. Parágrafo Único — A taxa só será devida a partir do exercício subsequente ao do início da atividade.
+
+Art. 148 — LC n° 001/2001:
+As infrações e as penalidades previstas para os impostos são aplicáveis, no que couber, à taxa de fiscalização do funcionamento.
+
+Art. 5°, II, "b" — LC n° 001/2001:
+A extinção do crédito tributário se dá, entre outras hipóteses, pela remissão. O cancelamento de crédito tributário regularmente constituído somente se dá por lei específica ou por ato do Chefe do Poder Executivo, mediante processo administrativo devidamente instruído.`,
+    analise: `O pedido de cancelamento/revisão da TFF não encontra amparo legal na LC n° 001/2001. A TFF, sob a lei antiga, tem como fato gerador o exercício do poder de polícia (Art. 146), sendo devida em razão do simples funcionamento — presumido — e não da efetiva movimentação econômica.
+
+Enquanto a inscrição municipal estiver ativa, a obrigação tributária subsiste. A alegação de ausência de movimentação não constitui, por si só, causa de extinção do crédito tributário. O caminho adequado para cessar cobranças é o pedido formal de baixa (Art. 141 e regulamentos). O cancelamento de débito já constituído exige remissão, competência do Prefeito Municipal, mediante lei específica ou ato administrativo fundamentado.`,
+    conclusaoTexto: `Pelo exposto, opino pelo INDEFERIMENTO do pedido de cancelamento/revisão da TFF regida pela LC n° 001/2001, por ausência de amparo legal. Recomenda-se orientar o contribuinte quanto ao pedido formal de baixa da inscrição municipal, à possibilidade de impugnação (Art. 42), ou à solicitação de parcelamento do débito (Art. 8°). Submeto à apreciação do Sr. Diretor do Setor de Tributos para ciência, visto e encaminhamento.`
+  },
+
+  // 2 — Baixa da Inscrição Municipal
+  2: {
+    relatorio: (p) => `Em ${new Date(p.dataHora).toLocaleDateString('pt-BR')}, compareceu a este Setor de Tributos o(a) Sr(a). ${p.representante||p.nome}, na qualidade de ${p.representante?'representante legal':'titular'} da empresa/contribuinte ${p.nome}, CPF/CNPJ n° ${p.documento}, inscrita no cadastro municipal sob o n° ${p.inscricao||'___________'}, solicitando a BAIXA da inscrição municipal, em razão do encerramento de suas atividades, apresentando os documentos listados na seção anterior. O pedido refere-se ao regime da LC n° 001/2001, aplicável a débitos com fato gerador anterior a 26/03/2026.`,
+    fundamentacao: `Art. 141 — LC n° 001/2001:
+A baixa do cadastro fiscal de atividades será solicitada pelo contribuinte, mediante requerimento fundamentado, sujeito à conferência das informações, à verificação de débitos pendentes e à observância do disposto em regulamento próprio.
+
+Art. 5° — LC n° 001/2001:
+Extinguem o crédito tributário: I – o pagamento; II – outras modalidades previstas em lei, dentre elas: a) a decisão administrativa irreformável, contrária à Fazenda Pública; b) a remissão; c) a compensação; d) decadência ou prescrição. A baixa do cadastro, isoladamente, não extingue os créditos já constituídos.
+
+Art. 146 — LC n° 001/2001:
+Enquanto ativa a inscrição, o contribuinte encontra-se sujeito ao poder de polícia e à respectiva taxação (TFF), sendo essencial a formalização da baixa para cessar a incidência tributária a partir da data do requerimento.`,
+    analise: `O pedido de baixa é formalmente admissível nos termos do Art. 141 da LC n° 001/2001. Cabe verificar a existência de débitos pendentes referentes aos exercícios anteriores à baixa, cientificando o requerente da persistência da obrigação quanto aos créditos já constituídos, uma vez que a baixa produz efeitos ex nunc (a partir do requerimento).
+
+A baixa não retroage nem extingue automaticamente débitos anteriores. A regularização, se for o caso, deverá ser feita mediante pagamento à vista ou parcelamento (Art. 8°).`,
+    conclusaoTexto: `Pelo exposto, opino pelo DEFERIMENTO do pedido de baixa da inscrição municipal, condicionado à regularização de eventuais débitos pendentes ou ao ciente formal do contribuinte quanto à persistência da exigibilidade dos créditos já constituídos, nos termos do Art. 141 da LC n° 001/2001. Submeto à apreciação do Sr. Diretor do Setor de Tributos para ciência, visto e encaminhamento.`
+  },
+
+  // 3 — Suspensão da Inscrição Municipal
+  3: {
+    relatorio: (p) => `Em ${new Date(p.dataHora).toLocaleDateString('pt-BR')}, compareceu a este Setor o(a) Sr(a). ${p.representante||p.nome}, na qualidade de ${p.representante?'representante legal':'titular'} da empresa/contribuinte ${p.nome}, CPF/CNPJ n° ${p.documento}, inscrita sob o n° ${p.inscricao||'___________'}, solicitando a SUSPENSÃO da inscrição municipal, informando que não irá exercer atividades por período determinado. O pedido refere-se ao regime da LC n° 001/2001.`,
+    fundamentacao: `Art. 4° — LC n° 001/2001:
+As situações que impedem, suspendem ou modificam a inscrição no cadastro municipal serão disciplinadas por ato do Poder Executivo, cabendo ao contribuinte solicitar formalmente a alteração de sua situação cadastral.
+
+Art. 141 — LC n° 001/2001 e regulamento:
+A suspensão temporária de inscrição, quando prevista, deve ser solicitada mediante requerimento fundamentado, com documentação que comprove o não exercício das atividades, sujeita à análise do órgão competente.`,
+    analise: `A LC n° 001/2001 não disciplina especificamente o instituto da suspensão temporária, remetendo a matéria à regulamentação pelo Poder Executivo (Art. 4°). A análise do pedido deve seguir os atos regulamentares vigentes à época do fato gerador do débito.
+
+Sendo cabível, a suspensão produzirá efeitos a partir do deferimento, cessando novas obrigações relativas à TFF pelo período aprovado, sem prejuízo dos débitos anteriores.`,
+    conclusaoTexto: `Pelo exposto, opino pelo DEFERIMENTO do pedido de suspensão da inscrição municipal, nos termos do Art. 4° da LC n° 001/2001 e regulamento aplicável, condicionado à comprovação documental do não exercício das atividades e à regularização de débitos pendentes. Submeto à apreciação do Sr. Diretor do Setor de Tributos para ciência, visto e encaminhamento.`
+  },
+
+  // 4 — Impugnação — Contestação do Fisco
+  4: {
+    relatorio: (p) => `Em ${new Date(p.dataHora).toLocaleDateString('pt-BR')}, compareceu a este Setor o(a) Sr(a). ${p.representante||p.nome}, na qualidade de ${p.representante?'representante legal':'titular'} da empresa/contribuinte ${p.nome}, CPF/CNPJ n° ${p.documento}, inscrita sob o n° ${p.inscricao||'___________'}, apresentando IMPUGNAÇÃO ao lançamento tributário, no prazo legal de 30 (trinta) dias previsto no Art. 42 da LC n° 001/2001. A impugnação está devidamente formalizada por escrito e instruída com os documentos que a fundamentam.`,
+    fundamentacao: `Art. 42 — LC n° 001/2001:
+A impugnação da exigência, apresentada à repartição preparadora no prazo de 30 (trinta) dias, a contar da ciência do impugnante, instaura a fase contenciosa do procedimento.
+
+§ 1° — No caso de auto de infração complementar ou de qualquer modificação no lançamento, será devolvido o prazo para impugnação adicional ao fato novo.
+
+§ 2° — A impugnação será formulada por escrito e instruída com os documentos em que se fundamentar.
+
+Art. 5°, XXXV e LV da CF/88:
+Garantia constitucional do contraditório e da ampla defesa em todos os processos administrativos.`,
+    analise: `A impugnação foi apresentada dentro do prazo legal de 30 dias (Art. 42), por escrito e devidamente instruída. Preenchidos os requisitos formais, a impugnação é admissível e instaura a fase contenciosa do procedimento administrativo tributário.
+
+O crédito tributário terá sua exigibilidade suspensa durante o processamento da impugnação, nos termos do Art. 151, III do CTN, aplicando-se subsidiariamente às disposições municipais.
+
+Cabe encaminhamento ao órgão preparador para análise das razões apresentadas, produção de eventual prova adicional e julgamento em primeira instância, conforme Arts. 43 a 45 da LC n° 001/2001.`,
+    conclusaoTexto: `Pelo exposto, recebo a impugnação como TEMPESTIVA E ADMISSÍVEL, com suspensão automática da exigibilidade do crédito tributário (Art. 42 da LC n° 001/2001). Encaminhar ao órgão preparador para análise em 1ª instância, com posterior julgamento pelo Sr. Prefeito Municipal, conforme Art. 45. Submeto à apreciação do Sr. Diretor do Setor de Tributos para ciência, visto e encaminhamento.`
+  },
+
+  // 5 — Impugnação — Julgamento 1ª Instância
+  5: {
+    relatorio: (p) => `Trata-se de julgamento em 1ª instância administrativa de IMPUGNAÇÃO apresentada por ${p.nome}, CPF/CNPJ n° ${p.documento}, inscrição municipal n° ${p.inscricao||'___________'}, tempestivamente protocolada nos termos do Art. 42 da LC n° 001/2001. A impugnação foi analisada quanto aos fatos e ao direito alegados, com base na documentação juntada e nos elementos constantes dos autos.`,
+    fundamentacao: `Art. 43 — LC n° 001/2001:
+A autoridade preparadora, definida em regimento interno, poderá discordar de exigência não impugnada, em despacho fundamentado, o qual será submetido ao Secretário da pasta a que estiver vinculada a Fazenda Municipal.
+
+Art. 44 — LC n° 001/2001:
+O processo será decidido em primeira instância administrativa pela autoridade competente designada pelo Poder Executivo, mediante despacho fundamentado.
+
+Art. 45 — LC n° 001/2001:
+São definitivas as decisões prolatadas pelo Prefeito Municipal.
+
+Art. 5°, LV da CF/88:
+Contraditório e ampla defesa em processo administrativo.`,
+    analise: `Analisadas as razões da impugnação e verificados os documentos juntados aos autos, cabe à autoridade julgadora de primeira instância pronunciar-se de forma fundamentada sobre a procedência ou improcedência das alegações do impugnante, à luz da legislação municipal vigente à época do fato gerador (LC n° 001/2001 e demais atos normativos).
+
+Da decisão de primeira instância cabe recurso ao Sr. Prefeito Municipal, cuja decisão será definitiva (Art. 45).`,
+    conclusaoTexto: `Pelo exposto, opino pela [PROCEDÊNCIA / IMPROCEDÊNCIA / PROCEDÊNCIA PARCIAL] da impugnação apresentada, com fundamento nos elementos analisados e na aplicação da LC n° 001/2001. Da presente decisão cabe recurso ao Sr. Prefeito Municipal (Art. 45). Submeto à apreciação da autoridade competente para julgamento em 1ª instância, ciência, visto e encaminhamento.`
+  },
+
+  // 6 — Recurso Voluntário 2ª Instância
+  6: {
+    relatorio: (p) => `Trata-se de RECURSO VOLUNTÁRIO em 2ª instância administrativa apresentado por ${p.nome}, CPF/CNPJ n° ${p.documento}, inscrição municipal n° ${p.inscricao||'___________'}, contra decisão proferida em 1ª instância no processo de impugnação nos termos dos Arts. 42 e ss. da LC n° 001/2001, com pedido de reforma da decisão.`,
+    fundamentacao: `Art. 45 — LC n° 001/2001:
+São definitivas as decisões prolatadas pelo Prefeito Municipal.
+
+Art. 46 — LC n° 001/2001:
+A decisão definitiva contrária ao sujeito passivo será cumprida no prazo de 30 (trinta) dias, contados da ciência.
+
+Art. 5°, LV da CF/88:
+Contraditório e ampla defesa em processos administrativos.
+
+Aplicação subsidiária do Art. 151, III do CTN — suspensão da exigibilidade do crédito tributário durante a tramitação do processo administrativo.`,
+    analise: `O recurso foi apresentado dentro do prazo legal e será submetido à apreciação do Sr. Prefeito Municipal para decisão definitiva em 2ª instância (Art. 45 da LC n° 001/2001). A decisão a ser proferida encerra a esfera administrativa e, sendo contrária ao contribuinte, deverá ser cumprida no prazo de 30 dias (Art. 46), sob pena de inscrição do débito em Dívida Ativa.`,
+    conclusaoTexto: `Pelo exposto, encaminho o recurso voluntário ao Sr. Prefeito Municipal para decisão em 2ª instância administrativa, nos termos do Art. 45 da LC n° 001/2001. Após a decisão, o processo deve retornar para as providências cabíveis (comunicação ao contribuinte e execução, se for o caso). Submeto à apreciação do Sr. Diretor do Setor de Tributos para ciência, visto e encaminhamento.`
+  },
+
+  // 7 — Consulta Tributária
+  7: {
+    relatorio: (p) => `Em ${new Date(p.dataHora).toLocaleDateString('pt-BR')}, o(a) contribuinte ${p.nome}, CPF/CNPJ n° ${p.documento}, apresentou CONSULTA TRIBUTÁRIA sobre a interpretação e aplicação da legislação tributária municipal ao caso concreto descrito nos autos, requerendo pronunciamento formal da Administração sobre a situação apresentada.`,
+    fundamentacao: `Art. 47 — LC n° 001/2001:
+Fica o Poder Executivo autorizado a criar e disciplinar a reclamação simplificada, cuja tramitação processual terá rito sumaríssimo e substituirá, nos casos previstos, a impugnação de que trata o processo contencioso.
+
+Art. 51 — LC n° 001/2001:
+Após resolvida a consulta, deverá o consulente ser informado quanto ao conteúdo da decisão da autoridade administrativa competente, tendo, a partir desse comunicado, 30 (trinta) dias para tomar as providências cabíveis, sem sofrer nenhuma penalidade.
+
+Aplicação subsidiária do Art. 100 do CTN — as normas complementares das leis tributárias vinculam a Administração e o consulente.`,
+    analise: `A consulta é o instrumento pelo qual o contribuinte busca pronunciamento formal da Administração sobre a interpretação e aplicação da legislação tributária ao seu caso concreto. Uma vez respondida, a resposta vincula tanto a Administração quanto o consulente, e este dispõe de 30 dias para se ajustar às orientações, sem sofrer penalidade (Art. 51 da LC n° 001/2001).
+
+Analisada a matéria com base na legislação vigente à época do fato consultado, cabe emitir manifestação técnica clara e fundamentada.`,
+    conclusaoTexto: `Pelo exposto, respondo à consulta tributária formalizada nos autos com base na LC n° 001/2001 e demais atos normativos aplicáveis. Fica o consulente cientificado de que, a partir da ciência formal desta resposta, disporá de 30 (trinta) dias para tomar as providências cabíveis (Art. 51 da LC n° 001/2001). Submeto à apreciação do Sr. Diretor do Setor de Tributos para ciência, visto e encaminhamento.`
+  },
+
+  // 8 — Revisão de Dados Cadastrais
+  8: {
+    relatorio: (p) => `Em ${new Date(p.dataHora).toLocaleDateString('pt-BR')}, o(a) contribuinte ${p.nome}, CPF/CNPJ n° ${p.documento}, inscrição municipal n° ${p.inscricao||'___________'}, requereu a REVISÃO DE DADOS CADASTRAIS, alegando existência de erro ou desatualização nas informações constantes do cadastro fiscal municipal, apresentando os documentos comprobatórios listados nos autos.`,
+    fundamentacao: `Art. 67 — LC n° 001/2001:
+Compete ao contribuinte solicitar o cancelamento ou a retificação da inscrição cadastral do imóvel, mediante petição ou formulário, apenas nas situações específicas previstas em Lei ou regulamento, especialmente em caso de erro de informação cadastral que prejudique os dados da inscrição.
+
+Art. 68 — LC n° 001/2001:
+O Poder Executivo expedirá os atos administrativos necessários à regulamentação das normas referentes à inscrição no cadastro imobiliário.
+
+Art. 4° — LC n° 001/2001:
+Os atos administrativos de alteração cadastral devem ser fundamentados e instruídos com documentação comprobatória.`,
+    analise: `A revisão de dados cadastrais é procedimento legítimo previsto no Art. 67 da LC n° 001/2001, aplicável quando houver erro material ou desatualização das informações do cadastro. A correção deve estar amparada em documentação comprobatória adequada.
+
+Verificados os documentos apresentados e a compatibilidade com o cadastro atual, procede-se à análise técnica quanto à admissibilidade e ao mérito da revisão pleiteada, sem prejuízo dos débitos já constituídos com base nas informações vigentes.`,
+    conclusaoTexto: `Pelo exposto, opino pelo DEFERIMENTO da revisão de dados cadastrais requerida, com fundamento no Art. 67 da LC n° 001/2001, produzindo efeitos a partir do deferimento, sem retroatividade quanto aos débitos já constituídos. Encaminhar ao setor de cadastro para a devida atualização. Submeto à apreciação do Sr. Diretor do Setor de Tributos para ciência, visto e encaminhamento.`
+  },
+
+  // 9 — Certidão Negativa de Débitos (CND)
+  9: {
+    relatorio: (p) => `Em ${new Date(p.dataHora).toLocaleDateString('pt-BR')}, o(a) contribuinte ${p.nome}, CPF/CNPJ n° ${p.documento}, inscrição municipal n° ${p.inscricao||'___________'}, requereu a expedição de CERTIDÃO NEGATIVA DE DÉBITOS relativa aos tributos municipais, nos termos do Art. 221 da LC n° 001/2001.`,
+    fundamentacao: `Art. 221 — LC n° 001/2001:
+A prova de quitação administrativa será feita unicamente por certidão negativa, regularmente expedida pela repartição competente.
+
+Art. 205 do CTN:
+A lei poderá exigir que a prova da quitação de determinado tributo, quando exigível, seja feita por certidão negativa, expedida à vista de requerimento do interessado, que contenha todas as informações necessárias à identificação de sua pessoa, domicílio fiscal e ramo de negócio ou atividade.
+
+Art. 206 do CTN:
+Tem os mesmos efeitos previstos no artigo anterior a certidão de que conste a existência de créditos não vencidos, em curso de cobrança executiva em que tenha sido efetivada a penhora, ou cuja exigibilidade esteja suspensa.`,
+    analise: `Verificada a situação fiscal do requerente perante o Município de Caetité, constata-se a [existência / inexistência] de débitos tributários vencidos e exigíveis, aptos a ensejar a expedição de:
+
+▸ CERTIDÃO NEGATIVA — se não constar débito;
+▸ CERTIDÃO POSITIVA COM EFEITOS DE NEGATIVA — se houver crédito não vencido, em execução com penhora efetivada, ou exigibilidade suspensa (Art. 206 do CTN);
+▸ CERTIDÃO POSITIVA — se houver débito vencido não pago ou em cobrança regular.
+
+A expedição observa a legislação vigente à época e as informações constantes do cadastro fiscal municipal.`,
+    conclusaoTexto: `Pelo exposto, opino pela EXPEDIÇÃO da certidão [NEGATIVA / POSITIVA COM EFEITOS DE NEGATIVA / POSITIVA], nos termos do Art. 221 da LC n° 001/2001 e Arts. 205 e 206 do CTN. A certidão terá validade conforme prazo estabelecido em regulamento. Submeto à apreciação do Sr. Diretor do Setor de Tributos para ciência, visto e encaminhamento.`
+  },
+
+  // 10 — Parcelamento de Débito
+  10: {
+    relatorio: (p) => `Em ${new Date(p.dataHora).toLocaleDateString('pt-BR')}, o(a) contribuinte ${p.nome}, CPF/CNPJ n° ${p.documento}, inscrição municipal n° ${p.inscricao||'___________'}, solicitou o PARCELAMENTO do crédito tributário existente em seu nome, referente a débito com fato gerador anterior a 26/03/2026 (regido pela LC n° 001/2001), apresentando os documentos e a proposta constantes dos autos.`,
+    fundamentacao: `Art. 8° — LC n° 001/2001:
+É permitido o parcelamento do crédito tributário, sempre que ocorrer motivo que o justifique, disciplinado por ato do Poder Executivo.
+
+§ 1° — A competência para conceder o parcelamento pode ser delegada.
+
+Art. 5°, II — LC n° 001/2001:
+Extingue o crédito tributário, dentre outras hipóteses, o pagamento — inclusive parcelado, quando integralmente cumprido conforme os termos avençados.
+
+Aplicação subsidiária do Art. 155-A do CTN — o parcelamento suspende a exigibilidade do crédito tributário, nos termos da lei específica.`,
+    analise: `O parcelamento é instrumento legal expressamente admitido pelo Art. 8° da LC n° 001/2001, cabendo à Administração deferir o pedido nos termos do regulamento vigente, observando: a) o número máximo de parcelas; b) o valor mínimo de cada parcela; c) as garantias eventualmente exigidas; d) as hipóteses de rescisão automática por inadimplência.
+
+O parcelamento, uma vez concedido, suspende a exigibilidade do crédito tributário (Art. 151, VI do CTN), permitindo a emissão de certidão positiva com efeitos de negativa (Art. 206 do CTN). A confissão de dívida que acompanha o parcelamento interrompe a prescrição (Art. 174, IV do CTN).`,
+    conclusaoTexto: `Pelo exposto, opino pelo DEFERIMENTO do pedido de parcelamento, nos termos do Art. 8° da LC n° 001/2001 e do regulamento vigente, condicionado à assinatura do Termo de Confissão e Parcelamento de Dívida, com pagamento em [___] parcelas, sob pena de rescisão em caso de inadimplência. Submeto à apreciação do Sr. Diretor do Setor de Tributos para ciência, visto e encaminhamento.`
+  },
+
+  // 11 — Pedido de Remissão de Débito
+  11: {
+    relatorio: (p) => `Em ${new Date(p.dataHora).toLocaleDateString('pt-BR')}, o(a) contribuinte ${p.nome}, CPF/CNPJ n° ${p.documento}, inscrição municipal n° ${p.inscricao||'___________'}, apresentou pedido de REMISSÃO do débito tributário existente em seu nome, referente a fato gerador anterior a 26/03/2026 (regido pela LC n° 001/2001), com base em razões econômicas, sociais ou de equidade constantes dos autos.`,
+    fundamentacao: `Art. 5°, II, "b" — LC n° 001/2001:
+Extingue o crédito tributário, dentre outras hipóteses, a remissão. A LC n° 001/2001 não disciplina expressamente a matéria, sendo aplicável subsidiariamente o CTN.
+
+Art. 172 do CTN:
+A lei pode autorizar a autoridade administrativa a conceder, por despacho fundamentado, remissão total ou parcial do crédito tributário, atendendo:
+I – à situação econômica do sujeito passivo;
+II – ao erro ou ignorância escusável do sujeito passivo, quanto a matéria de fato;
+III – à diminuta importância do crédito tributário;
+IV – a considerações de equidade, em relação com as características pessoais ou materiais do caso;
+V – a condições peculiares a determinada região do território da entidade tributante.
+
+Parágrafo único — O despacho referido neste artigo não gera direito adquirido, podendo ser revogado a qualquer tempo, mediante ato fundamentado.`,
+    analise: `A remissão é modalidade de extinção do crédito tributário que exige lei municipal específica que a autorize, nos termos do Art. 150, § 6° da CF/88 e do Art. 172 do CTN. Não havendo lei específica autorizadora vigente à época do fato gerador que ampare a hipótese apresentada, o pedido não pode ser deferido pela via administrativa.
+
+A concessão de remissão sem lei autorizadora configura renúncia de receita irregular, com possível responsabilização do agente público (Lei de Responsabilidade Fiscal — LC n° 101/2000, Art. 14).`,
+    conclusaoTexto: `Pelo exposto, opino pelo INDEFERIMENTO do pedido de remissão, por ausência de lei municipal específica autorizadora aplicável ao caso concreto (Art. 172 do CTN c/c Art. 5°, II, "b" da LC n° 001/2001). Recomenda-se orientar o contribuinte sobre o parcelamento (Art. 8°) como alternativa para regularização do débito. Submeto à apreciação do Sr. Diretor do Setor de Tributos para ciência, visto e encaminhamento.`
+  },
+
+  // 12 — Isenção de IPTU
+  12: {
+    relatorio: (p) => `Em ${new Date(p.dataHora).toLocaleDateString('pt-BR')}, o(a) contribuinte ${p.nome}, CPF/CNPJ n° ${p.documento}, inscrição municipal n° ${p.inscricao||'___________'}, requereu ISENÇÃO do Imposto Predial e Territorial Urbano — IPTU, alegando enquadramento em hipótese de isenção prevista na LC n° 001/2001 ou em lei municipal específica vigente à época do fato gerador, apresentando os documentos comprobatórios listados nos autos.`,
+    fundamentacao: `Art. 63 — LC n° 001/2001:
+Serão obrigatoriamente inscritos no cadastro imobiliário todos os imóveis existentes na zona urbana do Município, ainda que sejam beneficiados por imunidade ou isenção do imposto sobre a propriedade predial e territorial urbana.
+
+Art. 5°, II, "c" — LC n° 001/2001:
+A isenção é modalidade de extinção do crédito tributário, sendo concedida por lei específica.
+
+Art. 176 do CTN:
+A isenção, ainda quando prevista em contrato, é sempre decorrente de lei que especifique as condições e requisitos exigidos para a sua concessão, os tributos a que se aplica e, sendo caso, o prazo de sua duração.
+
+Art. 177 do CTN:
+Salvo disposição de lei em contrário, a isenção não é extensiva às taxas e às contribuições de melhoria e a tributos instituídos posteriormente à sua concessão.`,
+    analise: `A isenção de IPTU depende de expressa previsão em lei municipal, respeitados os princípios da legalidade e da tipicidade tributária. A LC n° 001/2001 e/ou lei específica vigente à época do fato gerador devem ser consultadas para verificar o enquadramento do requerente na hipótese pleiteada.
+
+Verificados os documentos apresentados e a legislação aplicável, cabe emitir manifestação técnica sobre o cabimento da isenção, com efeitos ex nunc (a partir do deferimento) ou retroativos, conforme dispuser a lei autorizadora.
+
+O deferimento da isenção não dispensa a inscrição do imóvel no cadastro imobiliário (Art. 63).`,
+    conclusaoTexto: `Pelo exposto, opino pelo [DEFERIMENTO / INDEFERIMENTO] do pedido de isenção do IPTU, com fundamento na LC n° 001/2001 e/ou lei municipal específica aplicável. [Em caso de deferimento: com efeitos a partir do exercício seguinte, sujeito à renovação anual e à manutenção dos requisitos legais.] Submeto à apreciação do Sr. Diretor do Setor de Tributos para ciência, visto e encaminhamento.`
+  },
+
+  // 13 — Revisão de Lançamento IPTU
+  13: {
+    relatorio: (p) => `Em ${new Date(p.dataHora).toLocaleDateString('pt-BR')}, o(a) contribuinte ${p.nome}, CPF/CNPJ n° ${p.documento}, inscrição imobiliária n° ${p.inscricao||'___________'}, requereu a REVISÃO DO LANÇAMENTO do IPTU, alegando incorreção nos dados que fundamentaram o cálculo (área construída, tipo de construção, alíquota, avaliação, etc.), referente a fato gerador anterior a 26/03/2026 (regido pela LC n° 001/2001).`,
+    fundamentacao: `Art. 42 — LC n° 001/2001:
+A impugnação da exigência, apresentada à repartição preparadora no prazo de 30 (trinta) dias, a contar da ciência do impugnante, instaura a fase contenciosa do procedimento.
+
+Art. 67 — LC n° 001/2001:
+Compete ao contribuinte solicitar o cancelamento ou a retificação da inscrição cadastral do imóvel, mediante petição ou formulário, apenas nas situações específicas previstas, especialmente em caso de erro de informação cadastral que prejudique os dados da inscrição.
+
+Arts. 145, § 1° e 156, III do CTN:
+Os lançamentos regularmente notificados podem ser revistos de ofício ou a requerimento do sujeito passivo, quando comprovada a inexatidão dos dados cadastrais ou o erro material no lançamento.`,
+    analise: `A revisão de lançamento de IPTU é procedimento legítimo, cabível quando comprovado o erro material ou a inexatidão dos dados cadastrais que fundamentaram o cálculo. Cabe verificar: a) tempestividade da manifestação; b) documentos comprobatórios; c) natureza do erro alegado; d) impacto sobre o valor lançado.
+
+Sendo procedente a alegação, o lançamento deve ser revisado com efeitos ex tunc (retroativos), respeitados os prazos decadencial (Art. 173 CTN) e prescricional (Art. 174 CTN).`,
+    conclusaoTexto: `Pelo exposto, opino pelo [DEFERIMENTO / INDEFERIMENTO] da revisão do lançamento do IPTU, com fundamento nos Arts. 42 e 67 da LC n° 001/2001 e Arts. 145 e 156 do CTN. Em caso de deferimento, proceder à retificação do cadastro e ao recálculo do imposto, com estorno ou compensação de eventuais valores pagos a maior. Submeto à apreciação do Sr. Diretor do Setor de Tributos para ciência, visto e encaminhamento.`
+  },
+
+  // 14 — Alvará / Licença de Funcionamento
+  14: {
+    relatorio: (p) => `Em ${new Date(p.dataHora).toLocaleDateString('pt-BR')}, o(a) contribuinte ${p.nome}, CPF/CNPJ n° ${p.documento}, inscrição municipal n° ${p.inscricao||'___________'}, requereu a expedição/renovação/aditamento de ALVARÁ / LICENÇA DE FUNCIONAMENTO, referente ao exercício de atividade sob o regime da LC n° 001/2001.`,
+    fundamentacao: `Art. 87 — LC n° 001/2001:
+O alvará de funcionamento e a licença municipal serão expedidos após verificação do cumprimento das exigências legais e regulamentares, sujeitos ao pagamento da taxa correspondente e à observância das normas de uso e ocupação do solo, higiene, saúde e segurança.
+
+Art. 139 — LC n° 001/2001:
+A concessão de alvará de licença fica condicionada ao prévio pagamento da respectiva taxa e ao cumprimento dos requisitos técnicos, cadastrais e fiscais.
+
+Art. 142 — LC n° 001/2001:
+A licença poderá ser cassada quando o beneficiário deixar de cumprir os requisitos exigidos ou infringir a legislação aplicável.`,
+    analise: `A expedição/renovação de alvará depende do cumprimento dos requisitos legais e regulamentares vigentes à época, incluindo: a) regularidade cadastral; b) inexistência de débitos vencidos; c) atendimento às normas de uso e ocupação do solo; d) conformidade com exigências sanitárias, ambientais e de segurança.
+
+Verificada a documentação e a situação fiscal do requerente, cabe emitir manifestação técnica quanto ao cabimento da concessão, sem prejuízo da fiscalização posterior.`,
+    conclusaoTexto: `Pelo exposto, opino pelo DEFERIMENTO da expedição/renovação do alvará de licença de funcionamento, nos termos dos Arts. 87 e 139 da LC n° 001/2001, condicionado ao pagamento das taxas correspondentes e à manutenção dos requisitos legais. Submeto à apreciação do Sr. Diretor do Setor de Tributos para ciência, visto e encaminhamento.`
+  },
+
+  // 15 — Prescrição / Decadência
+  15: {
+    relatorio: (p) => `Em ${new Date(p.dataHora).toLocaleDateString('pt-BR')}, foi identificada, quanto ao(à) contribuinte ${p.nome}, CPF/CNPJ n° ${p.documento}, inscrição municipal n° ${p.inscricao||'___________'}, situação em que se cogita a ocorrência de PRESCRIÇÃO ou DECADÊNCIA relativa a crédito tributário, referente a fato gerador anterior a 26/03/2026 (regido pela LC n° 001/2001).`,
+    fundamentacao: `Art. 5°, II, "d" — LC n° 001/2001:
+Extingue o crédito tributário, dentre outras hipóteses, a decadência ou prescrição, aplicando-se subsidiariamente o CTN.
+
+Art. 173 do CTN:
+O direito de a Fazenda Pública constituir o crédito tributário extingue-se após 5 (cinco) anos, contados: I – do primeiro dia do exercício seguinte àquele em que o lançamento poderia ter sido efetuado; II – da data em que se tornar definitiva a decisão que houver anulado, por vício formal, o lançamento anteriormente efetuado.
+
+Art. 174 do CTN:
+A ação para cobrança do crédito tributário prescreve em 5 (cinco) anos, contados da data da sua constituição definitiva. Parágrafo único — A prescrição se interrompe: I – pelo despacho do juiz que ordenar a citação em execução fiscal; II – pelo protesto judicial; III – por qualquer ato judicial que constitua em mora o devedor; IV – por qualquer ato inequívoco, ainda que extrajudicial, que importe em reconhecimento do débito pelo devedor.
+
+Art. 156, V do CTN:
+Extingue o crédito tributário a prescrição e a decadência.`,
+    analise: `A ocorrência de prescrição ou decadência produz a extinção do crédito tributário (Art. 156, V do CTN), impedindo a cobrança administrativa ou judicial e ensejando o cancelamento da inscrição em Dívida Ativa.
+
+Cabe análise minuciosa dos elementos do caso: a) data do fato gerador; b) data da constituição definitiva do crédito; c) eventuais causas suspensivas ou interruptivas (parcelamento, confissão, citação, protesto); d) tempo transcorrido entre cada marco temporal.
+
+Recomenda-se encaminhamento à Procuradoria Municipal para parecer jurídico específico, dada a especialidade da matéria e as consequências jurídicas do reconhecimento.`,
+    conclusaoTexto: `Pelo exposto, encaminho o processo à Procuradoria Municipal para análise e parecer jurídico quanto à ocorrência de prescrição (Art. 174 do CTN) ou decadência (Art. 173 do CTN), com vista a todos os elementos do caso concreto e aplicando-se a LC n° 001/2001 c/c CTN. Após o pronunciamento da Procuradoria, o processo retornará para as providências cabíveis. Submeto à apreciação do Sr. Diretor do Setor de Tributos para ciência, visto e encaminhamento.`
+  },
+
+  // 16 — Outros (Tributário)
+  16: {
+    relatorio: (p) => `Em ${new Date(p.dataHora).toLocaleDateString('pt-BR')}, compareceu a este Setor o(a) Sr(a). ${p.representante||p.nome}, na qualidade de ${p.representante?'representante legal':'titular'} da empresa/contribuinte ${p.nome}, CPF/CNPJ n° ${p.documento}, inscrita sob o n° ${p.inscricao||'___________'}, apresentando requerimento referente a ${p.assuntoNome}, sob o regime da LC n° 001/2001 (fato gerador anterior a 26/03/2026), conforme descrito na petição e documentos constantes dos autos.`,
+    fundamentacao: `LC n° 001/2001 — Código Tributário Municipal:
+Esta Lei institui o Código Tributário do Município de Caetité, aplicável a fatos geradores ocorridos até 25/03/2026, regulando os tributos de competência municipal, os direitos e garantias dos contribuintes e os procedimentos administrativos tributários.
+
+Art. 42 — LC n° 001/2001:
+Assegura ao contribuinte o direito de impugnação e ampla defesa no prazo de 30 (trinta) dias.
+
+Aplicação subsidiária do CTN e da CF/88 (Art. 5°, XXXV e LV) — contraditório e ampla defesa em todos os processos administrativos.`,
+    analise: `O requerimento foi recebido e analisado quanto aos seus fundamentos fáticos e jurídicos. Os documentos apresentados foram verificados e a situação do contribuinte foi consultada no sistema municipal. A matéria deve ser analisada à luz da LC n° 001/2001 (vigente à época do fato gerador) e demais normas municipais aplicáveis ao caso concreto.
+
+O servidor responsável deverá identificar o fundamento legal específico aplicável ao pedido, instruir o processo com os elementos necessários e emitir manifestação fundamentada.`,
+    conclusaoTexto: `Pelo exposto, após análise do caso concreto à luz da legislação tributária municipal vigente à época do fato gerador (LC n° 001/2001), encaminho o presente processo com a manifestação técnica fundamentada para as providências cabíveis. Submeto à apreciação do Sr. Diretor do Setor de Tributos para ciência, visto e encaminhamento.`
+  }
+}
+
+// Retorna o conjunto de modelos de parecer conforme a lei aplicável do protocolo
+// Prefere modelos editados no banco; se não houver, usa os padrão do código
+function _getMapaParecer(p) {
+  const mapaPadrao = (p && p.leiAplicavel === 'lc001') ? TEXTOS_PARECER_LC001 : TEXTOS_PARECER;
+  try {
+    const lei = (p && p.leiAplicavel === 'lc001') ? 'lc001' : 'lc5';
+    if (!_pareceresModelosDB || !_pareceresModelosDB[lei]) return mapaPadrao;
+    // Se ninguém editou nada ainda, retorna o padrão diretamente (sem merge)
+    if (Object.keys(_pareceresModelosDB[lei]).length === 0) return mapaPadrao;
+    // Merge: usa o editado quando existe, senão o padrão
+    const merged = {};
+    Object.keys(mapaPadrao).forEach(k => {
+      const editado = _pareceresModelosDB[lei][k];
+      if (editado) {
+        merged[k] = {
+          relatorio: editado.relatorio ? (typeof editado.relatorio === 'string' ? () => editado.relatorio : editado.relatorio) : mapaPadrao[k].relatorio,
+          fundamentacao: editado.fundamentacao || mapaPadrao[k].fundamentacao,
+          analise: editado.analise || mapaPadrao[k].analise,
+          conclusaoTexto: editado.conclusao || mapaPadrao[k].conclusaoTexto
+        };
+      } else {
+        merged[k] = mapaPadrao[k];
+      }
+    });
+    return merged;
+  } catch(e) {
+    console.warn('Erro em _getMapaParecer, usando modelo padrão:', e);
+    return mapaPadrao;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// MODELOS DE PARECER EDITÁVEIS — Cache e sincronização com banco
+// ═══════════════════════════════════════════════════════════
+let _pareceresModelosDB = { lc5: {}, lc001: {} };
+
+async function carregarPareceresModelo() {
+  try {
+    const { data, error } = await _sb.from('pareceres_modelo').select('*');
+    if (error) { console.warn('Não foi possível carregar modelos editados:', error); return; }
+    _pareceresModelosDB = { lc5: {}, lc001: {} };
+    (data || []).forEach(row => {
+      const lei = row.lei || 'lc5';
+      if (!_pareceresModelosDB[lei]) _pareceresModelosDB[lei] = {};
+      _pareceresModelosDB[lei][row.assunto_id] = {
+        relatorio: row.relatorio || null,
+        fundamentacao: row.fundamentacao || null,
+        analise: row.analise || null,
+        conclusao: row.conclusao || null,
+        editado_por_id: row.editado_por_id,
+        editado_por_login: row.editado_por_login,
+        editado_em: row.editado_em
+      };
+    });
+  } catch (e) {
+    console.warn('Erro ao carregar modelos de parecer:', e);
+  }
+}
+
+function abrirEdicaoModeloParecer(assuntoId, lei) {
+  const assunto = DB.assuntos.find(a => a.id === assuntoId);
+  if (!assunto) return;
+  const mapaPadrao = lei === 'lc001' ? TEXTOS_PARECER_LC001 : TEXTOS_PARECER;
+  const padrao = mapaPadrao[assuntoId];
+  const editado = _pareceresModelosDB[lei] && _pareceresModelosDB[lei][assuntoId];
+
+  document.getElementById('mmpAssuntoId').value = assuntoId;
+  document.getElementById('mmpLei').value = lei;
+  document.getElementById('mmpTitulo').textContent = `${lei === 'lc001' ? '📙' : '📗'} Editando: ${assunto.nome}`;
+  document.getElementById('mmpSubtitulo').textContent = lei === 'lc001' ? 'Modelo para LC 001/2001 (lei antiga)' : 'Modelo para LC 5/2025 (lei nova)';
+
+  // Aviso sobre autoria
+  let aviso = '';
+  if (editado && editado.editado_por_login) {
+    const data = editado.editado_em ? new Date(editado.editado_em).toLocaleString('pt-BR') : '';
+    aviso = `⚠ Este modelo já foi editado por <strong>${editado.editado_por_login}</strong>${data ? ' em ' + data : ''}. Apenas ele ou o admin podem editar novamente.`;
+  } else {
+    aviso = 'ℹ Este modelo ainda está com o texto padrão do sistema. Apenas o admin pode editar pela primeira vez.';
+  }
+  document.getElementById('mmpAviso').innerHTML = aviso;
+
+  // Verificar permissão
+  const ehAdmin = usuarioLogado.perfil === 'admin';
+  const ehAutor = editado && editado.editado_por_login === usuarioLogado.login;
+  const podeEditar = ehAdmin || ehAutor;
+  ['mmpRelatorio','mmpFundamentacao','mmpAnalise','mmpConclusao'].forEach(id => {
+    document.getElementById(id).readOnly = !podeEditar;
+    document.getElementById(id).style.background = podeEditar ? '#fff' : '#f5f7fa';
+  });
+
+  // Preencher os campos (com o modelo editado se houver, senão o padrão)
+  const relPadraoTexto = padrao && typeof padrao.relatorio === 'function'
+    ? '[Texto dinâmico — gerado automaticamente com dados do protocolo]\n\nPara editar, digite abaixo o texto desejado. Você pode usar marcadores como {nome}, {documento} — mas para manter o comportamento dinâmico, deixe em branco.'
+    : (padrao?.relatorio || '');
+  document.getElementById('mmpRelatorio').value = (editado && editado.relatorio) || '';
+  document.getElementById('mmpRelatorio').placeholder = 'Deixe em branco para usar o texto dinâmico padrão que inclui automaticamente dados do protocolo.';
+  document.getElementById('mmpFundamentacao').value = (editado && editado.fundamentacao) || (padrao?.fundamentacao || '');
+  document.getElementById('mmpAnalise').value = (editado && editado.analise) || (padrao?.analise || '');
+  document.getElementById('mmpConclusao').value = (editado && editado.conclusao) || (padrao?.conclusaoTexto || '');
+
+  document.getElementById('modalModeloParecer').style.display = 'flex';
+}
+
+function fecharModalModeloParecer() {
+  document.getElementById('modalModeloParecer').style.display = 'none';
+}
+
+async function salvarModeloParecer() {
+  const assuntoId = parseInt(document.getElementById('mmpAssuntoId').value);
+  const lei = document.getElementById('mmpLei').value;
+  const relatorio = document.getElementById('mmpRelatorio').value.trim();
+  const fundamentacao = document.getElementById('mmpFundamentacao').value.trim();
+  const analise = document.getElementById('mmpAnalise').value.trim();
+  const conclusao = document.getElementById('mmpConclusao').value.trim();
+
+  // Verificar permissão de novo (segurança)
+  const editado = _pareceresModelosDB[lei] && _pareceresModelosDB[lei][assuntoId];
+  const ehAdmin = usuarioLogado.perfil === 'admin';
+  const ehAutor = editado && editado.editado_por_login === usuarioLogado.login;
+  if (editado && !ehAdmin && !ehAutor) {
+    alert('❌ Você não tem permissão para editar este modelo. Apenas o autor da última edição ou o admin podem editar.');
+    return;
+  }
+
+  try {
+    const row = {
+      assunto_id: assuntoId,
+      lei: lei,
+      relatorio: relatorio || null,
+      fundamentacao: fundamentacao || null,
+      analise: analise || null,
+      conclusao: conclusao || null,
+      editado_por_id: usuarioLogado.id,
+      editado_por_login: usuarioLogado.login,
+      editado_em: new Date().toISOString()
+    };
+    // Upsert: se existe atualiza, senão insere
+    const { error } = await _sb.from('pareceres_modelo').upsert(row, { onConflict: 'assunto_id,lei' });
+    if (error) throw error;
+    await carregarPareceresModelo();
+    pa_auditar && pa_auditar('EDITAR', {tabela:'pareceres_modelo', id: assuntoId, num: `${lei}#${assuntoId}`, detalhes: `Modelo de parecer editado (${lei})`});
+    fecharModalModeloParecer();
+    renderModelosParecer();
+    alert('✅ Modelo salvo com sucesso!');
+  } catch (e) {
+    alert('Erro ao salvar: ' + (e.message || e));
+  }
+}
+
+async function restaurarModeloPadrao() {
+  const assuntoId = parseInt(document.getElementById('mmpAssuntoId').value);
+  const lei = document.getElementById('mmpLei').value;
+  if (!confirm('Restaurar o texto original deste modelo? Suas alterações serão perdidas.')) return;
+  try {
+    const { error } = await _sb.from('pareceres_modelo').delete().eq('assunto_id', assuntoId).eq('lei', lei);
+    if (error) throw error;
+    await carregarPareceresModelo();
+    pa_auditar && pa_auditar('EXCLUIR', {tabela:'pareceres_modelo', id: assuntoId, num: `${lei}#${assuntoId}`, detalhes: `Modelo restaurado ao padrão (${lei})`});
+    fecharModalModeloParecer();
+    renderModelosParecer();
+    alert('✅ Modelo restaurado ao padrão original.');
+  } catch (e) {
+    alert('Erro ao restaurar: ' + (e.message || e));
+  }
+}
+
+function renderModelosParecer() {
+  const div = document.getElementById('listaModelosParecer');
+  if (!div) return;
+  const linhas = [];
+  DB.assuntos.forEach(a => {
+    ['lc5','lc001'].forEach(lei => {
+      const editado = _pareceresModelosDB[lei] && _pareceresModelosDB[lei][a.id];
+      const status = editado
+        ? `<span style="background:#dcfce7;color:#14532d;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600">✏️ Editado por ${editado.editado_por_login}</span>`
+        : `<span style="background:#f3f4f6;color:#6b7280;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600">Padrão do sistema</span>`;
+      const icone = lei === 'lc001' ? '📙' : '📗';
+      const nomeLei = lei === 'lc001' ? 'LC 001/2001' : 'LC 5/2025';
+      linhas.push(`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border:1px solid #e5e7eb;border-radius:6px;margin-bottom:5px;font-size:12px;background:#fff">
+        <div style="flex:1">
+          <div style="font-weight:600;color:#0a3d62">${icone} ${a.nome} — ${nomeLei}</div>
+          <div style="margin-top:3px">${status}</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="abrirEdicaoModeloParecer(${a.id}, '${lei}')" style="font-size:11px;padding:4px 10px">Editar</button>
+      </div>`);
+    });
+  });
+  div.innerHTML = linhas.join('');
+}
 
 let parecerConclusaoSelecionada = '';
 let parecerDespachoSelecionado  = '';
@@ -4017,9 +5065,10 @@ function abrirParecer() {
     document.getElementById('pResponsavel').value = par ? par.autor : usuarioLogado.nome;
     document.getElementById('pPerfil').value      = par ? labelPerfil(par.perfilAutor) : labelPerfil(usuarioLogado.perfil);
 
-    // Carregar textos
+    // Carregar textos (usa modelos LC 001/2001 quando o protocolo é regido pela lei antiga)
     const chave  = MAPA_ASSUNTO_PARECER[p.assuntoId];
-    const textos = (chave && chave !== 'prescricao') ? TEXTOS_PARECER[chave] : null;
+    const _mapa  = _getMapaParecer(p);
+    const textos = (chave && chave !== 'prescricao') ? _mapa[chave] : null;
     document.getElementById('pDocumentos').value      = par ? (par.documentos||'')    : (p.documentos||'');
     const semTexto = !textos || isPrescr;
     document.getElementById('pRelatorio').value       = par ? (par.relatorio||'')     : (semTexto ? '' : textos.relatorio(p));
@@ -4034,7 +5083,7 @@ function abrirParecer() {
     ['opt-deferir','opt-indeferir','opt-encaminhar'].forEach(id => {
       const el = document.getElementById(id); if(el) el.className='conclusao-opt';
     });
-    ['desp-concordo','desp-devolver','desp-secretaria'].forEach(id => {
+    ['desp-concordo','desp-devolver','desp-secretaria','desp-procuradoria'].forEach(id => {
       const el = document.getElementById(id); if(el) el.className='conclusao-opt';
     });
     if (par && par.conclusao)      selecionarConclusao(par.conclusao);
@@ -4052,8 +5101,14 @@ function abrirParecer() {
     const camposTexto  = ['pRelatorio','pFundamentacao','pAnalise','pConclusaoTexto','pDocumentos'];
     const camposConc   = ['opt-deferir','opt-indeferir','opt-encaminhar'];
 
+    // O autor só pode editar o texto enquanto o protocolo ainda estiver com ele
+    // (responsável atual). Depois de encaminhar ao diretor/secretaria/procuradoria,
+    // mesmo sendo o autor, os campos ficam bloqueados — só visualização.
+    const _souRespAtualP = usuarioPodeAgirNoProtocolo(p) && !isDir;
+    const _respAtualP = descricaoResponsavelAtual(p);
+
     // Admin tem acesso TOTAL a tudo
-    const podeEditarTexto    = isAdmin || !temParecer || (!isDir && isAutor);
+    const podeEditarTexto    = isAdmin || !temParecer || (!isDir && isAutor && _souRespAtualP);
     const podeEditarDespacho = isAdmin || (isDir && (!par || !par.despachoAutor || par.despachoAutor === usuarioLogado.nome));
     const somenteLeitura     = !podeEditarTexto && !podeEditarDespacho;
 
@@ -4067,13 +5122,26 @@ function abrirParecer() {
       el.style.cursor     = podeEditarTexto ? '' : 'default';
     });
 
-    // Botões de conclusão
-    camposConc.forEach(id => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.style.pointerEvents = podeEditarTexto ? '' : 'none';
-      el.style.opacity       = podeEditarTexto ? '' : '0.5';
-    });
+    // Botões de conclusão (Deferir/Indeferir/Encaminhar ao Diretor) —
+    // são botões do SERVIDOR: ficam completamente OCULTOS para o diretor/gerente,
+    // que só deve ver os botões de despacho. Para o servidor autor, ficam visíveis
+    // e habilitados/desabilitados conforme a permissão de edição.
+    const conclusaoOpts = document.getElementById('conclusaoOpts');
+    const conclusaoAviso = document.getElementById('conclusaoAvisoObrig');
+    if (isDir && !isAdmin) {
+      // Diretor/Gerente (não-admin): esconde os botões do servidor completamente
+      if (conclusaoOpts) conclusaoOpts.style.display = 'none';
+      if (conclusaoAviso) conclusaoAviso.style.display = 'none';
+    } else {
+      if (conclusaoOpts) conclusaoOpts.style.display = '';
+      if (conclusaoAviso) conclusaoAviso.style.display = podeEditarTexto ? '' : 'none';
+      camposConc.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.style.pointerEvents = podeEditarTexto ? '' : 'none';
+        el.style.opacity       = podeEditarTexto ? '' : '0.5';
+      });
+    }
 
     // Seção de despacho — admin sempre vê
     const secaoDesp = document.getElementById('secaoDespacho');
@@ -4114,11 +5182,21 @@ function abrirParecer() {
       aviso.style.cssText = 'background:#fff3e0;border:1px solid #ffb74d;border-radius:7px;padding:8px 12px;font-size:12px;color:#e65100;margin-bottom:12px;';
       if (!isDir && !isAutor) {
         aviso.innerHTML = '🔒 <b>Visualização:</b> Este parecer foi elaborado por <b>' + (par?par.autor:'outro servidor') + '</b>. Somente o autor pode editar.';
+      } else if (!isDir && isAutor && !_souRespAtualP) {
+        aviso.innerHTML = '✓ <b>Parecer enviado:</b> Este parecer já foi encaminhado e está com <b>' + (_respAtualP||'outro setor') + '</b>. Não é mais possível editar. Se precisar corrigir algo, peça para devolverem o protocolo ao seu setor.';
       } else if (isDir && !podeEditarDespacho) {
         aviso.innerHTML = '🔒 <b>Despacho bloqueado:</b> Este despacho foi registrado por <b>' + (par.despachoAutor||'outro servidor') + '</b>.';
       } else if (isDir) {
         aviso.innerHTML = '🔒 <b>Modo Diretor:</b> Campos do servidor bloqueados. Edite apenas o Despacho.';
       }
+      const form = document.getElementById('formParecer');
+      form.insertBefore(aviso, form.firstChild);
+    } else if (isDir) {
+      // Diretor com despacho liberado — explica que só vê a seção de despacho
+      const aviso = document.createElement('div');
+      aviso.id = 'labelReadOnly';
+      aviso.style.cssText = 'background:#f3e5f5;border:1px solid #ce93d8;border-radius:7px;padding:8px 12px;font-size:12px;color:#7d3c98;margin-bottom:12px;';
+      aviso.innerHTML = '👤 <b>Modo Diretor/Gerente:</b> Você está visualizando o parecer elaborado pelo servidor (campos bloqueados para leitura). Registre sua decisão na seção "Despacho do Diretor/Gerente", ao final.';
       const form = document.getElementById('formParecer');
       form.insertBefore(aviso, form.firstChild);
     }
@@ -4171,19 +5249,21 @@ function selecionarDespacho(val) {
 
 async function salvarParecer() {
   // ── VERIFICAÇÃO DE PERMISSÃO ─────────────────────────────────
+  // Auxiliar Administrativo nunca pode salvar parecer, em hipótese alguma
+  if (usuarioLogado.perfil === 'auxiliar_adm') {
+    alert('⛔ Este perfil não tem permissão para registrar pareceres.');
+    fecharParecer && fecharParecer();
+    return;
+  }
   const _p_guard = DB.protocolos.find(x => x.id === protocoloAtualId);
   if (_p_guard) {
     const _isAdmin_g = usuarioLogado.perfil === 'admin';
-    const _respAtual_g = obterResponsavelAtual(_p_guard);
-    const _sou_resp_g = _respAtual_g && (
-      _respAtual_g === usuarioLogado.login ||
-      _respAtual_g === usuarioLogado.nome
-    );
-    if (!_isAdmin_g && !_sou_resp_g) {
+    const _podeAgir_g = usuarioPodeAgirNoProtocolo(_p_guard);
+    if (!_podeAgir_g) {
       if (['concluido','arquivado'].includes(_p_guard.situacao)) {
         alert('⛔ Este protocolo está '+_p_guard.situacao+'. Apenas administradores podem registrar pareceres.');
       } else {
-        alert('⛔ Você não pode registrar parecer neste protocolo.\n\nEste protocolo está com: ' + (_respAtual_g||'—'));
+        alert('⛔ Você não pode registrar parecer neste protocolo.\n\nEste protocolo está com: ' + descricaoResponsavelAtual(_p_guard));
       }
       fecharParecer && fecharParecer();
       return;
@@ -4269,10 +5349,37 @@ async function salvarParecer() {
       parecerSequencial++;
     }
 
-    // Atualizar situacao se diretor concordou
-    if (isDir && parecer.despachoDecisao === 'concordo') {
-      p.situacao = 'concluido';
-      await _sbPatchWhere_sdk('protocolos', 'id', p.id, { situacao: 'concluido', atualizado_em: parecer.data });
+    // Atualizar situacao conforme decisão do diretor
+    if (isDir && parecer.despachoDecisao) {
+      let novaSituacao = null;
+      if (parecer.despachoDecisao === 'concordo')      novaSituacao = 'concluido';
+      else if (parecer.despachoDecisao === 'devolver')     novaSituacao = 'devolvido';
+      else if (parecer.despachoDecisao === 'secretaria')   novaSituacao = 'secretaria';
+      else if (parecer.despachoDecisao === 'procuradoria') novaSituacao = 'procuradoria';
+      if (novaSituacao) {
+        p.situacao = novaSituacao;
+        await _sbPatchWhere_sdk('protocolos', 'id', p.id, { situacao: novaSituacao, atualizado_em: parecer.data });
+        // Registrar no histórico
+        const histItem = {
+          data: parecer.data,
+          dataStr: new Date(parecer.data).toLocaleString('pt-BR'),
+          usuario: usuarioLogado.nome,
+          situacao: novaSituacao,
+          obs: `Despacho do Diretor: ${parecer.despacho || (novaSituacao === 'concluido' ? 'Processo concluído' : '—')}`
+        };
+        p.historico = p.historico || [];
+        p.historico.push(histItem);
+        try {
+          await sbPost('historico', {
+            protocolo_id: p.id,
+            data: histItem.data,
+            data_str: histItem.dataStr,
+            usuario: histItem.usuario,
+            situacao: histItem.situacao,
+            obs: histItem.obs
+          });
+        } catch(e) { console.warn('Erro ao salvar histórico:', e); }
+      }
     }
 
     // Notificações
@@ -4564,14 +5671,23 @@ async function abrirNotif(notifId, protocoloId) {
   }
 }
 
-function marcarTodasLidas() {
+async function marcarTodasLidas() {
+  const paraSalvar = [];
   (DB.notificacoes||[]).forEach(n => {
     const minhas = usuarioLogado.perfil === 'admin' ||
                    n.destinatarios.includes(usuarioLogado.login);
-    if (minhas && !n.lida_por.includes(usuarioLogado.login))
+    if (minhas && !n.lida_por.includes(usuarioLogado.login)) {
       n.lida_por.push(usuarioLogado.login);
+      paraSalvar.push(n);
+    }
   });
-  salvarDB(); renderNotifBadge(); renderNotifPanel();
+  renderNotifBadge(); renderNotifPanel();
+  // Persistir cada notificação alterada no Supabase (mesma lógica usada ao ler uma individual)
+  for (const n of paraSalvar) {
+    try {
+      await _sbPatchWhere_sdk('notificacoes', 'id', n.id, { lida_por: n.lida_por.join(',') });
+    } catch(e) { console.warn('Erro ao marcar notificação como lida:', n.id, e); }
+  }
 }
 
 function tempoRelativo(iso) {
@@ -4645,14 +5761,20 @@ function verificarAcessoMovimentacao(id) {
 function verificarAcessoParecer(id) {
   const p = DB.protocolos.find(x => x.id === id);
   if (!p) return;
+  // Auxiliar Administrativo nunca acessa parecer, mesmo por atalho direto
+  if (usuarioLogado.perfil === 'auxiliar_adm') {
+    alert('⛔ Este perfil não tem permissão para gerar ou visualizar pareceres. Encaminhe o protocolo a um fiscal.');
+    return;
+  }
   const isAdmin    = usuarioLogado.perfil === 'admin';
-  const isDir      = ['diretor','gerente'].includes(usuarioLogado.perfil);
-  const isRespon   = p.responsavel === usuarioLogado.nome;
   const temParecer = p.pareceres && p.pareceres.length > 0;
   const isAutor    = temParecer && p.pareceres[0].autor === usuarioLogado.nome;
   const isDespAutor= temParecer && p.pareceres[0].despachoAutor === usuarioLogado.nome;
-  if (!isAdmin && !isDir && !isRespon && !isAutor && !isDespAutor) {
-    alert('⚠️ Somente o servidor responsável, o autor do parecer ou a chefia pode editar.');
+  // Usa a mesma função centralizada que decide quem "está com" o protocolo
+  // hoje (cobre encaminhamento nominal a fiscal, cargos, devolvido, etc.)
+  const podeAgirAgora = usuarioPodeAgirNoProtocolo(p);
+  if (!isAdmin && !podeAgirAgora && !isAutor && !isDespAutor) {
+    alert('⚠️ Somente o servidor responsável, o autor do parecer ou a chefia pode editar.\n\nEste protocolo está com: ' + descricaoResponsavelAtual(p));
     return;
   }
   abrirParecer();
@@ -5333,7 +6455,7 @@ function pa_initRelInd() {
   document.getElementById('ri-dt').value=new Date().toISOString().slice(0,10);
   document.getElementById('ri-fiscal').value=pa_usuarioAtual?.nome||'';
   const enc=document.getElementById('ri-enc');
-  enc.innerHTML='<option value="">Selecione...</option>'+paUsuarios().filter(u=>u.id!==pa_usuarioAtual?.id&&u.ativo).map(u=>`<option value="${u.id}">${u.nome} — ${pa_perfilNome(u.perfilId)}</option>`).join('');
+  enc.innerHTML='<option value="">Selecione...</option>'+paUsuarios().filter(u=>u.id!==pa_usuarioAtual?.id&&u.ativo).map(u=>`<option value="${u.id}">${u.nome} — ${u.cargo || pa_perfilNome(u.perfilId)}</option>`).join('');
 }
 function pa_enviarRelInd() {
   if(!pa_usuarioAtual){alert('Sessão expirada. Faça login novamente.');return;}
@@ -5412,7 +6534,7 @@ function pa_initRelCol() {
   document.getElementById('rc-dt').value=new Date().toISOString().slice(0,10);
   document.getElementById('rc-fiscal').value=pa_usuarioAtual?.nome||'';
   const enc=document.getElementById('rc-enc');
-  enc.innerHTML='<option value="">Selecione...</option>'+paUsuarios().filter(u=>u.id!==pa_usuarioAtual?.id&&u.ativo).map(u=>`<option value="${u.id}">${u.nome} — ${pa_perfilNome(u.perfilId)}</option>`).join('');
+  enc.innerHTML='<option value="">Selecione...</option>'+paUsuarios().filter(u=>u.id!==pa_usuarioAtual?.id&&u.ativo).map(u=>`<option value="${u.id}">${u.nome} — ${u.cargo || pa_perfilNome(u.perfilId)}</option>`).join('');
   pa_numEmpresas=0;
   document.getElementById('empresas-lista').innerHTML='';
   document.getElementById('rc-resumo').style.display='none';
@@ -5525,11 +6647,7 @@ function pa_enviarRelCol() {
 
 // ── NOTIFICAÇÕES ───────────────────────────────────────────────────────────
 function pa_renderNotificacoes() {
-  // Marcar como visto os retornos do usuário atual ao abrir a tela
   const _admNotif = isAdmin();
-  // Marcar como visto apenas os do próprio usuário
-  pa_relatorios.filter(r=>r.autorLogin===pa_usuarioAtual?.login&&['autorizado','rejeitado','complementar'].includes(r.status)&&!r.visto)
-    .forEach(r=>{ r.visto=true; });
   buildUnifiedNav();
   // Admin vê todos; demais veem só os seus
   const pendentes = _admNotif
@@ -5548,22 +6666,39 @@ function pa_renderNotificacoes() {
       </div>
       <div class="notif-time">${pa_fd(r.data)}</div>
     </div>`).join(''):'<p style="color:var(--pa-text2);font-size:13px">Nenhuma pendência.</p>';
-  document.getElementById('notif-hist').innerHTML=hist.length?hist.map(r=>`
-    <div class="notif-item" style="cursor:pointer" onclick="pa_irParaRelatorio(${r.id})">
-      <div class="notif-dot read"></div>
+  document.getElementById('notif-hist').innerHTML=hist.length?hist.map(r=>{
+    // Uma resposta é "nova" para o autor quando ainda não foi vista (r.visto=false)
+    const ehNovaParaMim = r.autorLogin===pa_usuarioAtual?.login && ['autorizado','rejeitado','complementar'].includes(r.status) && !r.visto;
+    return `
+    <div class="notif-item ${ehNovaParaMim?'unread':''}" style="cursor:pointer" onclick="pa_marcarVistoEAbrir(${r.id})">
+      <div class="notif-dot ${ehNovaParaMim?'':'read'}"></div>
       <div class="notif-info">
-        <div class="notif-title">${r.num}</div>
+        <div class="notif-title">${r.num} ${ehNovaParaMim?'<span class="badge b-new" style="font-size:10px">Nova resposta</span>':''}</div>
         <div class="notif-sub">${r.tipo==='coletivo'?r.empresas.length+' empresas':r.nm}${r.interessado?' · '+r.interessado:''}</div>
         <div style="margin-top:5px">${pa_bdg(r.status)}</div>
         ${r.status==='complementar'&&r.autorLogin===pa_usuarioAtual?.login?`<div style="font-size:12px;color:#b45309;font-weight:600;margin-top:6px;padding:6px 8px;background:#fef3c7;border-radius:5px;border-left:3px solid #f59e0b">⚠️ Complementação solicitada: ${r.despacho?.texto||'(sem mensagem)'}<br><span style="font-size:11px;font-weight:400">Clique em Abrir para corrigir, faça as alterações e reencaminhe.</span></div>`:''}
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
         <div class="notif-time">${pa_fd(r.data)}</div>
-        ${r.status==='autorizado'&&r.autorLogin===pa_usuarioAtual?.login?`<button class="btn ${r.procId?'btn-g':'btn-p'} btn-xs" onclick="pa_abrirProcDeRel(${r.id})">${r.procId?'📂 Ver processo':'Abrir processo'}</button>`:''}${r.status==='rejeitado'&&r.autorLogin===pa_usuarioAtual?.login?`<button class="btn btn-g btn-xs" onclick="pa_verRelatorio(${r.id})">Ver justificativa</button>`:''}
-        ${r.status==='complementar'&&r.autorLogin===pa_usuarioAtual?.login?`<button class="btn btn-g btn-xs" onclick="pa_abrirRelParaCorrigir(${r.id})">Abrir para corrigir</button><button class="btn btn-g btn-xs" onclick="pa_reencaminharRel(${r.id})">Reencaminhar</button>`:''}
+        ${r.status==='autorizado'&&r.autorLogin===pa_usuarioAtual?.login?`<button class="btn ${r.procId?'btn-g':'btn-p'} btn-xs" onclick="event.stopPropagation();pa_marcarVistoEAbrirProc(${r.id})">${r.procId?'📂 Ver processo':'Abrir processo'}</button>`:''}${r.status==='rejeitado'&&r.autorLogin===pa_usuarioAtual?.login?`<button class="btn btn-g btn-xs" onclick="event.stopPropagation();pa_marcarVistoEVer(${r.id})">Ver justificativa</button>`:''}
+        ${r.status==='complementar'&&r.autorLogin===pa_usuarioAtual?.login?`<button class="btn btn-g btn-xs" onclick="event.stopPropagation();pa_marcarVisto(${r.id});pa_abrirRelParaCorrigir(${r.id})">Abrir para corrigir</button><button class="btn btn-g btn-xs" onclick="event.stopPropagation();pa_marcarVisto(${r.id});pa_reencaminharRel(${r.id})">Reencaminhar</button>`:''}
       </div>
-    </div>`).join(''):'<p style="color:var(--pa-text2);font-size:13px">Nenhum histórico.</p>';
+    </div>`;
+  }).join(''):'<p style="color:var(--pa-text2);font-size:13px">Nenhum histórico.</p>';
 }
+
+// Marca a resposta (autorizado/rejeitado/complementar) como vista pelo autor,
+// tanto localmente quanto no Supabase, para que o indicador de "nova" suma.
+function pa_marcarVisto(id) {
+  const r = pa_relatorios.find(x=>x.id===id);
+  if (!r || r.visto) return;
+  r.visto = true;
+  sbPatch('pa_relatorios', r.id, { visto: true }).catch(e=>console.warn('Erro ao marcar visto:', e));
+  buildUnifiedNav();
+}
+function pa_marcarVistoEAbrir(id) { pa_marcarVisto(id); pa_irParaRelatorio(id); }
+function pa_marcarVistoEAbrirProc(id) { pa_marcarVisto(id); pa_abrirProcDeRel(id); }
+function pa_marcarVistoEVer(id) { pa_marcarVisto(id); pa_verRelatorio(id); }
 
 // ── DESPACHO ───────────────────────────────────────────────────────────────
 function pa_abrirDespacho(rid) {
@@ -5603,7 +6738,10 @@ function pa_despachar(decisao) {
   };
   if(decisao==='complementar'){
     r.status='complementar';
-    r.despacho={texto:document.getElementById('desp-txt').value,nm:assinAutoridade.nome,cg:assinAutoridade.cargo,data:assinAutoridade.data,assin:assinAutoridade};
+    // IMPORTANTE: pedir complementação NÃO é um ato de assinatura/autorização —
+    // por isso guarda o texto e quem pediu, mas SEM o bloco "assin" (que é o
+    // que faz aparecer o cartão de assinatura formal na tela do relatório).
+    r.despacho={texto:document.getElementById('desp-txt').value, nm:assinAutoridade.nome, cg:assinAutoridade.cargo, data:assinAutoridade.data};
     r.visto=false;
     // Notificar fiscal sobre o despacho
     gerarNotificacao(
@@ -5708,7 +6846,7 @@ function pa_abrirRelParaCorrigir(rid) {
       document.getElementById('rc-cnpj').value = r.doc || '';
       document.getElementById('rc-desc').value = r.desc;
       document.getElementById('rc-conc').value = r.conc;
-      document.getElementById('rc-enc').innerHTML='<option value="">Selecione...</option>'+paUsuarios().filter(u=>u.id!==pa_usuarioAtual?.id&&u.ativo).map(u=>`<option value="${u.id}">${u.nome} — ${pa_perfilNome(u.perfilId)}</option>`).join('');
+      document.getElementById('rc-enc').innerHTML='<option value="">Selecione...</option>'+paUsuarios().filter(u=>u.id!==pa_usuarioAtual?.id&&u.ativo).map(u=>`<option value="${u.id}">${u.nome} — ${u.cargo || pa_perfilNome(u.perfilId)}</option>`).join('');
       document.getElementById('rc-enc').value = r.encParaId;
       pa_numEmpresas = 0;
       document.getElementById('empresas-lista').innerHTML = '';
@@ -5740,7 +6878,7 @@ function pa_abrirRelParaCorrigir(rid) {
       document.getElementById('ri-desc').value = r.desc;
       document.getElementById('ri-conc').value = r.conc;
       document.getElementById('ri-dt').value = r.data;
-      document.getElementById('ri-enc').innerHTML='<option value="">Selecione...</option>'+paUsuarios().filter(u=>u.id!==pa_usuarioAtual?.id&&u.ativo).map(u=>`<option value="${u.id}">${u.nome} — ${pa_perfilNome(u.perfilId)}</option>`).join('');
+      document.getElementById('ri-enc').innerHTML='<option value="">Selecione...</option>'+paUsuarios().filter(u=>u.id!==pa_usuarioAtual?.id&&u.ativo).map(u=>`<option value="${u.id}">${u.nome} — ${u.cargo || pa_perfilNome(u.perfilId)}</option>`).join('');
       document.getElementById('ri-enc').value = r.encParaId;
       toast('Relatório carregado para correção. Faça as alterações necessárias e reencaminhe.');
     }, 100);
@@ -6116,10 +7254,13 @@ async function pa_excluirFolha(id) {
 function pa_editarRelatorio(id) {
   const r = pa_relatorios.find(x=>x.id===id); if(!r) return;
   if(!pa_canEdit(r.autorId, r.autorLogin)) { toast('Sem permissão para editar este relatório.'); return; }
-  pa_editRelId = id;
   if(r.tipo === 'individual') {
     navegarPara('novo-rel-ind');
     setTimeout(()=>{
+      // pa_editRelId precisa ser setado AQUI (depois do navegarPara), pois
+      // pa_initRelInd() — disparado pelo navegarPara — reseta essa variável
+      // para null. Se setado antes, a edição vira criação de um novo relatório.
+      pa_editRelId = id;
       document.getElementById('ri-dt').value = r.data||'';
       document.getElementById('ri-nm').value = r.nm||'';
       document.getElementById('ri-doc').value = r.doc||'';
@@ -6130,6 +7271,8 @@ function pa_editarRelatorio(id) {
   } else {
     navegarPara('novo-rel-col');
     setTimeout(()=>{
+      // Mesmo cuidado aqui — pa_initRelCol() também reseta pa_editRelId.
+      pa_editRelId = id;
       document.getElementById('rc-dt').value = r.data||'';
       document.getElementById('rc-desc').value = r.desc||'';
       document.getElementById('rc-conc').value = r.conc||'';
