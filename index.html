@@ -1957,7 +1957,7 @@ let pa_usuarioAtual = null; // usuário mapeado para formato Sistema B
 // ── VARIÁVEIS GLOBAIS PROCESSADMIN ────────────────────────────────
 let pa_processos = [], pa_relatorios = [], pa_folhas = [], pa_intimacoes = [], pa_termos = [];
 let pa_nextProcId = 1, pa_nextProcNum = 1;
-let pa_nextRelId  = 1, pa_nextRelNum  = 1;
+let pa_nextRelId  = 1, pa_nextRelNum  = 1, pa_nextTermoNum = 1;
 let pa_nextFolhaId= 1, pa_nextIntId   = 1, pa_nextTermoId = 1;
 let pa_salvando_intimacao = false;
 let pa_nextUsrId  = 1, pa_nextPerfId  = 6, pa_nextTribId = 7;
@@ -2247,6 +2247,7 @@ function rowToIntimacao(row) {
 function rowToTermo(row) {
   return {
     id:           row.id,
+    num:          row.num || '',
     intId:        row.int_id,
     procId:       row.proc_id || null,
     procNum:      row.proc_num || '',
@@ -2318,6 +2319,14 @@ async function carregarDadosPA() {
       return m ? parseInt(m[1]) : 0;
     });
   pa_nextRelNum = relsAno.length ? Math.max(...relsAno) + 1 : 1;
+  // Termos: campo é 'num' (formato "TDA-0001/2026")
+  const termosAno = pa_termos
+    .filter(t => t.num && t.num.includes('/'+ano))
+    .map(t => {
+      const m = t.num.match(/(\d+)\/\d+/);
+      return m ? parseInt(m[1]) : 0;
+    });
+  pa_nextTermoNum = termosAno.length ? Math.max(...termosAno) + 1 : 1;
 }
 
 
@@ -2337,6 +2346,14 @@ function pa_recalcularNumeros() {
       return m ? parseInt(m[1]) : 0;
     });
   pa_nextRelNum = relsAno.length ? Math.max(...relsAno) + 1 : 1;
+  // Termos
+  const termosAno = pa_termos
+    .filter(t => t.num && t.num.includes('/'+ano))
+    .map(t => {
+      const m = t.num.match(/(\d+)\/\d+/);
+      return m ? parseInt(m[1]) : 0;
+    });
+  pa_nextTermoNum = termosAno.length ? Math.max(...termosAno) + 1 : 1;
   // IDs (também recalcular)
   pa_nextProcId  = pa_processos.length  ? Math.max(...pa_processos.map(p=>p.id||0)) + 1 : 1;
   pa_nextRelId   = pa_relatorios.length ? Math.max(...pa_relatorios.map(p=>p.id||0)) + 1 : 1;
@@ -6152,7 +6169,7 @@ function pa_verDetalhe(id) {
     const labels = { aguardando: '⏳ Aguardando análise', efetivado: '✅ Efetivado', devolvido: '↩️ Devolvido para correção' };
     const cores = { aguardando: '#b45309', efetivado: '#16a34a', devolvido: '#dc2626' };
     return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--pa-border);font-size:13px">
-      <div><strong>${t.nm}</strong> · ${pa_fd(t.data)}<div style="font-size:12px;color:${cores[t.status]||'#555'};margin-top:1px;font-weight:600">${labels[t.status]||t.status}</div></div>
+      <div><strong>${t.num||'—'}</strong> · ${t.nm} · ${pa_fd(t.data)}<div style="font-size:12px;color:${cores[t.status]||'#555'};margin-top:1px;font-weight:600">${labels[t.status]||t.status}</div></div>
       <button class="btn btn-g btn-xs" onclick="pa_verTermo(${t.id})">👁️ Ver / Imprimir</button>
     </div>`;
   }).join('') : '<p style="color:var(--pa-text2);font-size:13px">Nenhum termo gerado para este processo.</p>';
@@ -6800,7 +6817,7 @@ function pa_renderNotificacoesTermos() {
     <div class="notif-item unread" style="cursor:pointer" onclick="pa_abrirDespachoTermo(${t.id})">
       <div class="notif-dot"></div>
       <div class="notif-info">
-        <div class="notif-title">Termo — ${t.nm}</div>
+        <div class="notif-title">${t.num||"Termo"} — ${t.nm}</div>
         <div class="notif-sub">Autor: ${t.autorNome} · Processo: ${t.procNum||'—'} · Total: R$ ${t.total||'—'}</div>
       </div>
       <div class="notif-time">${pa_fd(t.data)}</div>
@@ -6812,7 +6829,7 @@ function pa_renderNotificacoesTermos() {
     <div class="notif-item ${ehNovo?'unread':''}" style="cursor:pointer" onclick="pa_marcarVistoTermoEAbrir(${t.id})">
       <div class="notif-dot ${ehNovo?'':'read'}"></div>
       <div class="notif-info">
-        <div class="notif-title">Termo — ${t.nm} ${ehNovo?'<span class="badge b-new" style="font-size:10px">Nova resposta</span>':''}</div>
+        <div class="notif-title">${t.num||"Termo"} — ${t.nm} ${ehNovo?'<span class="badge b-new" style="font-size:10px">Nova resposta</span>':''}</div>
         <div class="notif-sub">${t.status==='efetivado'?'✅ Efetivado':'↩️ Devolvido para correção'}</div>
         ${t.status==='devolvido'&&t.diretorObs?`<div style="font-size:12px;color:#b45309;font-weight:600;margin-top:6px;padding:6px 8px;background:#fef3c7;border-radius:5px;border-left:3px solid #f59e0b">⚠️ ${t.diretorObs}</div>`:''}
       </div>
@@ -6868,6 +6885,7 @@ function pa_abrirDespachoTermo(id) {
   const t = pa_termos.find(x=>x.id===id); if (!t) return;
   pa_despTermoId = id;
   document.getElementById('dt-resumo').innerHTML = `
+    <div><b>Nº do Termo:</b> ${t.num||'—'}</div>
     <div><b>Devedor:</b> ${t.nm} ${t.tipo==='fisica'?'(CPF':'(CNPJ'} ${t.doc})</div>
     <div><b>Origem/Natureza:</b> ${t.origem||'—'} · ${t.natureza||'—'}</div>
     <div><b>Valor total atualizado:</b> R$ ${t.total||'—'}</div>
@@ -6958,7 +6976,7 @@ function pa_gerarHtmlTermo(t) {
       </div>
       <div style="width:58px"></div>
     </div>
-    <div style="text-align:center;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;border-top:2px solid #111;border-bottom:2px solid #111;padding:8px 0;margin:14px 0 16px">Termo de Inscrição em Dívida Ativa</div>
+    <div style="text-align:center;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;border-top:2px solid #111;border-bottom:2px solid #111;padding:8px 0;margin:14px 0 16px">Termo de Inscrição em Dívida Ativa${t.num?' — '+t.num:''}</div>
     <div style="font-size:12.5px;line-height:1.7;text-align:justify;margin-bottom:16px;color:#333">
       Aos ${dataGeracao}, nos termos do art. 66 da Lei Complementar Municipal nº 5, de 26 de dezembro de 2025, procede-se à inscrição em Dívida Ativa do Município de Caetité do crédito abaixo descrito, o qual goza de presunção de certeza e liquidez e tem efeito de prova pré-constituída, nos termos do art. 65, § 2º, da referida Lei Complementar.
     </div>
@@ -8512,8 +8530,12 @@ async function pa_gerarTermoDaIntimacao(intId) {
   if (!confirm(`Gerar o Termo de Inscrição em Dívida Ativa para ${i.nm}?\n\nO documento será enviado ao Diretor do Setor de Tributos para análise e assinatura.`)) return;
 
   const agora = new Date();
+  pa_recalcularNumeros();
+  const ano = agora.getFullYear();
+  const num = `TDA-${String(pa_nextTermoNum).padStart(4,'0')}/${ano}`;
   const dados = {
     int_id: intId,
+    num: num,
     proc_id: i.procId || null,
     proc_num: i.procNum || '',
     status: 'aguardando',
