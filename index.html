@@ -1034,6 +1034,25 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
       </div>
       </div>
 
+      <!-- MODAL — DESPACHO DO TERMO DE INSCRIÇÃO EM DÍVIDA ATIVA -->
+      <div id="modalDespachoTermo" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;padding:20px">
+        <div style="background:#fff;border-radius:12px;padding:24px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h3 style="margin:0;color:#0a3d62;font-size:17px">📄 Termo de Inscrição em Dívida Ativa</h3>
+            <button onclick="pa_fecharDespachoTermo()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888">×</button>
+          </div>
+          <div id="dt-resumo" style="background:#f8f9fa;border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;line-height:1.7"></div>
+          <div style="margin-bottom:14px">
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Observação (opcional, ou motivo da devolução)</label>
+            <textarea id="dt-obs" rows="3" style="width:100%;font-family:inherit;font-size:13px;padding:8px;border:1px solid #ddd;border-radius:6px" placeholder="Preencha se estiver devolvendo para correção..."></textarea>
+          </div>
+          <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
+            <button class="btn btn-g btn-sm" onclick="pa_despacharTermo('devolvido')">↩️ Devolver para Correção</button>
+            <button class="btn btn-p btn-sm" onclick="pa_despacharTermo('efetivado')">✅ Assinar e Efetivar</button>
+          </div>
+        </div>
+      </div>
+
       <!-- MODAL — ESCOLHA DE LEI APLICÁVEL -->
       <div id="modalLeiAplicavel" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;padding:20px">
         <div style="background:#fff;border-radius:12px;padding:24px;max-width:540px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);">
@@ -1255,6 +1274,19 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
           <div>
             <div style="font-size:11px;font-weight:500;color:var(--pa-text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Histórico</div>
             <div id="notif-hist"></div>
+          </div>
+        </div>
+
+        <hr style="margin:24px 0;border:none;border-top:1px solid var(--pa-border)">
+        <div style="font-size:14px;font-weight:600;margin-bottom:12px">📄 Termos de Inscrição em Dívida Ativa</div>
+        <div class="grid2">
+          <div>
+            <div style="font-size:11px;font-weight:500;color:var(--pa-text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Aguardando análise</div>
+            <div id="notif-termos-pendentes"><p style="color:var(--pa-text2);font-size:13px">Nenhum termo pendente.</p></div>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:500;color:var(--pa-text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Histórico</div>
+            <div id="notif-termos-hist"></div>
           </div>
         </div>
       </div>
@@ -1921,10 +1953,10 @@ let parecerSequencial = 1;
 let pa_usuarioAtual = null; // usuário mapeado para formato Sistema B
 
 // ── VARIÁVEIS GLOBAIS PROCESSADMIN ────────────────────────────────
-let pa_processos = [], pa_relatorios = [], pa_folhas = [], pa_intimacoes = [];
+let pa_processos = [], pa_relatorios = [], pa_folhas = [], pa_intimacoes = [], pa_termos = [];
 let pa_nextProcId = 1, pa_nextProcNum = 1;
 let pa_nextRelId  = 1, pa_nextRelNum  = 1;
-let pa_nextFolhaId= 1, pa_nextIntId   = 1;
+let pa_nextFolhaId= 1, pa_nextIntId   = 1, pa_nextTermoId = 1;
 let pa_salvando_intimacao = false;
 let pa_nextUsrId  = 1, pa_nextPerfId  = 6, pa_nextTribId = 7;
 let pa_detProcId  = null, pa_despRelId = null, pa_editRelId = null;
@@ -2210,22 +2242,62 @@ function rowToIntimacao(row) {
   };
 }
 
+function rowToTermo(row) {
+  return {
+    id:           row.id,
+    intId:        row.int_id,
+    procId:       row.proc_id || null,
+    procNum:      row.proc_num || '',
+    status:       row.status || 'aguardando', // aguardando | efetivado | devolvido
+    // Dados copiados da intimação no momento da geração (Art. 66, §1º, LC 5/2025)
+    nm:           row.nm || '',
+    doc:          row.doc || '',
+    tipo:         row.tipo || 'juridica',
+    end:          row.end || '',
+    origem:       row.origem || '',
+    natureza:     row.natureza || '',
+    inscrDA:      row.inscr_da || '',
+    livro:        row.livro || '',
+    folha:        row.folha || '',
+    dtInscr:      row.dt_inscr || '',
+    vp:           row.vp || '',
+    cm:           row.cm || '',
+    multa:        row.multa || '',
+    juros:        row.juros || '',
+    total:        row.total || '',
+    // Autoria (quem gerou / encaminhou ao Diretor)
+    autorId:      row.autor_id || null,
+    autorLogin:   row.autor_login || '',
+    autorNome:    row.autor_nome || '',
+    data:         row.data || '',
+    // Despacho do Diretor
+    diretorNome:      row.diretor_nome || '',
+    diretorMatricula: row.diretor_matricula || '',
+    diretorData:      row.diretor_data || '',
+    diretorObs:       row.diretor_obs || '',
+    visto:        row.visto || false,
+  };
+}
+
 async function carregarDadosPA() {
-  const [procs, rels, folhas, ints] = await Promise.all([
+  const [procs, rels, folhas, ints, termos] = await Promise.all([
     sbGet('pa_processos','select=*&limit=500'),
     sbGet('pa_relatorios','select=*&limit=500'),
     sbGet('pa_folhas','select=*&limit=1000'),
     sbGet('pa_intimacoes','select=*&limit=500'),
+    sbGet('pa_termos_da','select=*&limit=500'),
   ]);
   pa_processos   = (procs   || []).map(rowToProcesso);
   // (auto-reparo automático removido — vínculo agora é criado apenas via ação manual do usuário)
   pa_relatorios  = (rels    || []).map(rowToRelatorio);
   pa_folhas      = (folhas  || []).map(rowToFolha);
   pa_intimacoes  = (ints    || []).map(rowToIntimacao);
+  pa_termos      = (termos  || []).map(rowToTermo);
   pa_nextProcId  = pa_processos.length  ? Math.max(...pa_processos.map(p=>p.id)) + 1 : 1;
   pa_nextRelId   = pa_relatorios.length ? Math.max(...pa_relatorios.map(p=>p.id)) + 1 : 1;
   pa_nextFolhaId = pa_folhas.length     ? Math.max(...pa_folhas.map(p=>p.id)) + 1 : 1;
   pa_nextIntId   = pa_intimacoes.length ? Math.max(...pa_intimacoes.map(p=>p.id)) + 1 : 1;
+  pa_nextTermoId = pa_termos.length     ? Math.max(...pa_termos.map(p=>p.id)) + 1 : 1;
   // Calcular próximos números sequenciais (para exibição)
   // CORREÇÃO: usar campos corretos (num/numero) e pegar MAX em vez de length
   const ano = new Date().getFullYear();
@@ -2322,7 +2394,7 @@ function logout() {
   if (window._refreshIntervalA) { clearInterval(window._refreshIntervalA); window._refreshIntervalA = null; }
   if (window._refreshIntervalB) { clearInterval(window._refreshIntervalB); window._refreshIntervalB = null; }
   // Limpar dados PA em memória
-  pa_processos = []; pa_relatorios = []; pa_folhas = []; pa_intimacoes = [];
+  pa_processos = []; pa_relatorios = []; pa_folhas = []; pa_intimacoes = []; pa_termos = [];
   // Mostrar login
   const app = document.getElementById('unified-app');
   const login = document.getElementById('loginScreen');
@@ -6685,6 +6757,55 @@ function pa_renderNotificacoes() {
       </div>
     </div>`;
   }).join(''):'<p style="color:var(--pa-text2);font-size:13px">Nenhum histórico.</p>';
+  pa_renderNotificacoesTermos();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TERMOS DE INSCRIÇÃO EM DÍVIDA ATIVA — Notificações (seção separada,
+// não mexe na lógica de relatórios acima)
+// ═══════════════════════════════════════════════════════════════
+function pa_renderNotificacoesTermos() {
+  const elP = document.getElementById('notif-termos-pendentes');
+  const elH = document.getElementById('notif-termos-hist');
+  if (!elP || !elH) return; // tela pode não estar aberta ainda
+  const _admNotif = isAdmin();
+
+  const pendentes = _admNotif || ['diretor','gerente'].includes(pa_perfilNomeAtual())
+    ? pa_termos.filter(t => t.status === 'aguardando')
+    : [];
+  const hist = _admNotif
+    ? pa_termos.filter(t => t.status !== 'aguardando').sort((a,b)=>b.id-a.id)
+    : pa_termos.filter(t => t.autorLogin === pa_usuarioAtual?.login && t.status !== 'aguardando').sort((a,b)=>b.id-a.id);
+
+  elP.innerHTML = pendentes.length ? pendentes.map(t => `
+    <div class="notif-item unread" style="cursor:pointer" onclick="pa_abrirDespachoTermo(${t.id})">
+      <div class="notif-dot"></div>
+      <div class="notif-info">
+        <div class="notif-title">Termo — ${t.nm}</div>
+        <div class="notif-sub">Autor: ${t.autorNome} · Processo: ${t.procNum||'—'} · Total: R$ ${t.total||'—'}</div>
+      </div>
+      <div class="notif-time">${pa_fd(t.data)}</div>
+    </div>`).join('') : '<p style="color:var(--pa-text2);font-size:13px">Nenhum termo pendente.</p>';
+
+  elH.innerHTML = hist.length ? hist.map(t => {
+    const ehNovo = t.autorLogin === pa_usuarioAtual?.login && !t.visto;
+    return `
+    <div class="notif-item ${ehNovo?'unread':''}" style="cursor:pointer" onclick="pa_marcarVistoTermoEAbrir(${t.id})">
+      <div class="notif-dot ${ehNovo?'':'read'}"></div>
+      <div class="notif-info">
+        <div class="notif-title">Termo — ${t.nm} ${ehNovo?'<span class="badge b-new" style="font-size:10px">Nova resposta</span>':''}</div>
+        <div class="notif-sub">${t.status==='efetivado'?'✅ Efetivado':'↩️ Devolvido para correção'}</div>
+        ${t.status==='devolvido'&&t.diretorObs?`<div style="font-size:12px;color:#b45309;font-weight:600;margin-top:6px;padding:6px 8px;background:#fef3c7;border-radius:5px;border-left:3px solid #f59e0b">⚠️ ${t.diretorObs}</div>`:''}
+      </div>
+      <div class="notif-time">${pa_fd(t.data)}</div>
+    </div>`;
+  }).join('') : '<p style="color:var(--pa-text2);font-size:13px">Nenhum histórico.</p>';
+}
+
+// Helper simples para saber o perfil (nome) do usuário atual dentro do Sistema B
+function pa_perfilNomeAtual() {
+  const u = DB.usuarios.find(x => x.login === pa_usuarioAtual?.login);
+  return u ? u.perfil : '';
 }
 
 // Marca a resposta (autorizado/rejeitado/complementar) como vista pelo autor,
@@ -6699,6 +6820,143 @@ function pa_marcarVisto(id) {
 function pa_marcarVistoEAbrir(id) { pa_marcarVisto(id); pa_irParaRelatorio(id); }
 function pa_marcarVistoEAbrirProc(id) { pa_marcarVisto(id); pa_abrirProcDeRel(id); }
 function pa_marcarVistoEVer(id) { pa_marcarVisto(id); pa_verRelatorio(id); }
+
+// ═══════════════════════════════════════════════════════════════
+// TERMO DE INSCRIÇÃO EM DÍVIDA ATIVA — Despacho do Diretor
+// Bloco isolado, não compartilha variáveis nem telas com o despacho
+// de Relatório (pa_despRelId, tela "despacho") — evita qualquer risco
+// de interferência entre os dois fluxos.
+// ═══════════════════════════════════════════════════════════════
+let pa_despTermoId = null;
+
+function pa_marcarVistoTermo(id) {
+  const t = pa_termos.find(x=>x.id===id);
+  if (!t || t.visto) return;
+  t.visto = true;
+  sbPatch('pa_termos_da', t.id, { visto: true }).catch(e=>console.warn('Erro ao marcar termo como visto:', e));
+  buildUnifiedNav();
+}
+function pa_marcarVistoTermoEAbrir(id) { pa_marcarVistoTermo(id); pa_verTermo(id); }
+
+// Visualização simples (fiscal vendo o próprio termo já despachado)
+function pa_verTermo(id) {
+  const t = pa_termos.find(x=>x.id===id); if (!t) return;
+  pa_openModal('Termo de Inscrição em Dívida Ativa', pa_gerarHtmlTermo(t), true);
+}
+
+// Abre o modal de despacho para o Diretor (analisar/assinar/devolver)
+function pa_abrirDespachoTermo(id) {
+  const t = pa_termos.find(x=>x.id===id); if (!t) return;
+  pa_despTermoId = id;
+  document.getElementById('dt-resumo').innerHTML = `
+    <div><b>Devedor:</b> ${t.nm} ${t.tipo==='fisica'?'(CPF':'(CNPJ'} ${t.doc})</div>
+    <div><b>Origem/Natureza:</b> ${t.origem||'—'} · ${t.natureza||'—'}</div>
+    <div><b>Valor total atualizado:</b> R$ ${t.total||'—'}</div>
+    <div><b>Livro/Folha/Data de inscrição:</b> ${t.livro||'—'} / ${t.folha||'—'} / ${pa_fd(t.dtInscr)}</div>
+    <div><b>Processo de origem:</b> ${t.procNum||'—'}</div>
+    <div><b>Gerado por:</b> ${t.autorNome} em ${pa_fd(t.data)}</div>
+    <div style="margin-top:8px"><button class="btn btn-g btn-xs" onclick="pa_verTermo(${t.id})">👁️ Ver documento completo / Imprimir</button></div>
+  `;
+  document.getElementById('dt-obs').value = '';
+  document.getElementById('modalDespachoTermo').style.display = 'flex';
+}
+function pa_fecharDespachoTermo() {
+  document.getElementById('modalDespachoTermo').style.display = 'none';
+  pa_despTermoId = null;
+}
+
+// Executa a decisão do Diretor: 'efetivado' (assina) ou 'devolvido' (correção)
+async function pa_despacharTermo(decisao) {
+  const t = pa_termos.find(x => x.id === pa_despTermoId);
+  if (!t) return;
+  const obs = document.getElementById('dt-obs').value.trim();
+  if (decisao === 'devolvido' && !obs) {
+    alert('⚠️ Informe o motivo da devolução no campo de observação.');
+    return;
+  }
+  const agora = new Date();
+  const updates = { status: decisao, diretor_obs: obs, visto: false };
+  if (decisao === 'efetivado') {
+    updates.diretor_nome = pa_usuarioAtual?.nome || '';
+    updates.diretor_matricula = pa_usuarioAtual?.matricula || '';
+    updates.diretor_data = agora.toISOString();
+  }
+  showLoading('Salvando decisão...');
+  try {
+    await sbPatch('pa_termos_da', t.id, updates);
+    t.status = decisao;
+    t.diretorObs = obs;
+    t.visto = false;
+    if (decisao === 'efetivado') {
+      t.diretorNome = updates.diretor_nome;
+      t.diretorMatricula = updates.diretor_matricula;
+      t.diretorData = updates.diretor_data;
+    }
+    pa_auditar && pa_auditar(decisao === 'efetivado' ? 'EFETIVAR' : 'DEVOLVER', {tabela:'pa_termos_da', id: t.id, num: t.nm, detalhes: `Termo de Inscrição em DA — ${decisao}${obs?': '+obs.slice(0,80):''}`});
+    hideLoading();
+    pa_fecharDespachoTermo();
+    toast(decisao === 'efetivado' ? '✅ Termo efetivado e assinado.' : '↩️ Termo devolvido para correção.');
+    pa_renderNotificacoesTermos();
+    buildUnifiedNav();
+  } catch(e) {
+    hideLoading();
+    alert('Erro ao salvar: ' + (e.message||e));
+  }
+}
+
+// Gera o HTML formatado do Termo (usado tanto na visualização quanto na
+// impressão individual e no "Imprimir Tudo"). Segue os itens I a VI do
+// Art. 66, §1º, da LC nº 5/2025.
+function pa_gerarHtmlTermo(t) {
+  const dataGeracao = t.data ? new Date(t.data).toLocaleDateString('pt-BR') : '';
+  const totalFmt = t.total || '0,00';
+  const assinaturaHtml = t.status === 'efetivado' ? `
+    <div style="margin-top:40px;text-align:center">
+      <div style="border-top:1px solid #333;width:260px;margin:0 auto 4px"></div>
+      <div style="font-size:12px;font-weight:700">${t.diretorNome}</div>
+      <div style="font-size:11px;color:#555;margin-top:2px">Diretor do Setor de Tributos${t.diretorMatricula?(/^decreto/i.test(t.diretorMatricula)?'<br>'+t.diretorMatricula:'<br>Matrícula: '+t.diretorMatricula):''}</div>
+      <div style="font-size:10px;color:#888;margin-top:4px">Efetivado em ${pa_fd(t.diretorData)}</div>
+    </div>` : `
+    <div style="margin-top:30px;padding:10px 14px;background:#fff3e0;border-radius:6px;font-size:12px;color:#78350f;text-align:center">
+      ⏳ Termo aguardando análise e assinatura do Diretor do Setor de Tributos
+    </div>`;
+
+  return `<div style="background:#fff;color:#111;font-family:'Times New Roman',Georgia,serif;padding:40px 46px 30px;max-width:720px;margin:0 auto">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+      <div style="width:58px"></div>
+      <div style="text-align:center;flex:1;padding:0 10px">
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Prefeitura Municipal de Caetité</div>
+        <div style="font-size:10.5px;margin-top:2px;color:#333">Estado da Bahia</div>
+        <div style="font-size:10px;margin-top:2px;color:#333">Secretaria Municipal de Administração, Planejamento e Finanças — Setor de Tributos</div>
+      </div>
+      <div style="width:58px"></div>
+    </div>
+    <div style="text-align:center;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;border-top:2px solid #111;border-bottom:2px solid #111;padding:8px 0;margin:14px 0 16px">Termo de Inscrição em Dívida Ativa</div>
+    <div style="font-size:12.5px;line-height:1.7;text-align:justify;margin-bottom:16px;color:#333">
+      Aos ${dataGeracao}, nos termos do art. 66 da Lei Complementar Municipal nº 5, de 26 de dezembro de 2025, procede-se à inscrição em Dívida Ativa do Município de Caetité do crédito abaixo descrito, o qual goza de presunção de certeza e liquidez e tem efeito de prova pré-constituída, nos termos do art. 65, § 2º, da referida Lei Complementar.
+    </div>
+    <div style="font-size:13px;line-height:1.8;margin-bottom:10px;text-align:justify"><b>I — Origem e natureza do crédito:</b> ${t.natureza||'—'}, decorrente de ${t.origem||'lançamento não adimplido no prazo legal'}${t.procNum?', apurado no Processo Administrativo nº '+t.procNum:''}.</div>
+    <div style="font-size:13px;line-height:1.8;margin-bottom:10px;text-align:justify"><b>II — Quantia devida e acréscimos legais:</b>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:6px">
+        <tr><td style="padding:2px 0">Valor principal</td><td style="text-align:right">R$ ${t.vp||'0,00'}</td></tr>
+        <tr><td style="padding:2px 0">Correção monetária</td><td style="text-align:right">R$ ${t.cm||'0,00'}</td></tr>
+        <tr><td style="padding:2px 0">Multa de mora</td><td style="text-align:right">R$ ${t.multa||'0,00'}</td></tr>
+        <tr><td style="padding:2px 0">Juros de mora</td><td style="text-align:right">R$ ${t.juros||'0,00'}</td></tr>
+        <tr style="border-top:1px solid #999;font-weight:700"><td style="padding:4px 0">Valor total atualizado</td><td style="text-align:right">R$ ${totalFmt}</td></tr>
+      </table>
+    </div>
+    <div style="font-size:13px;line-height:1.8;margin-bottom:10px;text-align:justify"><b>III — Devedor:</b> ${t.nm}, ${t.tipo==='fisica'?'CPF':'CNPJ'} nº ${t.doc}${t.end?', com domicílio fiscal em '+t.end:''}.</div>
+    <div style="font-size:13px;line-height:1.8;margin-bottom:10px;text-align:justify"><b>IV — Livro, folha e data da inscrição:</b> Livro nº ${t.livro||'—'}, Folha nº ${t.folha||'—'}, inscrito em ${pa_fd(t.dtInscr)}.</div>
+    <div style="font-size:13px;line-height:1.8;margin-bottom:10px;text-align:justify"><b>V — Processo administrativo ou fiscal de origem:</b> ${t.procNum?'Processo Administrativo nº '+t.procNum:'—'}.</div>
+    <div style="font-size:13px;line-height:1.8;margin-bottom:10px;text-align:justify"><b>VI — CNPJ/CPF do devedor ou responsável:</b> ${t.doc}.</div>
+    <hr style="border:none;border-top:1px solid #999;margin:18px 0 14px">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;color:#444">Controle de legalidade — Procuradoria do Município</div>
+    <div style="font-size:11.5px;line-height:1.6;color:#444;text-align:justify">
+      Nos termos do art. 66, §§ 2º e 3º, da LC nº 5/2025, este Termo e a respectiva Certidão de Dívida Ativa serão remetidos à Procuradoria do Município para controle de legalidade, podendo ser cancelados ou não efetivados em caso de pagamento anterior, vício insanável ou superposição de valores já cobrados.
+    </div>
+    ${assinaturaHtml}
+  </div>`;
+}
 
 // ── DESPACHO ───────────────────────────────────────────────────────────────
 function pa_abrirDespacho(rid) {
@@ -7585,7 +7843,11 @@ function pa_imprimirProcessoCompleto(procId) {
   const folhas = pa_folhas.filter(f => f.pid === p.id).sort((a,b) => (a.num||0) - (b.num||0));
   folhas.forEach(f => partes.push(pa_gerarHtmlFolha(f, p)));
 
-  // 4) Intimações vinculadas
+  // 4) Termo(s) de Inscrição em Dívida Ativa vinculado(s) a este processo
+  const termos = pa_termos.filter(t => t.procId === p.id);
+  termos.forEach(t => partes.push(pa_gerarHtmlTermo(t)));
+
+  // 5) Intimações vinculadas
   const intimacoes = pa_intimacoes.filter(i => i.procId === p.id);
   intimacoes.forEach(i => partes.push(pa_gerarDocNotif(i)));
 
@@ -8196,9 +8458,62 @@ function pa_renderIntimacoes() {
     <td style="display:flex;gap:4px">
       <button class="btn btn-g btn-xs" onclick="pa_prevIntimacaoById(${i.id})">Ver</button>
       ${pa_canEdit(i.autorId, i.autorLogin)?`<button class="btn btn-g btn-xs" onclick="pa_editarIntimacao(${i.id})">✏️ Editar</button>`:''}
+      ${pa_botaoTermoIntimacao(i.id)}
       ${isAdmin()?`<button class="btn btn-xs" style="background:#dc2626;color:#fff" onclick="pa_excluirIntimacao(${i.id})">🗑️</button>`:''}
     </td>
   </tr>`).join('');
+}
+
+// Decide qual botão mostrar na linha da intimação em relação ao Termo de
+// Inscrição em Dívida Ativa: gerar (se ainda não existe) ou ver status.
+function pa_botaoTermoIntimacao(intId) {
+  const t = pa_termos.find(x => x.intId === intId);
+  if (!t) {
+    return `<button class="btn btn-p btn-xs" onclick="pa_gerarTermoDaIntimacao(${intId})">📄 Gerar Termo</button>`;
+  }
+  const labels = { aguardando: '⏳ Termo: Aguardando', efetivado: '✅ Termo: Efetivado', devolvido: '↩️ Termo: Devolvido' };
+  return `<button class="btn btn-g btn-xs" onclick="pa_verTermo(${t.id})">${labels[t.status]||'Ver Termo'}</button>`;
+}
+
+// Gera o Termo de Inscrição em Dívida Ativa a partir dos dados já
+// preenchidos na Intimação, e envia para o Diretor analisar/assinar.
+async function pa_gerarTermoDaIntimacao(intId) {
+  const i = pa_intimacoes.find(x => x.id === intId);
+  if (!i) { alert('Intimação não encontrada.'); return; }
+  if (pa_termos.find(x => x.intId === intId)) { alert('Já existe um Termo gerado para esta intimação.'); return; }
+
+  if (!confirm(`Gerar o Termo de Inscrição em Dívida Ativa para ${i.nm}?\n\nO documento será enviado ao Diretor do Setor de Tributos para análise e assinatura.`)) return;
+
+  const agora = new Date();
+  const dados = {
+    int_id: intId,
+    proc_id: i.procId || null,
+    proc_num: i.procNum || '',
+    status: 'aguardando',
+    nm: i.nm, doc: i.doc, tipo: i.tipo, end: i.end,
+    origem: i.origem, natureza: i.natureza, inscr_da: i.inscrDA,
+    livro: i.livro, folha: i.folha, dt_inscr: i.data,
+    vp: i.vp, cm: i.cm, multa: i.multa, juros: i.juros, total: i.total,
+    autor_id: pa_usuarioAtual?.id || null,
+    autor_login: pa_usuarioAtual?.login || '',
+    autor_nome: pa_usuarioAtual?.nome || '',
+    data: agora.toISOString(),
+    visto: false,
+  };
+
+  showLoading('Gerando Termo de Inscrição em Dívida Ativa...');
+  try {
+    const inserido = await sbPost('pa_termos_da', dados);
+    if (!inserido || !inserido[0]) throw new Error('Falha ao salvar o Termo.');
+    pa_termos.push(rowToTermo(inserido[0]));
+    pa_auditar && pa_auditar('CRIAR', {tabela:'pa_termos_da', id: inserido[0].id, num: i.nm, detalhes: `Termo de Inscrição em DA gerado para ${i.nm}, encaminhado ao Diretor`});
+    hideLoading();
+    toast('✅ Termo gerado e encaminhado ao Diretor para análise.');
+    pa_renderIntimacoes();
+  } catch(e) {
+    hideLoading();
+    alert('Erro ao gerar o Termo: ' + (e.message||e));
+  }
 }
 
 function pa_editarIntimacao(id) {
@@ -8451,9 +8766,8 @@ function pa_gerarDocNotif(int) {
 
     '<div style="margin-top:auto;padding-top:16px;display:flex;flex-direction:column"><div style="text-align:right;font-size:12px">Caetit\u00e9 \u2013 BA, ' + hoje + '.</div>' +
     '<div style="margin-top:60px;page-break-inside:avoid;text-align:center">' +
-    '<div style="height:36px"></div>' +
-    '<div style="border-top:.5px solid #333;width:220px;margin:0 auto 3px"></div>' +
-    '<div style="font-size:11px;font-weight:700">Marisvaldo Soares dos Santos</div>' +
+    '<img src="data:image/png;base64,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" style="width:150px;display:block;margin:0 auto">' +
+    '<div style="font-size:11px;font-weight:700;margin-top:2px">Marisvaldo Soares dos Santos</div>' +
     '<div style="font-size:10px;color:#555">Secretário Municipal de Administração, Planejamento e Finanças</div>' +
     '</div></div>' +
     rodapeDoc +
