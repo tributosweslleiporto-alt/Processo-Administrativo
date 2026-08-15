@@ -1024,6 +1024,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
           <div class="card"><div class="card-title">Tramitação</div><div class="tl" id="det-tram"></div></div>
         </div>
         <div class="card"><div class="card-title">Folhas de informação</div><div id="det-folhas"></div></div>
+        <div class="card"><div class="card-title">📄 Termo(s) de Inscrição em Dívida Ativa</div><div id="det-termos"></div></div>
       <div id="det-int-container"></div>
       <div class="card" id="det-anexos-card">
         <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
@@ -1902,8 +1903,9 @@ async function sbGet(tabela, filtro='') {
       q = q.in(m[1], vals);
     }
     const { data, error } = await q;
-    return error ? [] : (data || []);
-  } catch(e) { return []; }
+    if (error) { console.error(`[sbGet] Erro ao buscar "${tabela}":`, error.message, error.details, error.hint); return []; }
+    return data || [];
+  } catch(e) { console.error(`[sbGet] Exceção em "${tabela}":`, e); return []; }
 }
 async function sbPost(tabela, dados) {
   try {
@@ -6145,6 +6147,15 @@ function pa_verDetalhe(id) {
     const canAd = isAdmin();
     return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--pa-border);font-size:13px"><div><strong>Folha Nº ${f.num}</strong> · ${pa_fd(f.data)}<div style="font-size:12px;color:var(--pa-text2);margin-top:1px">${f.sv||''} · ${(f.tx||'').slice(0,55)}${f.tx&&f.tx.length>55?'…':''}</div></div><div style="display:flex;gap:4px"><button class="btn btn-g btn-xs" onclick="pa_prevFolhaById(${f.id})">Prévia</button>${canEf?`<button class="btn btn-g btn-xs" onclick="pa_editarFolha(${f.id})" title="Editar">✏️</button>`:''}${canAd?`<button class="btn btn-xs" style="background:#dc2626;color:#fff" onclick="pa_excluirFolha(${f.id})" title="Excluir">🗑️</button>`:''}</div></div>`;
   }).join(''):'<p style="color:var(--pa-text2);font-size:13px">Nenhuma folha emitida.</p>';
+  const pt = pa_termos.filter(t=>t.procId===id);
+  document.getElementById('det-termos').innerHTML = pt.length ? pt.map(t=>{
+    const labels = { aguardando: '⏳ Aguardando análise', efetivado: '✅ Efetivado', devolvido: '↩️ Devolvido para correção' };
+    const cores = { aguardando: '#b45309', efetivado: '#16a34a', devolvido: '#dc2626' };
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--pa-border);font-size:13px">
+      <div><strong>${t.nm}</strong> · ${pa_fd(t.data)}<div style="font-size:12px;color:${cores[t.status]||'#555'};margin-top:1px;font-weight:600">${labels[t.status]||t.status}</div></div>
+      <button class="btn btn-g btn-xs" onclick="pa_verTermo(${t.id})">👁️ Ver / Imprimir</button>
+    </div>`;
+  }).join('') : '<p style="color:var(--pa-text2);font-size:13px">Nenhum termo gerado para este processo.</p>';
   const acts=document.getElementById('det-actions');
   const canE = pa_canEdit(p.autorId, p.autorLogin);
   const canAdmin = isAdmin();
@@ -6155,6 +6166,7 @@ function pa_verDetalhe(id) {
   acts.innerHTML=`
     <button class="btn btn-g btn-sm" onclick="pa_impCartao()">⎙ Cartão</button>
     <button class="btn btn-g btn-sm" onclick="pa_impCapa()">⎙ Capa</button>
+    <button class="btn btn-g btn-sm" onclick="pa_imprimirProcessoCompleto(${p.id})" title="Imprimir capa + relatório + folhas + termo + intimações">🖨️ Imprimir Tudo</button>
     ${relBtn}
     ${ativo ? `<button class="btn btn-g btn-sm" onclick="pa_novaFolhaDet()">+ Folha</button>` : ''}
     ${ativo ? `<button class="btn btn-g btn-sm" onclick="pa_novaIntimacaoDet('fisica')">+ Intimação Pessoa Física</button>` : ''}
