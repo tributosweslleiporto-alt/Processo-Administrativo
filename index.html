@@ -884,11 +884,11 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
               Em caso de problemas, importe o backup para restaurar os dados.
             </p>
             <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
-              <button class="btn btn-primary" onclick="pa_exportarBackup()" style="display:flex;align-items:center;gap:6px;">
+              <button class="btn btn-primary" onclick="exportarBackup()" style="display:flex;align-items:center;gap:6px;">
                 ⬇️ Exportar Backup
               </button>
               <div style="position:relative;">
-                <input type="file" id="inputImportBackup" accept=".json" style="display:none;" onchange="pa_importarBackup(this)">
+                <input type="file" id="inputImportBackup" accept=".json" style="display:none;" onchange="importarBackup(this)">
                 <button class="btn btn-outline" onclick="document.getElementById('inputImportBackup').click()" style="display:flex;align-items:center;gap:6px;">
                   ⬆️ Importar Backup
                 </button>
