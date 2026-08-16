@@ -7857,13 +7857,31 @@ async function pa_excluirRelatorio(id) {
 async function pa_excluirIntimacao(id) {
   if(!isAdmin()) { toast('Apenas administradores podem excluir.'); return; }
   const i = pa_intimacoes.find(x=>x.id===id); if(!i) return;
-  if(!confirm(`⚠️ Excluir Intimação de ${i.nm}?\n\nEsta ação NÃO pode ser desfeita.`)) return;
+  // O Termo de Inscrição em Dívida Ativa guarda cópia própria de todos os
+  // dados (não depende mais da Intimação depois de gerado), então pode
+  // continuar existindo normalmente mesmo se a Intimação for excluída —
+  // ele continua acessível pela tela do Processo e pelas Notificações.
+  const termoVinc = pa_termos.find(x => x.intId === id);
+  let msgConfirm = `⚠️ Excluir Intimação de ${i.nm}?\n\nEsta ação NÃO pode ser desfeita.`;
+  if (termoVinc) {
+    msgConfirm += `\n\nℹ️ Existe um Termo de Inscrição em Dívida Ativa (${termoVinc.num||'sem número'}, status: ${termoVinc.status}) vinculado a esta intimação. Ele NÃO será excluído — continuará existindo normalmente e acessível pela tela do Processo.`;
+  }
+  if(!confirm(msgConfirm)) return;
   try {
     await sbDelete('pa_intimacoes', id);
-    pa_auditar('EXCLUIR', {tabela:'pa_intimacoes', id:i.id, num:`Intimação ${i.nm||''}`, detalhes:`Intimação excluída`});
+    // Desvincula o Termo da intimação excluída (limpeza de referência),
+    // sem apagar nenhum dado do Termo em si — ele já tem cópia própria
+    // de tudo que precisa.
+    if (termoVinc) {
+      try {
+        await sbPatch('pa_termos_da', termoVinc.id, { int_id: null });
+        termoVinc.intId = null;
+      } catch(e2) { console.warn('Não foi possível desvincular o Termo:', e2); }
+    }
+    pa_auditar('EXCLUIR', {tabela:'pa_intimacoes', id:i.id, num:`Intimação ${i.nm||''}`, detalhes:`Intimação excluída${termoVinc?' (Termo '+(termoVinc.num||'')+' preservado)':''}`});
     pa_intimacoes = pa_intimacoes.filter(x=>x.id!==id);
     pa_renderIntimacoes();
-    toast(`Intimação excluída.`);
+    toast(termoVinc ? `Intimação excluída. O Termo vinculado continua disponível no Processo.` : `Intimação excluída.`);
   } catch(e) { alert('Erro ao excluir: ' + e.message); }
 }
 
@@ -8757,7 +8775,7 @@ function pa_renderIntimacoes() {
       <button class="btn btn-g btn-xs" onclick="pa_prevIntimacaoById(${i.id})">Ver</button>
       ${pa_canEdit(i.autorId, i.autorLogin)?`<button class="btn btn-g btn-xs" onclick="pa_editarIntimacao(${i.id})">✏️ Editar</button>`:''}
       ${pa_botaoTermoIntimacao(i.id)}
-      ${isAdmin()?`<button class="btn btn-xs" style="background:#dc2626;color:#fff" onclick="pa_excluirIntimacao(${i.id})">🗑️</button>`:''}
+      ${isAdmin()?`<button class="btn btn-xs" style="background:#dc2626;color:#fff" onclick="pa_excluirIntimacao(${i.id})" title="Excluir a INTIMAÇÃO inteira">🗑️</button>`:''}
     </td>
   </tr>`).join('');
 }
@@ -8771,14 +8789,17 @@ function pa_botaoTermoIntimacao(intId) {
   }
   const labels = { aguardando: '⏳ Termo: Aguardando', efetivado: '✅ Termo: Efetivado', devolvido: '↩️ Termo: Devolvido' };
   const souAutorT = t.autorLogin === pa_usuarioAtual?.login;
-  let html = `<button class="btn btn-g btn-xs" onclick="pa_verTermo(${t.id})">${labels[t.status]||'Ver Termo'}</button>`;
+  // Agrupamento visual: tudo relacionado ao TERMO fica dentro de uma
+  // "cápsula" com borda, separado do botão de excluir a INTIMAÇÃO,
+  // para não haver confusão entre os dois "excluir" (são coisas diferentes).
+  let grupoTermo = `<button class="btn btn-g btn-xs" onclick="pa_verTermo(${t.id})">${labels[t.status]||'Ver Termo'}</button>`;
   if (t.status === 'devolvido' && (souAutorT || isAdmin())) {
-    html += ` <button class="btn btn-p btn-xs" onclick="pa_corrigirTermo(${t.id})">✏️ Corrigir</button>`;
+    grupoTermo += `<button class="btn btn-p btn-xs" onclick="pa_corrigirTermo(${t.id})">✏️ Corrigir Termo</button>`;
   }
   if (isAdmin()) {
-    html += ` <button class="btn btn-xs" style="background:#dc2626;color:#fff" onclick="pa_excluirTermo(${t.id})" title="Excluir">🗑️</button>`;
+    grupoTermo += `<button class="btn btn-xs" style="background:#dc2626;color:#fff" onclick="pa_excluirTermo(${t.id})" title="Excluir o TERMO (não a intimação)">🗑️ Excluir Termo</button>`;
   }
-  return html;
+  return `<span style="display:inline-flex;gap:3px;padding:2px;border:1px dashed var(--pa-border);border-radius:6px;background:var(--pa-surface2)">${grupoTermo}</span>`;
 }
 
 // Gera o Termo de Inscrição em Dívida Ativa a partir dos dados já
