@@ -1049,7 +1049,90 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
           </div>
           <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
             <button class="btn btn-g btn-sm" onclick="pa_despacharTermo('devolvido')">↩️ Devolver para Correção</button>
-            <button class="btn btn-p btn-sm" onclick="pa_despacharTermo('efetivado')">✅ Assinar e Efetivar</button>
+            <button class="btn btn-p btn-sm" id="dt-btn-assinar" onclick="pa_despacharTermo('efetivado')">✅ Assinar e Efetivar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODAL — EDITAR TERMO (correção pelo autor após devolução, ou edição total pelo Admin) -->
+      <div id="modalEditarTermo" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;padding:20px">
+        <div style="background:#fff;border-radius:12px;padding:24px;max-width:640px;width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <h3 style="margin:0;color:#0a3d62;font-size:17px" id="et-titulo">✏️ Editar Termo</h3>
+            <button onclick="pa_fecharEdicaoTermo()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888">×</button>
+          </div>
+          <div id="et-aviso" style="background:#fff3e0;border:1px solid #f59e0b;border-radius:6px;padding:8px 12px;font-size:12px;color:#78350f;margin-bottom:14px"></div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+            <div id="et-num-wrap" style="display:none">
+              <label style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">Nº do Termo</label>
+              <input type="text" id="et-num" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:6px;font-size:13px">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">Nome / Razão Social</label>
+              <input type="text" id="et-nm" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:6px;font-size:13px">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">CPF/CNPJ</label>
+              <input type="text" id="et-doc" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:6px;font-size:13px">
+            </div>
+          </div>
+          <div style="margin-bottom:10px">
+            <label style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">Endereço/Domicílio</label>
+            <input type="text" id="et-end" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:6px;font-size:13px">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+            <div>
+              <label style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">Origem</label>
+              <input type="text" id="et-origem" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:6px;font-size:13px">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">Natureza/Tributo</label>
+              <input type="text" id="et-natureza" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:6px;font-size:13px">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
+            <div>
+              <label style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">Livro Nº</label>
+              <input type="text" id="et-livro" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:6px;font-size:13px">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">Folha Nº</label>
+              <input type="text" id="et-folha" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:6px;font-size:13px">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">Data Inscrição</label>
+              <input type="date" id="et-dtinscr" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:6px;font-size:13px">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+            <div>
+              <label style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">Principal</label>
+              <input type="text" id="et-vp" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:6px;font-size:13px">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">Correção</label>
+              <input type="text" id="et-cm" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:6px;font-size:13px">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">Multa</label>
+              <input type="text" id="et-multa" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:6px;font-size:13px">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">Juros</label>
+              <input type="text" id="et-juros" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:6px;font-size:13px">
+            </div>
+          </div>
+          <div style="margin-bottom:16px">
+            <label style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">Valor Total Atualizado</label>
+            <input type="text" id="et-total" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-weight:600">
+          </div>
+
+          <input type="hidden" id="et-id">
+          <input type="hidden" id="et-modo">
+          <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
+            <button class="btn btn-g btn-sm" onclick="pa_fecharEdicaoTermo()">Cancelar</button>
+            <button class="btn btn-p btn-sm" id="et-btn-salvar" onclick="pa_salvarEdicaoTermo()">💾 Salvar</button>
           </div>
         </div>
       </div>
@@ -1423,10 +1506,6 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <input type="text" id="int-q" placeholder="Buscar intimação..." oninput="pa_renderIntimacoes()" style="width:220px">
             <select id="int-sf" onchange="pa_renderIntimacoes()"><option value="">Todos</option><option value="fisica">Pessoa Física</option><option value="juridica">Pessoa Jurídica</option></select>
-          </div>
-          <div style="display:flex;gap:8px">
-            <button class="btn btn-g btn-sm" onclick="pa_novaIntimacao('fisica')">+ Intimação Pessoa Física</button>
-            <button class="btn btn-p btn-sm" onclick="pa_novaIntimacao('juridica')">+ Intimação Pessoa Jurídica</button>
           </div>
         </div>
         <div class="tw"><table><thead><tr><th>Nº</th><th>Tipo</th><th>Contribuinte</th><th>Tributo</th><th>Valor Total</th><th>Processo</th><th>Data</th><th></th></tr></thead><tbody id="int-tbody"></tbody></table>
@@ -6168,9 +6247,16 @@ function pa_verDetalhe(id) {
   document.getElementById('det-termos').innerHTML = pt.length ? pt.map(t=>{
     const labels = { aguardando: '⏳ Aguardando análise', efetivado: '✅ Efetivado', devolvido: '↩️ Devolvido para correção' };
     const cores = { aguardando: '#b45309', efetivado: '#16a34a', devolvido: '#dc2626' };
-    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--pa-border);font-size:13px">
+    const souAutorT = t.autorLogin === pa_usuarioAtual?.login;
+    const btnCorrigir = (t.status === 'devolvido' && (souAutorT || isAdmin())) ? `<button class="btn btn-p btn-xs" onclick="pa_corrigirTermo(${t.id})">✏️ Corrigir e Reenviar</button>` : '';
+    const btnAdminEd = isAdmin() ? `<button class="btn btn-g btn-xs" onclick="pa_adminEditarTermo(${t.id})" title="Editar (Admin)">🛠️</button>` : '';
+    const btnAdminEx = isAdmin() ? `<button class="btn btn-xs" style="background:#dc2626;color:#fff" onclick="pa_excluirTermo(${t.id})" title="Excluir (Admin)">🗑️</button>` : '';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--pa-border);font-size:13px;flex-wrap:wrap;gap:6px">
       <div><strong>${t.num||'—'}</strong> · ${t.nm} · ${pa_fd(t.data)}<div style="font-size:12px;color:${cores[t.status]||'#555'};margin-top:1px;font-weight:600">${labels[t.status]||t.status}</div></div>
-      <button class="btn btn-g btn-xs" onclick="pa_verTermo(${t.id})">👁️ Ver / Imprimir</button>
+      <div style="display:flex;gap:4px;flex-wrap:wrap">
+        <button class="btn btn-g btn-xs" onclick="pa_verTermo(${t.id})">👁️ Ver / Imprimir</button>
+        ${btnCorrigir}${btnAdminEd}${btnAdminEx}
+      </div>
     </div>`;
   }).join('') : '<p style="color:var(--pa-text2);font-size:13px">Nenhum termo gerado para este processo.</p>';
   const acts=document.getElementById('det-actions');
@@ -6198,6 +6284,22 @@ function pa_verDetalhe(id) {
   navegarPara('detalhe');
   // Carregar anexos do processo
   if (typeof renderAnexosPA === 'function') renderAnexosPA(id);
+  // Segurança extra: reforça a exibição dos Termos meio segundo depois,
+  // cobrindo qualquer situação em que os dados ainda estivessem chegando
+  // do banco no momento da primeira renderização desta tela.
+  setTimeout(() => {
+    const elT = document.getElementById('det-termos');
+    if (!elT) return;
+    const pt2 = pa_termos.filter(t=>t.procId===id);
+    if (pt2.length && elT.innerHTML.includes('Nenhum termo gerado')) {
+      const labels = { aguardando: '⏳ Aguardando análise', efetivado: '✅ Efetivado', devolvido: '↩️ Devolvido para correção' };
+      const cores = { aguardando: '#b45309', efetivado: '#16a34a', devolvido: '#dc2626' };
+      elT.innerHTML = pt2.map(t=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--pa-border);font-size:13px">
+        <div><strong>${t.num||'—'}</strong> · ${t.nm} · ${pa_fd(t.data)}<div style="font-size:12px;color:${cores[t.status]||'#555'};margin-top:1px;font-weight:600">${labels[t.status]||t.status}</div></div>
+        <button class="btn btn-g btn-xs" onclick="pa_verTermo(${t.id})">👁️ Ver / Imprimir</button>
+      </div>`).join('');
+    }
+  }, 800);
 }
 
 // ── NOVO PROCESSO ──────────────────────────────────────────────────────────
@@ -6895,6 +6997,12 @@ function pa_abrirDespachoTermo(id) {
     <div style="margin-top:8px"><button class="btn btn-g btn-xs" onclick="pa_verTermo(${t.id})">👁️ Ver documento completo / Imprimir</button></div>
   `;
   document.getElementById('dt-obs').value = '';
+  // Só Diretor/Gerente veem o botão de assinar — Admin acompanha mas não assina
+  const btnAssinar = document.getElementById('dt-btn-assinar');
+  if (btnAssinar) {
+    const podeAssinar = ['diretor','gerente'].includes(pa_perfilNomeAtual());
+    btnAssinar.style.display = podeAssinar ? '' : 'none';
+  }
   document.getElementById('modalDespachoTermo').style.display = 'flex';
 }
 function pa_fecharDespachoTermo() {
@@ -6902,10 +7010,155 @@ function pa_fecharDespachoTermo() {
   pa_despTermoId = null;
 }
 
+// ═══════════════════════════════════════════════════════════════
+// EDIÇÃO DO TERMO — 2 modos:
+//  - 'correcao': autor edita após devolução do Diretor (campos de
+//    conteúdo apenas; ao salvar, volta o status para 'aguardando')
+//  - 'admin': Admin edita QUALQUER campo, inclusive o número e o
+//    status, sem restrição.
+// ═══════════════════════════════════════════════════════════════
+
+// Autor corrige um Termo devolvido pelo Diretor
+function pa_corrigirTermo(id) {
+  const t = pa_termos.find(x => x.id === id); if (!t) return;
+  if (t.autorLogin !== pa_usuarioAtual?.login && !isAdmin()) {
+    alert('⛔ Somente o autor deste Termo pode corrigi-lo.');
+    return;
+  }
+  pa_abrirEdicaoTermo(t, 'correcao');
+}
+
+// Admin edita qualquer Termo, independente do status
+function pa_adminEditarTermo(id) {
+  if (!isAdmin()) { alert('⛔ Apenas o administrador pode usar esta opção.'); return; }
+  const t = pa_termos.find(x => x.id === id); if (!t) return;
+  pa_abrirEdicaoTermo(t, 'admin');
+}
+
+function pa_abrirEdicaoTermo(t, modo) {
+  document.getElementById('et-id').value = t.id;
+  document.getElementById('et-modo').value = modo;
+  document.getElementById('et-titulo').textContent = modo === 'admin'
+    ? '✏️ Editar Termo (Administrador)'
+    : '✏️ Corrigir Termo';
+  document.getElementById('et-aviso').innerHTML = modo === 'admin'
+    ? 'Como administrador, você pode editar qualquer campo, inclusive o número do Termo. Alterações não mudam o status atual automaticamente.'
+    : `Este Termo foi devolvido pelo Diretor${t.diretorObs ? ' com o motivo: "' + t.diretorObs + '"' : ''}. Corrija o que for necessário e salve para reenviar ao Diretor.`;
+
+  const numWrap = document.getElementById('et-num-wrap');
+  numWrap.style.display = modo === 'admin' ? '' : 'none';
+  document.getElementById('et-num').value = t.num || '';
+
+  document.getElementById('et-nm').value = t.nm || '';
+  document.getElementById('et-doc').value = t.doc || '';
+  document.getElementById('et-end').value = t.end || '';
+  document.getElementById('et-origem').value = t.origem || '';
+  document.getElementById('et-natureza').value = t.natureza || '';
+  document.getElementById('et-livro').value = t.livro || '';
+  document.getElementById('et-folha').value = t.folha || '';
+  document.getElementById('et-dtinscr').value = t.dtInscr || '';
+  document.getElementById('et-vp').value = t.vp || '';
+  document.getElementById('et-cm').value = t.cm || '';
+  document.getElementById('et-multa').value = t.multa || '';
+  document.getElementById('et-juros').value = t.juros || '';
+  document.getElementById('et-total').value = t.total || '';
+
+  document.getElementById('modalEditarTermo').style.display = 'flex';
+}
+
+function pa_fecharEdicaoTermo() {
+  document.getElementById('modalEditarTermo').style.display = 'none';
+}
+
+async function pa_salvarEdicaoTermo() {
+  const id = parseInt(document.getElementById('et-id').value);
+  const modo = document.getElementById('et-modo').value;
+  const t = pa_termos.find(x => x.id === id);
+  if (!t) return;
+
+  const updates = {
+    nm: document.getElementById('et-nm').value.trim(),
+    doc: document.getElementById('et-doc').value.trim(),
+    end: document.getElementById('et-end').value.trim(),
+    origem: document.getElementById('et-origem').value.trim(),
+    natureza: document.getElementById('et-natureza').value.trim(),
+    livro: document.getElementById('et-livro').value.trim(),
+    folha: document.getElementById('et-folha').value.trim(),
+    dt_inscr: document.getElementById('et-dtinscr').value,
+    vp: document.getElementById('et-vp').value.trim(),
+    cm: document.getElementById('et-cm').value.trim(),
+    multa: document.getElementById('et-multa').value.trim(),
+    juros: document.getElementById('et-juros').value.trim(),
+    total: document.getElementById('et-total').value.trim(),
+  };
+
+  // Modo correção (autor, após devolução): reenvia ao Diretor
+  if (modo === 'correcao') {
+    updates.status = 'aguardando';
+    updates.diretor_obs = null;
+    updates.visto = false;
+  }
+  // Modo admin: pode alterar também o número
+  if (modo === 'admin') {
+    updates.num = document.getElementById('et-num').value.trim();
+  }
+
+  showLoading('Salvando alterações...');
+  try {
+    await sbPatch('pa_termos_da', id, updates);
+    // Atualiza em memória
+    t.nm = updates.nm; t.doc = updates.doc; t.end = updates.end;
+    t.origem = updates.origem; t.natureza = updates.natureza;
+    t.livro = updates.livro; t.folha = updates.folha; t.dtInscr = updates.dt_inscr;
+    t.vp = updates.vp; t.cm = updates.cm; t.multa = updates.multa; t.juros = updates.juros; t.total = updates.total;
+    if (modo === 'correcao') { t.status = 'aguardando'; t.diretorObs = ''; t.visto = false; }
+    if (modo === 'admin') { t.num = updates.num; }
+
+    pa_auditar && pa_auditar('EDITAR', {tabela:'pa_termos_da', id: t.id, num: t.num||t.nm, detalhes: modo === 'admin' ? 'Termo editado pelo administrador' : 'Termo corrigido e reenviado ao Diretor'});
+    hideLoading();
+    pa_fecharEdicaoTermo();
+    toast(modo === 'correcao' ? '✅ Termo corrigido e reenviado ao Diretor.' : '✅ Termo atualizado.');
+    buildUnifiedNav();
+    if (typeof pa_renderIntimacoes === 'function') pa_renderIntimacoes();
+    if (typeof pa_verDetalhe === 'function' && pa_detProcId) pa_verDetalhe(pa_detProcId);
+  } catch(e) {
+    hideLoading();
+    alert('Erro ao salvar: ' + (e.message||e));
+  }
+}
+
+// Admin exclui um Termo permanentemente
+async function pa_excluirTermo(id) {
+  if (!isAdmin()) { alert('⛔ Apenas o administrador pode excluir um Termo.'); return; }
+  const t = pa_termos.find(x => x.id === id); if (!t) return;
+  if (!confirm(`Excluir permanentemente o Termo ${t.num||''} (${t.nm})?\n\nEsta ação não pode ser desfeita.`)) return;
+  showLoading('Excluindo...');
+  try {
+    await _sb.from('pa_termos_da').delete().eq('id', id);
+    pa_termos = pa_termos.filter(x => x.id !== id);
+    pa_auditar && pa_auditar('EXCLUIR', {tabela:'pa_termos_da', id, num: t.num||t.nm, detalhes: 'Termo excluído pelo administrador'});
+    hideLoading();
+    toast('🗑️ Termo excluído.');
+    buildUnifiedNav();
+    if (typeof pa_renderIntimacoes === 'function') pa_renderIntimacoes();
+    if (typeof pa_verDetalhe === 'function' && pa_detProcId) pa_verDetalhe(pa_detProcId);
+  } catch(e) {
+    hideLoading();
+    alert('Erro ao excluir: ' + (e.message||e));
+  }
+}
+
 // Executa a decisão do Diretor: 'efetivado' (assina) ou 'devolvido' (correção)
 async function pa_despacharTermo(decisao) {
   const t = pa_termos.find(x => x.id === pa_despTermoId);
   if (!t) return;
+  // "Assinar e Efetivar" é ato exclusivo do Diretor/Gerente — nem o Admin
+  // pode assinar em nome deles (Admin ainda pode editar/excluir o Termo,
+  // mas não pode assinar/efetivar, que é decisão de autoridade).
+  if (decisao === 'efetivado' && !['diretor','gerente'].includes(pa_perfilNomeAtual())) {
+    alert('⛔ Somente o Diretor ou Gerente do Setor de Tributos pode assinar e efetivar o Termo.');
+    return;
+  }
   const obs = document.getElementById('dt-obs').value.trim();
   if (decisao === 'devolvido' && !obs) {
     alert('⚠️ Informe o motivo da devolução no campo de observação.');
@@ -8517,7 +8770,15 @@ function pa_botaoTermoIntimacao(intId) {
     return `<button class="btn btn-p btn-xs" onclick="pa_gerarTermoDaIntimacao(${intId})">📄 Gerar Termo</button>`;
   }
   const labels = { aguardando: '⏳ Termo: Aguardando', efetivado: '✅ Termo: Efetivado', devolvido: '↩️ Termo: Devolvido' };
-  return `<button class="btn btn-g btn-xs" onclick="pa_verTermo(${t.id})">${labels[t.status]||'Ver Termo'}</button>`;
+  const souAutorT = t.autorLogin === pa_usuarioAtual?.login;
+  let html = `<button class="btn btn-g btn-xs" onclick="pa_verTermo(${t.id})">${labels[t.status]||'Ver Termo'}</button>`;
+  if (t.status === 'devolvido' && (souAutorT || isAdmin())) {
+    html += ` <button class="btn btn-p btn-xs" onclick="pa_corrigirTermo(${t.id})">✏️ Corrigir</button>`;
+  }
+  if (isAdmin()) {
+    html += ` <button class="btn btn-xs" style="background:#dc2626;color:#fff" onclick="pa_excluirTermo(${t.id})" title="Excluir">🗑️</button>`;
+  }
+  return html;
 }
 
 // Gera o Termo de Inscrição em Dívida Ativa a partir dos dados já
