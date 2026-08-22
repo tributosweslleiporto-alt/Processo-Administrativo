@@ -9063,15 +9063,15 @@ function pa_gerarDocNotif(int) {
     sociosHtml +
 
     '<div style="text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;border-top:1px solid #111;border-bottom:1px solid #111;padding:3px 0;margin:10px 0 6px">DESCRI\u00c7\u00c3O DA D\u00cdVIDA</div>' +
-    '<table style="width:100%;border-collapse:collapse;font-size:11px;margin:4px 0 14px"><tbody>' +
+    '<table style="width:100%;border-collapse:collapse;font-size:11px;margin:4px 0 14px;table-layout:fixed"><tbody>' +
     '<tr>' +
-    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700">Origem</th>' +
-    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700">Natureza</th>' +
-    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700">Inscri\u00e7\u00e3o</th>' +
-    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700">Livro N\u00ba</th>' +
-    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700">Folha N\u00ba</th>' +
-    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700">Data Inscri\u00e7\u00e3o</th>' +
-    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700">Processo N\u00ba</th>' +
+    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700' + (int.debitoTipo==='agrupado'?';width:40%':'') + '">Origem</th>' +
+    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700' + (int.debitoTipo==='agrupado'?';width:10%':'') + '">Natureza</th>' +
+    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700' + (int.debitoTipo==='agrupado'?';width:10%':'') + '">Inscri\u00e7\u00e3o</th>' +
+    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700' + (int.debitoTipo==='agrupado'?';width:10%':'') + '">Livro N\u00ba</th>' +
+    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700' + (int.debitoTipo==='agrupado'?';width:10%':'') + '">Folha N\u00ba</th>' +
+    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700' + (int.debitoTipo==='agrupado'?';width:10%':'') + '">Data Inscri\u00e7\u00e3o</th>' +
+    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700' + (int.debitoTipo==='agrupado'?';width:10%':'') + '">Processo N\u00ba</th>' +
     '</tr><tr>' +
     '<td style="border:1px solid #999;padding:4px 8px">' + docOrigem + '</td>' +
     '<td style="border:1px solid #999;padding:4px 8px">' + docNat + '</td>' +
@@ -9080,18 +9080,19 @@ function pa_gerarDocNotif(int) {
     '<td style="border:1px solid #999;padding:4px 8px">' + docFolha + '</td>' +
     '<td style="border:1px solid #999;padding:4px 8px">' + docDtInscr + '</td>' +
     '<td style="border:1px solid #999;padding:4px 8px">' + docProcNum + '</td>' +
-    '</tr><tr>' +
-    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700">' + (int.debitoTipo==='agrupado' ? 'ID / Exerc\u00edcio' : 'Exerc\u00edcio') + '</th>' +
-    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700">Vencimento</th>' +
-    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700">Valor Principal</th>' +
-    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700">C. Monet\u00e1ria</th>' +
-    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700">Multa de Mora</th>' +
-    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700">Juros de Mora</th>' +
-    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700;color:#111">Valor Atualizado</th>' +
+    '</tr></tbody></table>' +
+    '<table style="width:100%;border-collapse:collapse;font-size:11px;margin:4px 0 14px;table-layout:fixed"><tbody><tr>' +
+    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700' + (int.debitoTipo==='agrupado'?';width:10%':'') + '">' + (int.debitoTipo==='agrupado' ? 'ID / Exerc\u00edcio' : 'Exerc\u00edcio') + '</th>' +
+    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700' + (int.debitoTipo==='agrupado'?';width:10%':'') + '">Vencimento</th>' +
+    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700' + (int.debitoTipo==='agrupado'?';width:10%':'') + '">Valor Principal</th>' +
+    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700' + (int.debitoTipo==='agrupado'?';width:10%':'') + '">C. Monet\u00e1ria</th>' +
+    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700' + (int.debitoTipo==='agrupado'?';width:10%':'') + '">Multa de Mora</th>' +
+    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700' + (int.debitoTipo==='agrupado'?';width:10%':'') + '">Juros de Mora</th>' +
+    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700;color:#111' + (int.debitoTipo==='agrupado'?';width:10%':'') + '">Valor Atualizado</th>' +
     (int.debitoTipo==='agrupado' ? (
-      '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700;font-size:11px">Livro</th>' +
-      '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700;font-size:11px">Folha</th>' +
-      '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700;font-size:11px">Data Inscr.</th>'
+      '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700;font-size:11px;width:10%">Livro</th>' +
+      '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700;font-size:11px;width:10%">Folha</th>' +
+      '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700;font-size:11px;width:10%">Data Inscr.</th>'
     ) : '') +
     '</tr>' +
     (function() {
