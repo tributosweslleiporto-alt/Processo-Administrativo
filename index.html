@@ -1606,6 +1606,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
               <thead>
                 <tr style="background:var(--pa-surface2)">
                   <th style="padding:6px 8px;text-align:left;border:1px solid var(--pa-border);font-size:11px">ID / Débito</th>
+                  <th style="padding:6px 8px;text-align:left;border:1px solid var(--pa-border);font-size:11px">Inscr. DA</th>
                   <th style="padding:6px 8px;text-align:left;border:1px solid var(--pa-border);font-size:11px">Tributo</th>
                   <th style="padding:6px 8px;text-align:left;border:1px solid var(--pa-border);font-size:11px">Exercício</th>
                   <th style="padding:6px 8px;text-align:left;border:1px solid var(--pa-border);font-size:11px">Vencimento</th>
@@ -8356,6 +8357,7 @@ function pa_addLinhaAgrupado(linha) {
   tr.id = 'agrup-linha-' + n;
   tr.innerHTML = `
     <td style="padding:3px 4px;border:1px solid var(--pa-border)"><input type="text" id="agrup-id-${n}" value="${l.id||''}" placeholder="ID" style="width:70px;font-size:11px;padding:3px 5px"></td>
+    <td style="padding:3px 4px;border:1px solid var(--pa-border)"><input type="text" id="agrup-inscrda-${n}" value="${l.inscrDA||''}" placeholder="Inscr. DA" style="width:75px;font-size:11px;padding:3px 5px"></td>
     <td style="padding:3px 4px;border:1px solid var(--pa-border)"><input type="text" id="agrup-trib-${n}" value="${l.trib||''}" placeholder="TFF" style="width:55px;font-size:11px;padding:3px 5px"></td>
     <td style="padding:3px 4px;border:1px solid var(--pa-border)"><input type="text" id="agrup-exerc-${n}" value="${l.exerc||''}" placeholder="2024" style="width:55px;font-size:11px;padding:3px 5px"></td>
     <td style="padding:3px 4px;border:1px solid var(--pa-border)"><input type="date" id="agrup-venc-${n}" value="${l.venc||''}" style="width:120px;font-size:11px;padding:3px 5px"></td>
@@ -8402,6 +8404,7 @@ function pa_coletarLinhasAgrupado() {
     const n = tr.id.split('-')[2];
     linhas.push({
       id:    document.getElementById('agrup-id-'+n)?.value||'',
+      inscrDA: document.getElementById('agrup-inscrda-'+n)?.value||'',
       trib:  document.getElementById('agrup-trib-'+n)?.value||'',
       exerc: document.getElementById('agrup-exerc-'+n)?.value||'',
       venc:  document.getElementById('agrup-venc-'+n)?.value||'',
@@ -9023,7 +9026,9 @@ function pa_gerarDocNotif(int) {
   var docCep  = int.cep || '';
   var docOrigem = int.origem || '';
   var docNat  = int.natureza || '';
-  var docInscrDA = int.inscrDA || '';
+  var docInscrDA = (int.debitoTipo === 'agrupado' && int.linhasAgrupado && int.linhasAgrupado.length)
+    ? int.linhasAgrupado.map(function(l){ return l.inscrDA; }).filter(Boolean).join(', ')
+    : (int.inscrDA || '');
   var docLivro = int.livro || '';
   var docFolha = int.folha || '';
   var docDtInscr = pa_fd(int.dtInscr) || '';
