@@ -9027,7 +9027,7 @@ function pa_gerarDocNotif(int) {
   var docOrigem = int.origem || '';
   var docNat  = int.natureza || '';
   var docInscrDA = (int.debitoTipo === 'agrupado' && int.linhasAgrupado && int.linhasAgrupado.length)
-    ? int.linhasAgrupado.map(function(l){ return l.inscrDA; }).filter(Boolean).join(', ')
+    ? int.linhasAgrupado.map(function(l){ return l.inscrDA ? (l.inscrDA + (l.exerc ? '/'+l.exerc : '')) : ''; }).filter(Boolean).join(', ')
     : (int.inscrDA || '');
   var docLivro = int.livro || '';
   var docFolha = int.folha || '';
