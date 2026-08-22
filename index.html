@@ -1605,6 +1605,9 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
                   <th style="padding:6px 8px;text-align:right;border:1px solid var(--pa-border);font-size:11px">Multa</th>
                   <th style="padding:6px 8px;text-align:right;border:1px solid var(--pa-border);font-size:11px">Correção</th>
                   <th style="padding:6px 8px;text-align:right;border:1px solid var(--pa-border);font-size:11px">Total</th>
+                  <th style="padding:6px 8px;text-align:left;border:1px solid var(--pa-border);font-size:11px">Livro</th>
+                  <th style="padding:6px 8px;text-align:left;border:1px solid var(--pa-border);font-size:11px">Folha</th>
+                  <th style="padding:6px 8px;text-align:left;border:1px solid var(--pa-border);font-size:11px">Data Inscr.</th>
                   <th style="padding:6px 8px;border:1px solid var(--pa-border);font-size:11px"></th>
                 </tr>
               </thead>
@@ -8340,6 +8343,9 @@ function pa_addLinhaAgrupado(linha) {
     <td style="padding:3px 4px;border:1px solid var(--pa-border)"><input type="text" id="agrup-multa-${n}" value="${l.multa||''}" placeholder="0,00" style="width:75px;font-size:11px;padding:3px 5px;text-align:right" oninput="pa_calcTotaisAgrupado()"></td>
     <td style="padding:3px 4px;border:1px solid var(--pa-border)"><input type="text" id="agrup-cm-${n}" value="${l.cm||''}" placeholder="0,00" style="width:75px;font-size:11px;padding:3px 5px;text-align:right" oninput="pa_calcTotaisAgrupado()"></td>
     <td style="padding:3px 4px;border:1px solid var(--pa-border)"><input type="text" id="agrup-tot-${n}" value="${l.total||''}" placeholder="0,00" style="width:80px;font-size:11px;padding:3px 5px;text-align:right;font-weight:600;color:var(--pa-accent)" oninput="pa_calcTotaisAgrupado()"></td>
+    <td style="padding:3px 4px;border:1px solid var(--pa-border)"><input type="text" id="agrup-livro-${n}" value="${l.livro||''}" placeholder="Livro" style="width:55px;font-size:11px;padding:3px 5px"></td>
+    <td style="padding:3px 4px;border:1px solid var(--pa-border)"><input type="text" id="agrup-folha-${n}" value="${l.folha||''}" placeholder="Folha" style="width:55px;font-size:11px;padding:3px 5px"></td>
+    <td style="padding:3px 4px;border:1px solid var(--pa-border)"><input type="date" id="agrup-dtinscr-${n}" value="${l.dtInscr||''}" style="width:120px;font-size:11px;padding:3px 5px"></td>
     <td style="padding:3px 4px;border:1px solid var(--pa-border);text-align:center"><button class="btn btn-danger btn-xs" onclick="document.getElementById('agrup-linha-${n}').remove();pa_calcTotaisAgrupado()">✕</button></td>`;
   document.getElementById('agrup-tbody').appendChild(tr);
 }
@@ -8383,6 +8389,9 @@ function pa_coletarLinhasAgrupado() {
       multa: document.getElementById('agrup-multa-'+n)?.value||'',
       cm:    document.getElementById('agrup-cm-'+n)?.value||'',
       total: document.getElementById('agrup-tot-'+n)?.value||'',
+      livro:   document.getElementById('agrup-livro-'+n)?.value||'',
+      folha:   document.getElementById('agrup-folha-'+n)?.value||'',
+      dtInscr: document.getElementById('agrup-dtinscr-'+n)?.value||'',
     });
   });
   return linhas;
@@ -9052,6 +9061,11 @@ function pa_gerarDocNotif(int) {
     '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700">Multa de Mora</th>' +
     '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700">Juros de Mora</th>' +
     '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700;color:#111">Valor Atualizado</th>' +
+    (int.debitoTipo==='agrupado' ? (
+      '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700;font-size:11px">Livro</th>' +
+      '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700;font-size:11px">Folha</th>' +
+      '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700;font-size:11px">Data Inscr.</th>'
+    ) : '') +
     '</tr>' +
     (function() {
       if(int.debitoTipo === 'agrupado' && int.linhasAgrupado && int.linhasAgrupado.length) {
@@ -9064,6 +9078,9 @@ function pa_gerarDocNotif(int) {
             '<td style="border:1px solid #999;padding:4px 8px">R$ ' + l.multa + '</td>' +
             '<td style="border:1px solid #999;padding:4px 8px">R$ ' + l.juros + '</td>' +
             '<td style="border:1px solid #999;padding:4px 8px;font-weight:600">R$ ' + l.total + '</td>' +
+            '<td style="border:1px solid #999;padding:4px 8px;font-size:11px">' + (l.livro||'—') + '</td>' +
+            '<td style="border:1px solid #999;padding:4px 8px;font-size:11px">' + (l.folha||'—') + '</td>' +
+            '<td style="border:1px solid #999;padding:4px 8px;font-size:11px">' + (l.dtInscr?pa_fd(l.dtInscr):'—') + '</td>' +
             '</tr>';
         }).join('') +
         '<tr style="background:#f0f0f0;font-weight:700">' +
@@ -9073,6 +9090,7 @@ function pa_gerarDocNotif(int) {
         '<td style="border:1px solid #555;padding:4px 8px">R$ ' + docMulta + '</td>' +
         '<td style="border:1px solid #555;padding:4px 8px">R$ ' + docJuros + '</td>' +
         '<td style="border:1px solid #555;padding:4px 8px;color:#111">R$ ' + docTotal + '</td>' +
+        '<td colspan="3" style="border:1px solid #555;padding:4px 8px"></td>' +
         '</tr>';
       } else {
         return '<tr>' +
