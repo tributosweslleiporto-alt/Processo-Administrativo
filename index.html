@@ -9009,9 +9009,7 @@ function pa_gerarDocNotif(int) {
   var docCid  = int.cidade || '';
   var docUf   = int.uf || '';
   var docCep  = int.cep || '';
-  var docOrigem = (int.debitoTipo === 'agrupado' && int.linhasAgrupado && int.linhasAgrupado.length)
-    ? int.linhasAgrupado.map(function(l){ return l.id + '/' + l.exerc; }).join(', ')
-    : (int.origem || '');
+  var docOrigem = int.origem || '';
   var docNat  = int.natureza || '';
   var docInscrDA = int.inscrDA || '';
   var docLivro = int.livro || '';
