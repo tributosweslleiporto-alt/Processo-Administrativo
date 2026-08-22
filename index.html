@@ -1572,9 +1572,9 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
           </div>
           <div style="display:flex;flex-direction:column;gap:4px"><label>Natureza / Tributo</label><input type="text" id="int-natureza" placeholder="Ex: TFF, IPTU"></div>
           <div style="display:flex;flex-direction:column;gap:4px"><label>Inscrição DA</label><input type="text" id="int-inscr-da" placeholder="Nº inscrição DA"></div>
-          <div style="display:flex;flex-direction:column;gap:4px"><label>Livro Nº</label><input type="text" id="int-livro" placeholder=""></div>
-          <div style="display:flex;flex-direction:column;gap:4px"><label>Folha Nº</label><input type="text" id="int-folha" placeholder=""></div>
-          <div style="display:flex;flex-direction:column;gap:4px"><label>Data de Inscrição</label><input type="date" id="int-dt-inscr"></div>
+          <div style="display:flex;flex-direction:column;gap:4px" class="campo-livro-folha-topo"><label>Livro Nº</label><input type="text" id="int-livro" placeholder=""></div>
+          <div style="display:flex;flex-direction:column;gap:4px" class="campo-livro-folha-topo"><label>Folha Nº</label><input type="text" id="int-folha" placeholder=""></div>
+          <div style="display:flex;flex-direction:column;gap:4px" class="campo-livro-folha-topo"><label>Data de Inscrição</label><input type="date" id="int-dt-inscr"></div>
           <div style="display:flex;flex-direction:column;gap:4px"><label>Nº do Processo</label><input type="text" id="int-proc-num" placeholder="Ex: 0001/2025" oninput="pa_buscarProcesso()"></div>
           <div style="display:flex;flex-direction:column;gap:4px"><label>Data da Notificação</label><input type="date" id="int-data"></div>
         </div>
@@ -8334,6 +8334,18 @@ function pa_toggleDebitoTipo() {
   const tipo = document.querySelector('input[name="int-debito-tipo"]:checked').value;
   document.getElementById('debito-simples-section').style.display = tipo === 'simples' ? '' : 'none';
   document.getElementById('debito-agrupado-section').style.display = tipo === 'agrupado' ? '' : 'none';
+  // Quando é "Agrupado", cada linha de débito já tem seu próprio Livro/Folha/
+  // Data de Inscrição — os campos únicos aqui de cima ficariam redundantes/
+  // confusos (afinal, cada exercício pode ter sido inscrito em livro/folha
+  // diferentes). Por isso escondemos e limpamos esses 3 campos nesse caso.
+  document.querySelectorAll('.campo-livro-folha-topo').forEach(el => {
+    el.style.display = tipo === 'agrupado' ? 'none' : '';
+  });
+  if (tipo === 'agrupado') {
+    const li = document.getElementById('int-livro'); if (li) li.value = '';
+    const fo = document.getElementById('int-folha'); if (fo) fo.value = '';
+    const dt = document.getElementById('int-dt-inscr'); if (dt) dt.value = '';
+  }
 }
 
 function pa_addLinhaAgrupado(linha) {
@@ -9063,24 +9075,45 @@ function pa_gerarDocNotif(int) {
     sociosHtml +
 
     '<div style="text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;border-top:1px solid #111;border-bottom:1px solid #111;padding:3px 0;margin:10px 0 6px">DESCRI\u00c7\u00c3O DA D\u00cdVIDA</div>' +
-    '<table style="width:100%;border-collapse:collapse;font-size:11px;margin:4px 0 14px;table-layout:fixed;word-break:break-word"><tbody>' +
-    '<tr>' +
-    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700' + (int.debitoTipo==='agrupado'?';width:40%':'') + '">Origem</th>' +
-    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700' + (int.debitoTipo==='agrupado'?';width:10%':'') + '">Natureza</th>' +
-    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700' + (int.debitoTipo==='agrupado'?';width:10%':'') + '">Inscri\u00e7\u00e3o</th>' +
-    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700' + (int.debitoTipo==='agrupado'?';width:10%':'') + '">Livro N\u00ba</th>' +
-    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700' + (int.debitoTipo==='agrupado'?';width:10%':'') + '">Folha N\u00ba</th>' +
-    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700' + (int.debitoTipo==='agrupado'?';width:10%':'') + '">Data Inscri\u00e7\u00e3o</th>' +
-    '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700' + (int.debitoTipo==='agrupado'?';width:10%':'') + '">Processo N\u00ba</th>' +
-    '</tr><tr>' +
-    '<td style="border:1px solid #999;padding:4px 8px">' + docOrigem + '</td>' +
-    '<td style="border:1px solid #999;padding:4px 8px">' + docNat + '</td>' +
-    '<td style="border:1px solid #999;padding:4px 8px">' + docInscrDA + '</td>' +
-    '<td style="border:1px solid #999;padding:4px 8px">' + docLivro + '</td>' +
-    '<td style="border:1px solid #999;padding:4px 8px">' + docFolha + '</td>' +
-    '<td style="border:1px solid #999;padding:4px 8px">' + docDtInscr + '</td>' +
-    '<td style="border:1px solid #999;padding:4px 8px">' + docProcNum + '</td>' +
-    '</tr></tbody></table>' +
+    (int.debitoTipo==='agrupado' ? (
+      // AGRUPADO: Livro/Folha/Data ficam só na tabela de baixo (por exercício),
+      // já que cada débito pode ter valores diferentes — evita duplicidade/
+      // confusão. A tabela de cima fica com 4 colunas: Origem(40%) + 3x20%,
+      // usando o mesmo sistema de 10 partes da tabela de baixo (alinhadas).
+      '<table style="width:100%;border-collapse:collapse;font-size:11px;margin:4px 0 14px;table-layout:fixed;word-break:break-word"><tbody>' +
+      '<tr>' +
+      '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700;width:40%">Origem</th>' +
+      '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700;width:20%">Natureza</th>' +
+      '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700;width:20%">Inscri\u00e7\u00e3o</th>' +
+      '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700;width:20%">Processo N\u00ba</th>' +
+      '</tr><tr>' +
+      '<td style="border:1px solid #999;padding:4px 8px">' + docOrigem + '</td>' +
+      '<td style="border:1px solid #999;padding:4px 8px">' + docNat + '</td>' +
+      '<td style="border:1px solid #999;padding:4px 8px">' + docInscrDA + '</td>' +
+      '<td style="border:1px solid #999;padding:4px 8px">' + docProcNum + '</td>' +
+      '</tr></tbody></table>'
+    ) : (
+      // SIMPLES: continua igual, com Livro/Folha/Data juntos (não há duplicidade
+      // aqui, pois não existe tabela de detalhamento por exercício abaixo).
+      '<table style="width:100%;border-collapse:collapse;font-size:11px;margin:4px 0 14px"><tbody>' +
+      '<tr>' +
+      '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700">Origem</th>' +
+      '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700">Natureza</th>' +
+      '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700">Inscri\u00e7\u00e3o</th>' +
+      '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700">Livro N\u00ba</th>' +
+      '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700">Folha N\u00ba</th>' +
+      '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700">Data Inscri\u00e7\u00e3o</th>' +
+      '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700">Processo N\u00ba</th>' +
+      '</tr><tr>' +
+      '<td style="border:1px solid #999;padding:4px 8px">' + docOrigem + '</td>' +
+      '<td style="border:1px solid #999;padding:4px 8px">' + docNat + '</td>' +
+      '<td style="border:1px solid #999;padding:4px 8px">' + docInscrDA + '</td>' +
+      '<td style="border:1px solid #999;padding:4px 8px">' + docLivro + '</td>' +
+      '<td style="border:1px solid #999;padding:4px 8px">' + docFolha + '</td>' +
+      '<td style="border:1px solid #999;padding:4px 8px">' + docDtInscr + '</td>' +
+      '<td style="border:1px solid #999;padding:4px 8px">' + docProcNum + '</td>' +
+      '</tr></tbody></table>'
+    )) +
     '<table style="width:100%;border-collapse:collapse;font-size:11px;margin:4px 0 14px;table-layout:fixed;word-break:break-word"><tbody><tr>' +
     '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700' + (int.debitoTipo==='agrupado'?';width:10%':'') + '">' + (int.debitoTipo==='agrupado' ? 'ID / Exerc\u00edcio' : 'Exerc\u00edcio') + '</th>' +
     '<th style="border:1px solid #555;padding:4px 8px;background:#f0f0f0;font-weight:700' + (int.debitoTipo==='agrupado'?';width:10%':'') + '">Vencimento</th>' +
