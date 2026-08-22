@@ -1560,7 +1560,16 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
         <!-- DÍVIDA -->
         <div style="font-size:11px;font-weight:500;color:var(--pa-text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--pa-border)">Descrição da Dívida</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:12px">
-          <div style="display:flex;flex-direction:column;gap:4px"><label>Origem / Fase</label><input type="text" id="int-origem" placeholder="Ex: Administrativo"></div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <label>Origem / Fase</label>
+            <input type="text" id="int-origem" placeholder="Ex: Administrativo">
+            <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:2px">
+              <button type="button" class="btn btn-g btn-xs" onclick="pa_preencherOrigem('TFF')" style="font-size:10px;padding:2px 7px">TFF</button>
+              <button type="button" class="btn btn-g btn-xs" onclick="pa_preencherOrigem('IPTU')" style="font-size:10px;padding:2px 7px">IPTU</button>
+              <button type="button" class="btn btn-g btn-xs" onclick="pa_preencherOrigem('ISS')" style="font-size:10px;padding:2px 7px">ISS</button>
+              <button type="button" class="btn btn-g btn-xs" onclick="pa_preencherOrigem('outros')" style="font-size:10px;padding:2px 7px">Outros</button>
+            </div>
+          </div>
           <div style="display:flex;flex-direction:column;gap:4px"><label>Natureza / Tributo</label><input type="text" id="int-natureza" placeholder="Ex: TFF, IPTU"></div>
           <div style="display:flex;flex-direction:column;gap:4px"><label>Inscrição DA</label><input type="text" id="int-inscr-da" placeholder="Nº inscrição DA"></div>
           <div style="display:flex;flex-direction:column;gap:4px"><label>Livro Nº</label><input type="text" id="int-livro" placeholder=""></div>
@@ -8395,6 +8404,26 @@ function pa_coletarLinhasAgrupado() {
     });
   });
   return linhas;
+}
+
+// Preenche o campo "Origem / Fase" com o texto legal padrão de cada
+// tributo mais comum (TFF, IPTU, ISS), citando a base legal nas duas leis
+// (LC 001/2001 — maioria dos débitos antigos — e LC 5/2025). O campo
+// continua editável normalmente após o preenchimento.
+function pa_preencherOrigem(tipo) {
+  const textos = {
+    TFF:  'TFF — poder de polícia, lançamento de ofício (Art. 146 LC 001/2001 · Art. 149 LC 5/2025)',
+    IPTU: 'IPTU — propriedade/posse de imóvel urbano, lançamento de ofício (Art. 69 LC 001/2001 · Art. 74 LC 5/2025)',
+    ISS:  'ISS — prestação de serviços (Lista Anexa), lançado por homologação (Art. 109 LC 001/2001 · Art. 120 LC 5/2025)',
+  };
+  const campoOrigem = document.getElementById('int-origem');
+  const campoNatureza = document.getElementById('int-natureza');
+  if (tipo === 'outros') {
+    if (campoOrigem) { campoOrigem.value = ''; campoOrigem.focus(); }
+    return;
+  }
+  if (campoOrigem) campoOrigem.value = textos[tipo] || '';
+  if (campoNatureza && !campoNatureza.value.trim()) campoNatureza.value = tipo;
 }
 
 function pa_calcTotal() {
