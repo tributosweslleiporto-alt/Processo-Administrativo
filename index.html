@@ -1618,6 +1618,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
                   <th style="padding:6px 8px;text-align:left;border:1px solid var(--pa-border);font-size:11px">Livro</th>
                   <th style="padding:6px 8px;text-align:left;border:1px solid var(--pa-border);font-size:11px">Folha</th>
                   <th style="padding:6px 8px;text-align:left;border:1px solid var(--pa-border);font-size:11px">Data Inscr.</th>
+                  <th style="padding:6px 8px;text-align:left;border:1px solid var(--pa-border);font-size:11px">Processo Nº</th>
                   <th style="padding:6px 8px;border:1px solid var(--pa-border);font-size:11px"></th>
                 </tr>
               </thead>
@@ -8199,7 +8200,7 @@ function pa_abrirJanelaImpressao(titulo, bodyHtml) {
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${titulo}</title>
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-@page { size: A4; margin: 10mm 12mm 35mm 12mm; }
+@page { size: A4; margin: 8mm 8mm 20mm 8mm; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; background: #fff; color: #111; }
 .doc-sheet { background:#fff;color:#111;font-family:'Times New Roman',Georgia,serif;padding:20px 30px;max-width:100%;margin:0 auto }
@@ -8369,6 +8370,7 @@ function pa_addLinhaAgrupado(linha) {
     <td style="padding:3px 4px;border:1px solid var(--pa-border)"><input type="text" id="agrup-livro-${n}" value="${l.livro||''}" placeholder="Livro" style="width:55px;font-size:11px;padding:3px 5px"></td>
     <td style="padding:3px 4px;border:1px solid var(--pa-border)"><input type="text" id="agrup-folha-${n}" value="${l.folha||''}" placeholder="Folha" style="width:55px;font-size:11px;padding:3px 5px"></td>
     <td style="padding:3px 4px;border:1px solid var(--pa-border)"><input type="date" id="agrup-dtinscr-${n}" value="${l.dtInscr||''}" style="width:120px;font-size:11px;padding:3px 5px"></td>
+    <td style="padding:3px 4px;border:1px solid var(--pa-border)"><input type="text" id="agrup-proc-${n}" value="${l.procNum||''}" placeholder="Ex: 0001/2025" style="width:90px;font-size:11px;padding:3px 5px"></td>
     <td style="padding:3px 4px;border:1px solid var(--pa-border);text-align:center"><button class="btn btn-danger btn-xs" onclick="document.getElementById('agrup-linha-${n}').remove();pa_calcTotaisAgrupado()">✕</button></td>`;
   document.getElementById('agrup-tbody').appendChild(tr);
 }
@@ -8416,6 +8418,7 @@ function pa_coletarLinhasAgrupado() {
       livro:   document.getElementById('agrup-livro-'+n)?.value||'',
       folha:   document.getElementById('agrup-folha-'+n)?.value||'',
       dtInscr: document.getElementById('agrup-dtinscr-'+n)?.value||'',
+      procNum: document.getElementById('agrup-proc-'+n)?.value||'',
     });
   });
   return linhas;
@@ -8932,7 +8935,7 @@ function pa_imprimirModal() {
 <style>
 @page {
   size: A4;
-  margin: 10mm 12mm 35mm 12mm;
+  margin: 8mm 8mm 20mm 8mm;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -9100,7 +9103,7 @@ function pa_gerarDocNotif(int) {
           '<td style="border:1px solid #999;padding:4px 6px;text-align:center">' + (l.dtInscr?pa_fd(l.dtInscr):'') + '</td>' +
           '<td style="border:1px solid #999;padding:4px 6px;text-align:center">' + (l.livro||'') + '</td>' +
           '<td style="border:1px solid #999;padding:4px 6px;text-align:center">' + (l.folha||'') + '</td>' +
-          '<td style="border:1px solid #999;padding:4px 6px">' + (docProcNum||'') + '</td>' +
+          '<td style="border:1px solid #999;padding:4px 6px">' + (docProcNum||l.procNum||'') + '</td>' +
           '<td style="border:1px solid #999;padding:4px 6px;text-align:center">' + pa_fd(l.venc) + '</td>' +
           '<td style="border:1px solid #999;padding:4px 6px;text-align:right">R$ ' + l.vp + '</td>' +
           '<td style="border:1px solid #999;padding:4px 6px;text-align:right">R$ ' + l.cm + '</td>' +
