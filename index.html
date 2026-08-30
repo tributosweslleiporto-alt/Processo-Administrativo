@@ -8683,15 +8683,16 @@ function pa_preencherDadosBoleto(txt) {
     while((m = linhaReg.exec(textoAgrup)) !== null) {
       // m[1]=trib, m[2]=ano, m[3]=data, m[4]=vp, m[5]=id, m[6]=taxas, m[7]=juros, m[8]=multa, m[9]=cm, m[10]=desconto, m[11]=total
       linhasEncontradas.push({
-        id:    m[5],
-        trib:  m[1],
-        exerc: m[2],
-        venc:  toDate(m[3]),
-        vp:    m[4],
-        juros: m[7],
-        multa: m[8],
-        cm:    m[9],
-        total: m[11]
+        id:      m[5],
+        procNum: m[5],  // ID do agrupamento = Nº do Processo daquela linha
+        trib:    m[1],
+        exerc:   m[2],
+        venc:    toDate(m[3]),
+        vp:      m[4],
+        juros:   m[7],
+        multa:   m[8],
+        cm:      m[9],
+        total:   m[11]
       });
     }
     linhasEncontradas.forEach(l => pa_addLinhaAgrupado(l));
@@ -8706,8 +8707,13 @@ function pa_preencherDadosBoleto(txt) {
     document.getElementById('int-exercicio').value = 'Agrupado';
     if(venc) document.getElementById('int-venc').value = toDate(venc);
   } else {
-    // Débito único: Origem = Nº do documento
-    if(numDoc) document.getElementById('int-origem').value = numDoc;
+    // Débito único: número da "Identificação do Debito ( XXXXX )" vai pro Nº do Processo
+    const idDebito = getFirst([
+      /Identifica[cç][aã]o\s+do\s+[Dd]ebito\s*\(\s*(\d+)\s*\)/i,
+      /Identifica[cç][aã]o\s+do\s+[Dd]éb[il]to\s*\(\s*(\d+)\s*\)/i,
+    ]);
+    if(idDebito) document.getElementById('int-proc-num').value = idDebito;
+    else if(numDoc) document.getElementById('int-proc-num').value = numDoc;
     if(ref) document.getElementById('int-exercicio').value = ref;
     if(venc) document.getElementById('int-venc').value = toDate(venc);
     if(vp)    document.getElementById('int-vp').value    = vp;
