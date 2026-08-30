@@ -9090,7 +9090,7 @@ function pa_gerarDocNotif(int) {
 
     sociosHtml +
 
-    '<div style="text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;border-top:1px solid #111;border-bottom:1px solid #111;padding:3px 0;margin:10px 0 6px">DESCRI\u00c7\u00c3O DA D\u00cdVIDA</div>' +
+    '<div style="text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;border-top:1px solid #111;border-bottom:1px solid #111;padding:3px 6px;margin:10px 0 6px">DESCRI\u00c7\u00c3O DA D\u00cdVIDA</div>' +
     (int.debitoTipo==='agrupado' ? (function() {
       // AGRUPADO: tabela unificada igual ao print, com todas as colunas por linha
       // Nota de rodapé ¹ embaixo explicando a Origem
@@ -9104,7 +9104,7 @@ function pa_gerarDocNotif(int) {
       }
       var rows = int.linhasAgrupado.map(function(l) {
         return '<tr>' +
-          '<td style="border:1px solid #999;padding:4px 6px">' + docNat + (origemSuperscript?'<sup>'+origemSuperscript+'</sup>':'') + '</td>' +
+          '<td style="border:1px solid #999;padding:4px 6px;text-align:left">' + docNat + (origemSuperscript?'<sup>'+origemSuperscript+'</sup>':'') + '</td>' +
           '<td style="border:1px solid #999;padding:4px 6px;text-align:center">' + (l.trib||docNat) + (origemSuperscript?'<sup>'+origemSuperscript+'</sup>':'') + '</td>' +
           '<td style="border:1px solid #999;padding:4px 6px;text-align:center">' + (l.exerc||'') + '</td>' +
           '<td style="border:1px solid #999;padding:4px 6px">' + (l.inscrDA?l.inscrDA:'') + '</td>' +
@@ -9130,8 +9130,8 @@ function pa_gerarDocNotif(int) {
         '</tr>';
       return '<table style="width:100%;border-collapse:collapse;font-size:9px;margin:4px 0 0;table-layout:fixed;word-break:break-word;hyphens:none"><tbody>' +
         '<tr>' +
-        '<th style="border:1px solid #555;padding:4px 6px;background:#f0f0f0;font-weight:700;width:8%">Origem</th>' +
-        '<th style="border:1px solid #555;padding:4px 6px;background:#f0f0f0;font-weight:700;width:6%">Natureza</th>' +
+        '<th style="border:1px solid #555;padding:4px 6px;background:#f0f0f0;font-weight:700;width:6%;text-align:left">Origem</th>' +
+        '<th style="border:1px solid #555;padding:4px 6px;background:#f0f0f0;font-weight:700;width:8%">Natureza</th>' +
         '<th style="border:1px solid #555;padding:4px 6px;background:#f0f0f0;font-weight:700;width:6%">Exerc\u00edcio</th>' +
         '<th style="border:1px solid #555;padding:4px 6px;background:#f0f0f0;font-weight:700;width:6%">Insc.</th>' +
         '<th style="border:1px solid #555;padding:4px 6px;background:#f0f0f0;font-weight:700;width:8%">Data Insc.</th>' +
@@ -9140,7 +9140,7 @@ function pa_gerarDocNotif(int) {
         '<th style="border:1px solid #555;padding:4px 6px;background:#f0f0f0;font-weight:700;width:8%">Proc. N\u00ba</th>' +
         '<th style="border:1px solid #555;padding:4px 6px;background:#f0f0f0;font-weight:700;width:8%">Vencimento</th>' +
         '<th style="border:1px solid #555;padding:4px 6px;background:#f0f0f0;font-weight:700;width:8%">Valor Principal</th>' +
-        '<th style="border:1px solid #555;padding:4px 6px;background:#f0f0f0;font-weight:700;width:8%">A. Monet\u00e1ria</th>' +
+        '<th style="border:1px solid #555;padding:4px 6px;background:#f0f0f0;font-weight:700;width:8%">Corr. Monet.</th>' +
         '<th style="border:1px solid #555;padding:4px 6px;background:#f0f0f0;font-weight:700;width:7%">Multa de mora</th>' +
         '<th style="border:1px solid #555;padding:4px 6px;background:#f0f0f0;font-weight:700;width:7%">Juros de mora</th>' +
         '<th style="border:1px solid #555;padding:4px 6px;background:#f0f0f0;font-weight:700;width:10%">Valor Atualizado</th>' +
