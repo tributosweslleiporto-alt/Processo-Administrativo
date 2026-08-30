@@ -9111,7 +9111,7 @@ function pa_gerarDocNotif(int) {
           '<td style="border:1px solid #999;padding:4px 6px;text-align:center">' + (l.dtInscr?pa_fd(l.dtInscr):'') + '</td>' +
           '<td style="border:1px solid #999;padding:4px 6px;text-align:center">' + (l.livro||'') + '</td>' +
           '<td style="border:1px solid #999;padding:4px 6px;text-align:center">' + (l.folha||'') + '</td>' +
-          '<td style="border:1px solid #999;padding:4px 6px">' + (docProcNum||l.procNum||'') + '</td>' +
+          '<td style="border:1px solid #999;padding:4px 6px">' + (l.procNum||docProcNum||'') + '</td>' +
           '<td style="border:1px solid #999;padding:4px 6px;text-align:center">' + pa_fd(l.venc) + '</td>' +
           '<td style="border:1px solid #999;padding:4px 6px;text-align:right">R$ ' + l.vp + '</td>' +
           '<td style="border:1px solid #999;padding:4px 6px;text-align:right">R$ ' + l.cm + '</td>' +
