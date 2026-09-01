@@ -8941,7 +8941,7 @@ function pa_imprimirModal() {
 <style>
 @page {
   size: A4;
-  margin: 8mm 4mm 20mm 4mm;
+  margin: 8mm 4mm 28mm 4mm;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -8951,6 +8951,20 @@ body {
   color: #111;
   hyphens: none;
   -webkit-hyphens: none;
+}
+/* Rodapé fixo — aparece em TODAS as folhas na impressão */
+.rodape-fixo {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  border-top: 1px solid #555;
+  padding: 4px 8px 3px;
+  text-align: center;
+  font-size: 9px;
+  color: #444;
+  background: #fff;
+  font-family: 'Times New Roman', Georgia, serif;
 }
 
 .doc-sheet { background:#fff;color:#111;font-family:'Times New Roman',Georgia,serif;padding:20px 8px;max-width:100%;margin:0 auto }
@@ -8992,6 +9006,11 @@ th { background:#f0f0f0;font-weight:700 }
   .no-print { display:none !important; }
 }
 </style></head><body>
+<div class="rodape-fixo">
+Prefeitura de Caetit&eacute; &mdash; CNPJ: 13.811.476/0001-54 &nbsp;|&nbsp;
+Av. Marlene Montenegro Cerqueira de Oliveira, 1000 &ndash; Centro Administrativo, Bairro Prisco Viana, Caetit&eacute; &ndash; BA 46.400-000 &ndash; Fone: (77) 3454-5704 &nbsp;|&nbsp;
+www.caetite.ba.gov.br
+</div>
 ${body}
 </body></html>`;
 
@@ -9218,12 +9237,6 @@ function pa_gerarDocNotif(int) {
     '<div style="font-size:11px;margin-bottom:8px">Nome Leg\u00edvel do Recebedor: ____________________________________________________</div>' +
     '<div style="font-size:11px;margin-bottom:8px">N\u00ba do RG ou CPF: ________________________ Cargo/V\u00ednculo: _____________________</div>' +
     '<div style="font-size:11px">Assinatura do Recebedor: _____________________________________________________</div>' +
-    '</div>' +
-
-    '<div style="margin-top:16px;border-top:1px solid #555;padding-top:6px;text-align:center;font-size:9px;color:#444">' +
-    'Prefeitura de Caetit\u00e9 — CNPJ: 13.811.476/0001-54<br>' +
-    'Avenida Marlene Montenegro Cerqueira de Oliveira, 1000 \u2013 Centro Administrativo de Caetit\u00e9, Bairro Prisco Viana, Caetit\u00e9 \u2013 BA 46.400-000 \u2013 Fone: (77) 3454-5704<br>' +
-    'www.caetite.ba.gov.br' +
     '</div>' +
 
     rodapeDoc +
