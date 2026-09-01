@@ -8942,6 +8942,14 @@ function pa_imprimirModal() {
 @page {
   size: A4;
   margin: 8mm 4mm 28mm 4mm;
+  @bottom-center {
+    content: "Prefeitura de Caetité — CNPJ: 13.811.476/0001-54 | Av. Marlene Montenegro Cerqueira de Oliveira, 1000 – Bairro Prisco Viana, Caetité – BA 46.400-000 – (77) 3454-5704 | www.caetite.ba.gov.br";
+    font-size: 8px;
+    color: #444;
+    border-top: 1px solid #555;
+    padding-top: 3px;
+    font-family: 'Times New Roman', Georgia, serif;
+  }
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -8952,7 +8960,7 @@ body {
   hyphens: none;
   -webkit-hyphens: none;
 }
-/* Rodapé fixo — aparece em TODAS as folhas na impressão */
+/* Rodapé fixo via position:fixed — fallback para navegadores sem suporte a @bottom-center */
 .rodape-fixo {
   position: fixed;
   bottom: 0;
