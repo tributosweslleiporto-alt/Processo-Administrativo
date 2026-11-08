@@ -1021,7 +1021,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
           <div class="card"><div class="card-title">Descrição</div><p id="det-ds" style="font-size:13px;line-height:1.7;color:var(--pa-text2)"></p>
             <div id="det-empresas" style="margin-top:12px"></div>
           </div>
-          <div class="card"><div class="card-title">Tramitação</div><div class="tl" id="det-tram"></div></div>
+          <div class="card"><div class="card-title" style="display:flex;justify-content:space-between;align-items:center">Tramitação <span id="det-tram-btn"></span></div><div class="tl" id="det-tram"></div></div>
         </div>
         <div class="card"><div class="card-title">Folhas de informação</div><div id="det-folhas"></div></div>
         <div class="card"><div class="card-title">📄 Termo(s) de Inscrição em Dívida Ativa</div><div id="det-termos"></div></div>
@@ -1213,7 +1213,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
           <div class="fg">
             <div class="fgg full"><label>Assunto</label><input type="text" id="np-as"></div>
             <div class="fgg full"><label>Descrição</label><textarea id="np-ds" rows="4"></textarea></div>
-            <div class="fgg"><label>Destino inicial</label><input type="text" id="np-de" value="Protocolo Geral"></div>
+            <div class="fgg"><label>Destino inicial</label><select id="np-de"></select></div>
             <div class="fgg"><label>Status</label><select id="np-st"><option value="em-andamento">Em andamento</option><option value="pendente">Pendente</option></select></div>
           </div>
         </div>
@@ -1230,12 +1230,79 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
       </div>
 
       <!-- TRAMITAÇÃO -->
+      <!-- PROTOCOLOS (ProcessAdmin) — lista -->
+      <div id="view-protocolosPa" class="view">
+        <div class="search-row">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input type="text" id="pt-q" placeholder="Buscar protocolo..." oninput="pa_renderProtocolos()" style="width:240px">
+            <select id="pt-sf" onchange="pa_renderProtocolos()">
+              <option value="">Todas as situações</option>
+              <option value="aguardando_relatorio">Aguardando relatório</option>
+              <option value="em_andamento">Em andamento</option>
+              <option value="processo_aberto">Processo aberto</option>
+              <option value="encerrado_sem_processo">Encerrado sem processo</option>
+              <option value="cancelado">Cancelado</option>
+            </select>
+          </div>
+        </div>
+        <div class="tw"><table><thead><tr><th>Protocolo</th><th>Contribuinte</th><th>Assunto</th><th>Prazo</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="pt-tbody"></tbody></table>
+        <div id="pt-empty" style="text-align:center;padding:44px;color:var(--pa-text2);font-size:13px;display:none">Nenhum protocolo registrado.</div></div>
+      </div>
+
+      <!-- PROTOCOLOS (ProcessAdmin) — novo / editar -->
+      <div id="view-novo-protocoloPa" class="view">
+        <input type="hidden" id="pt-id">
+        <div class="card"><div class="card-title" id="pt-titulo">Novo protocolo</div>
+          <div class="fg3">
+            <div class="fgg"><label id="pt-num-lbl">Nº do protocolo (definido ao salvar)</label><input type="text" id="pt-num" readonly></div>
+            <div class="fgg"><label>Data / hora</label><input type="text" id="pt-dh" readonly></div>
+            <div class="fgg"><label>Atendente responsável</label><input type="text" id="pt-at" readonly></div>
+          </div>
+        </div>
+        <div class="card"><div class="card-title">Contribuinte / Requerente</div>
+          <div class="fg">
+            <div class="fgg"><label>Tipo</label><select id="pt-tp" onchange="pa_toggleProtDoc()"><option value="juridica">Pessoa jurídica (CNPJ)</option><option value="fisica">Pessoa física (CPF)</option></select></div>
+            <div class="fgg"><label id="pt-dl">CNPJ</label><input type="text" id="pt-dc" oninput="pa_aoDigitarDocProt(this)" placeholder="00.000.000/0000-00"><div style="display:flex;gap:8px;align-items:center;margin-top:4px"><button type="button" class="btn btn-g btn-xs" onclick="pa_buscarCnpjProt()">🔍 Buscar na Receita</button><span id="pt-cnpj-msg" style="font-size:11px;color:#6B6760"></span></div></div>
+            <div class="fgg full"><label>Nome / Razão social</label><input type="text" id="pt-nm"></div>
+            <div class="fgg"><label>E-mail</label><input type="email" id="pt-em"></div>
+            <div class="fgg"><label>Telefone</label><input type="text" id="pt-tl"></div>
+            <div class="fgg full"><label>Endereço</label><input type="text" id="pt-en"></div>
+            <div class="fgg"><label>Inscrição municipal (opcional)</label><input type="text" id="pt-im"></div>
+          </div>
+        </div>
+        <div class="card"><div class="card-title">Requerimento</div>
+          <div class="fg">
+            <div class="fgg full"><label>Assunto</label><input type="text" id="pt-as" list="pt-as-list" autocomplete="off"><datalist id="pt-as-list"></datalist></div>
+            <div class="fgg full"><label>Documentos apresentados (um por linha)</label><textarea id="pt-docs" rows="4"></textarea></div>
+            <div class="fgg"><label>Prazo de resposta (dias úteis)</label><input type="number" id="pt-pz" min="1" max="365" oninput="pa_prevPrazoProt()"></div>
+            <div class="fgg"><label>Vencimento do prazo</label><input type="text" id="pt-pzinfo" readonly placeholder="Informe os dias úteis"></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-p" id="pt-btn" onclick="pa_salvarProtocolo()">✓ Gerar protocolo e comprovante</button>
+          <button class="btn btn-g" onclick="navegarPara('protocolosPa')">Cancelar</button>
+        </div>
+      </div>
+
+      <!-- SETORES / DESTINOS DE TRAMITAÇÃO (somente admin) -->
+      <div id="view-destinosPa" class="view">
+        <div class="card"><div class="card-title">Setores / destinos de tramitação</div>
+          <p style="font-size:12px;color:var(--pa-text2);margin-bottom:10px">Esta lista aparece ao movimentar processos e ao escolher o destino inicial. Setores desativados somem das listas, mas o histórico dos processos não muda.</p>
+          <div id="dst-aviso" style="font-size:12px;color:#b45309;margin-bottom:10px"></div>
+          <div style="display:flex;gap:8px;margin-bottom:12px">
+            <input type="text" id="dst-novo" placeholder="Nome do novo setor" style="flex:1" onkeydown="if(event.key==='Enter')pa_addDestino()">
+            <button class="btn btn-p btn-sm" onclick="pa_addDestino()">+ Adicionar</button>
+          </div>
+          <div class="tw"><table><thead><tr><th>Setor</th><th>Situação</th><th></th></tr></thead><tbody id="dst-tbody"></tbody></table></div>
+        </div>
+      </div>
+
       <div id="view-tram" class="view">
         <div class="grid2">
           <div class="card"><div class="card-title">Registrar movimentação</div>
             <div style="display:flex;flex-direction:column;gap:11px">
               <div class="fgg"><label>Processo</label><select id="tr-p" onchange="pa_rht()"><option value="">Selecione...</option></select></div>
-              <div class="fgg"><label>Destino</label><input type="text" id="tr-d"></div>
+              <div class="fgg"><label>Destino</label><select id="tr-d"></select></div>
               <div class="fgg"><label>Data</label><input type="date" id="tr-dt"></div>
               <div class="fgg"><label>Observação</label><textarea id="tr-o" rows="2"></textarea></div>
               <div class="fgg"><label>Status</label><select id="tr-s"><option value="em-andamento">Em andamento</option><option value="pendente">Pendente</option><option value="concluido">Concluído</option><option value="arquivado">Arquivado</option></select></div>
@@ -1291,6 +1358,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
         <div class="card"><div class="card-title">Relatório individual de fiscalização</div>
           <div style="display:flex;flex-direction:column;gap:12px">
             <div class="fg3">
+              <div class="fgg" id="ri-prot-wrap" style="grid-column:1/-1"><label>Protocolo (obrigatório)</label><select id="ri-prot" onchange="pa_aplicarProtRel('ri')" style="width:100%"></select></div>
               <div class="fgg"><label>Nº do relatório</label><input type="text" id="ri-num" readonly></div>
               <div class="fgg"><label>Data</label><input type="date" id="ri-dt"></div>
               <div class="fgg"><label>Fiscal</label><input type="text" id="ri-fiscal" readonly></div>
@@ -1322,6 +1390,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
           </div>
           <div style="display:flex;flex-direction:column;gap:12px">
             <div class="fg3">
+              <div class="fgg" id="rc-prot-wrap" style="grid-column:1/-1"><label>Protocolo (obrigatório)</label><select id="rc-prot" onchange="pa_aplicarProtRel('rc')" style="width:100%"></select></div>
               <div class="fgg"><label>Nº do relatório</label><input type="text" id="rc-num" readonly></div>
               <div class="fgg"><label>Data</label><input type="date" id="rc-dt"></div>
               <div class="fgg"><label>Fiscal</label><input type="text" id="rc-fiscal" readonly></div>
@@ -2049,6 +2118,7 @@ let pa_usuarioAtual = null; // usuário mapeado para formato Sistema B
 
 // ── VARIÁVEIS GLOBAIS PROCESSADMIN ────────────────────────────────
 let pa_processos = [], pa_relatorios = [], pa_folhas = [], pa_intimacoes = [], pa_termos = [];
+let pa_protocolos = [];
 let pa_nextProcId = 1, pa_nextProcNum = 1;
 let pa_nextRelId  = 1, pa_nextRelNum  = 1, pa_nextTermoNum = 1;
 let pa_nextFolhaId= 1, pa_nextIntId   = 1, pa_nextTermoId = 1;
@@ -2378,12 +2448,14 @@ function rowToTermo(row) {
 }
 
 async function carregarDadosPA() {
-  const [procs, rels, folhas, ints, termos] = await Promise.all([
+  const [procs, rels, folhas, ints, termos, prots, dests] = await Promise.all([
     sbGet('pa_processos','select=*&limit=500'),
     sbGet('pa_relatorios','select=*&limit=500'),
     sbGet('pa_folhas','select=*&limit=1000'),
     sbGet('pa_intimacoes','select=*&limit=500'),
     sbGet('pa_termos_da','select=*&limit=500'),
+    sbGet('pa_protocolos','select=*&limit=3000'),
+    sbGet('pa_destinos','select=*&limit=500'),
   ]);
   pa_processos   = (procs   || []).map(rowToProcesso);
   // (auto-reparo automático removido — vínculo agora é criado apenas via ação manual do usuário)
@@ -2391,6 +2463,8 @@ async function carregarDadosPA() {
   pa_folhas      = (folhas  || []).map(rowToFolha);
   pa_intimacoes  = (ints    || []).map(rowToIntimacao);
   pa_termos      = (termos  || []).map(rowToTermo);
+  pa_protocolos  = (prots   || []).map(rowToProtocoloPa);
+  pa_destinos    = (dests   || []).map(rowToDestinoPa);
   pa_nextProcId  = pa_processos.length  ? Math.max(...pa_processos.map(p=>p.id)) + 1 : 1;
   pa_nextRelId   = pa_relatorios.length ? Math.max(...pa_relatorios.map(p=>p.id)) + 1 : 1;
   pa_nextFolhaId = pa_folhas.length     ? Math.max(...pa_folhas.map(p=>p.id)) + 1 : 1;
@@ -2422,6 +2496,706 @@ async function carregarDadosPA() {
   pa_nextTermoNum = termosAno.length ? Math.max(...termosAno) + 1 : 1;
 }
 
+
+// ════════════════════════════════════════════════════════════════
+// PROTOCOLO (ProcessAdmin) — primeiro passo: Protocolo → Relatório → Processo
+// Número do protocolo: PROT-0010/2026. A numeração nova começa em 0010/2026.
+// Nesta etapa só o protocolo existe; o relatório (REL-) e o processo herdam o
+// mesmo número na etapa 2. Registros antigos não são alterados.
+// ════════════════════════════════════════════════════════════════
+const PA_PROT_BASE_2026 = 9; // a numeração nova começa em 0010/2026
+const PA_PROT_SITUACOES = {
+  aguardando_relatorio:   'Protocolado — aguardando relatório',
+  em_andamento:           'Em andamento',
+  processo_aberto:        'Processo aberto',
+  encerrado_sem_processo: 'Encerrado sem processo',
+  cancelado:              'Cancelado'
+};
+const PA_DIAS_SEMANA = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+const pa_escP = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function rowToProtocoloPa(row) {
+  return {
+    id:         row.id,
+    ano:        row.ano,
+    seq:        row.seq,
+    num:        row.numero || '',
+    situacao:   row.situacao || 'aguardando_relatorio',
+    tipoPessoa: row.tipo_pessoa || 'juridica',
+    doc:        row.documento || '',
+    nm:         row.nome || '',
+    im:         row.inscricao_municipal || '',
+    end:        row.endereco || '',
+    email:      row.email || '',
+    tel:        row.telefone || '',
+    assunto:    row.assunto || '',
+    docs:       row.documentos_apresentados || '',
+    prazoDias:  row.prazo_dias == null ? null : row.prazo_dias,
+    prazoData:  row.prazo_data || '',
+    atendNome:  row.atendente_nome || '',
+    atendLogin: row.atendente_login || '',
+    atendMat:   row.atendente_matricula || '',
+    dataHora:   row.data_hora || '',
+    hash:       row.assin_hash || '',
+    relId:      row.rel_id || null,
+    procId:     row.proc_id || null,
+    canceladoPor: row.cancelado_por || '',
+    canceladoEm:  row.cancelado_em || '',
+    motivoCanc:   row.motivo_cancelamento || ''
+  };
+}
+
+// Quem pode registrar protocolo: admin e perfis que já trabalham com relatório/despacho/processo.
+// O Auxiliar Administrativo continua sem acesso ao Sistema B.
+function pa_podeProtocolar() {
+  if (usuarioLogado?.perfil === 'auxiliar_adm') return false;
+  if (isAdmin()) return true;
+  const perf = pa_perfis.find(p => p.id === pa_usuarioAtual?.perfilId);
+  return !!(perf?.perms?.relatorio || perf?.perms?.despacho || perf?.perms?.processo);
+}
+
+const pa_numProtocolo = (seq, ano) => 'PROT-' + String(seq).padStart(4, '0') + '/' + ano;
+
+// Próximo número livre do ano. Considera protocolos, processos e relatórios já existentes,
+// então nunca devolve um número que já esteja em uso (trava contra duplicidade).
+function pa_proxSeqProtocolo(ano) {
+  const nums = [];
+  pa_protocolos.forEach(p => { if (p.ano === ano) nums.push(parseInt(p.seq) || 0); });
+  pa_processos.forEach(p => {
+    const m = String(p.num || '').match(/^\s*(\d+)\/(\d{4})\s*$/);
+    if (m && parseInt(m[2]) === ano) nums.push(parseInt(m[1]));
+  });
+  pa_relatorios.forEach(r => {
+    const m = String(r.num || '').match(/(\d+)\/(\d{4})\s*$/);
+    if (m && parseInt(m[2]) === ano) nums.push(parseInt(m[1]));
+  });
+  const base = ano === 2026 ? PA_PROT_BASE_2026 : 0;
+  return Math.max(base, ...nums) + 1;
+}
+
+// Código de autenticação da assinatura eletrônica (determinístico: pode ser conferido depois).
+function pa_hashProt(texto) {
+  let h1 = 0x811c9dc5, h2 = (0x01000193 ^ texto.length) >>> 0;
+  for (let i = 0; i < texto.length; i++) {
+    const c = texto.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 16777619) >>> 0;
+    h2 = (Math.imul(h2 + c, 2246822519) >>> 0);
+    h2 = (h2 ^ (h2 >>> 13)) >>> 0;
+  }
+  return (h1.toString(16).padStart(8, '0') + h2.toString(16).padStart(8, '0')).toUpperCase();
+}
+
+// Prazo em dias úteis — reaproveita a conta do Sistema A (pula sábado, domingo e feriados).
+// Usa meio-dia como base para a checagem de feriados não ser afetada pelo fuso horário.
+function pa_calcPrazoUtilProt(dias, baseDate) {
+  const n = parseInt(dias);
+  if (!n || n < 1 || n > 365) return null;
+  const base = new Date(baseDate || new Date());
+  base.setHours(12, 0, 0, 0);
+  return calcularPrazoUtil(base, n);
+}
+const pa_dataISOLocal = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+
+// ── LISTA ────────────────────────────────────────────────────────
+function pa_renderProtocolos() {
+  const tb = document.getElementById('pt-tbody'); if (!tb) return;
+  const q  = (document.getElementById('pt-q')?.value || '').toLowerCase().trim();
+  const sf = document.getElementById('pt-sf')?.value || '';
+  const lista = pa_protocolos
+    .filter(p => (!sf || p.situacao === sf) && (!q || [p.num, p.nm, p.doc, p.assunto].join(' ').toLowerCase().includes(q)))
+    .sort((a, b) => (b.ano - a.ano) || (b.seq - a.seq));
+  const vazio = document.getElementById('pt-empty');
+  if (vazio) vazio.style.display = lista.length ? 'none' : 'block';
+  const cores = {
+    aguardando_relatorio:   ['#fff3e0', '#b45309'],
+    em_andamento:           ['#e6eff8', '#1a3a5c'],
+    processo_aberto:        ['#e4f0e6', '#1e4a28'],
+    encerrado_sem_processo: ['#f1f1f1', '#555555'],
+    cancelado:              ['#fde8e8', '#b91c1c']
+  };
+  tb.innerHTML = lista.map(p => {
+    const [bg, fg] = cores[p.situacao] || ['#eeeeee', '#333333'];
+    const dh = p.dataHora ? new Date(p.dataHora).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '—';
+    const acoesAdmin = isAdmin()
+      ? `<button class="btn btn-g btn-xs" onclick="pa_editarProtocolo(${p.id})">✏️ Editar</button>` +
+        (['processo_aberto', 'cancelado'].includes(p.situacao) ? '' :
+          ` <button class="btn btn-xs" style="background:#dc2626;color:#fff" onclick="pa_cancelarProtocolo(${p.id})">Cancelar</button>`)
+      : '';
+    const tip = p.situacao === 'cancelado' && p.motivoCanc ? ` title="${pa_escP('Motivo: ' + p.motivoCanc)}"` : '';
+    return `<tr>
+      <td><strong>${pa_escP(p.num)}</strong><div style="font-size:11px;color:var(--pa-text2)">${dh}</div></td>
+      <td>${pa_escP(p.nm)}<div style="font-size:11px;color:var(--pa-text2)">${pa_escP(p.doc)}</div></td>
+      <td>${pa_escP(p.assunto)}</td>
+      <td>${p.prazoData ? pa_fd(p.prazoData) : '—'}</td>
+      <td><span${tip} style="background:${bg};color:${fg};padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;display:inline-block">${pa_escP(PA_PROT_SITUACOES[p.situacao] || p.situacao)}</span></td>
+      <td><div style="display:flex;gap:4px;flex-wrap:wrap;min-width:150px"><button class="btn btn-g btn-xs" onclick="pa_verComprovanteProt(${p.id})">🖨️ Comprovante</button>${pa_acoesFluxoProt(p)}${acoesAdmin}</div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── FORMULÁRIO ───────────────────────────────────────────────────
+function pa_novoProtocolo() { navegarPara('novo-protocoloPa'); }
+
+function pa_toggleProtDoc() {
+  const t = document.getElementById('pt-tp').value;
+  document.getElementById('pt-dl').textContent = t === 'fisica' ? 'CPF' : 'CNPJ';
+  document.getElementById('pt-dc').placeholder = t === 'fisica' ? '000.000.000-00' : '00.000.000/0000-00';
+}
+
+function pa_prevPrazoProt() {
+  const out = document.getElementById('pt-pzinfo'); if (!out) return;
+  const dias = parseInt(document.getElementById('pt-pz').value);
+  if (!dias || dias < 1) { out.value = ''; return; }
+  if (dias > 365) { out.value = 'Máximo de 365 dias úteis'; return; }
+  const idEd = parseInt(document.getElementById('pt-id').value) || 0;
+  const pEd = idEd ? pa_protocolos.find(x => x.id === idEd) : null;
+  const d = pa_calcPrazoUtilProt(dias, pEd && pEd.dataHora ? new Date(pEd.dataHora) : new Date());
+  out.value = d ? PA_DIAS_SEMANA[d.getDay()] + ', ' + pa_fd(pa_dataISOLocal(d)) : '';
+}
+
+function pa_initProtocolo() {
+  if (!pa_podeProtocolar()) {
+    alert('⛔ Seu perfil não pode registrar protocolos.');
+    navegarPara('painel');
+    return;
+  }
+  const g = id => document.getElementById(id);
+  const ano = new Date().getFullYear();
+  g('pt-id').value = '';
+  g('pt-titulo').textContent = 'Novo protocolo';
+  g('pt-btn').textContent = '✓ Gerar protocolo e comprovante';
+  g('pt-btn').disabled = false;
+  g('pt-num-lbl').textContent = 'Nº do protocolo (definido ao salvar)';
+  g('pt-num').value = pa_numProtocolo(pa_proxSeqProtocolo(ano), ano);
+  g('pt-dh').value = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+  g('pt-at').value = pa_usuarioAtual?.nome || '';
+  ['pt-dc', 'pt-nm', 'pt-im', 'pt-em', 'pt-tl', 'pt-en', 'pt-as', 'pt-docs', 'pt-pz', 'pt-pzinfo'].forEach(id => { g(id).value = ''; });
+  g('pt-tp').value = 'juridica';
+  g('pt-cnpj-msg').textContent = '';
+  pa_toggleProtDoc();
+  // Sugestões de assunto: lista do Sistema A + assuntos já usados (evita nomes diferentes para o mesmo assunto)
+  const nomes = new Set();
+  (DB.assuntos || []).forEach(a => { if (a.nome) nomes.add(a.nome); });
+  pa_processos.forEach(p => { if (p.assunto) nomes.add(p.assunto); });
+  pa_protocolos.forEach(p => { if (p.assunto) nomes.add(p.assunto); });
+  g('pt-as-list').innerHTML = Array.from(nomes).sort().map(n => `<option value="${pa_escP(n)}"></option>`).join('');
+}
+
+function pa_editarProtocolo(id) {
+  if (!isAdmin()) { alert('⛔ Apenas o administrador pode editar um protocolo.'); return; }
+  const p = pa_protocolos.find(x => x.id === id); if (!p) return;
+  navegarPara('novo-protocoloPa');
+  const g = i => document.getElementById(i);
+  g('pt-id').value = p.id;
+  g('pt-titulo').textContent = 'Editar protocolo ' + p.num;
+  g('pt-btn').textContent = '💾 Salvar alterações';
+  g('pt-num-lbl').textContent = 'Nº do protocolo';
+  g('pt-num').value = p.num;
+  g('pt-dh').value = p.dataHora ? new Date(p.dataHora).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '';
+  g('pt-at').value = p.atendNome;
+  g('pt-tp').value = p.tipoPessoa;
+  pa_toggleProtDoc();
+  g('pt-dc').value = p.doc; g('pt-nm').value = p.nm; g('pt-im').value = p.im;
+  g('pt-em').value = p.email; g('pt-tl').value = p.tel; g('pt-en').value = p.end;
+  g('pt-as').value = p.assunto; g('pt-docs').value = p.docs;
+  g('pt-pz').value = p.prazoDias || '';
+  pa_prevPrazoProt();
+}
+
+async function pa_salvarProtocolo() {
+  if (!pa_podeProtocolar()) { alert('⛔ Seu perfil não pode registrar protocolos.'); return; }
+  const g = id => document.getElementById(id);
+  const editId = parseInt(g('pt-id').value) || 0;
+  const dados = {
+    tipo_pessoa:             g('pt-tp').value,
+    documento:               g('pt-dc').value.trim(),
+    nome:                    g('pt-nm').value.trim(),
+    inscricao_municipal:     g('pt-im').value.trim(),
+    email:                   g('pt-em').value.trim(),
+    telefone:                g('pt-tl').value.trim(),
+    endereco:                g('pt-en').value.trim(),
+    assunto:                 g('pt-as').value.trim(),
+    documentos_apresentados: g('pt-docs').value.trim()
+  };
+  const dias = parseInt(g('pt-pz').value);
+  if (!dados.nome || !dados.assunto) { alert('Preencha o nome do contribuinte e o assunto.'); return; }
+  if (!dias || dias < 1 || dias > 365) { alert('Informe o prazo de resposta em dias úteis (de 1 a 365).'); return; }
+
+  // ── Edição (somente admin): o número e o atendente nunca mudam ──
+  if (editId) {
+    if (!isAdmin()) { alert('⛔ Apenas o administrador pode editar um protocolo.'); return; }
+    const p = pa_protocolos.find(x => x.id === editId); if (!p) return;
+    const dPrazo = pa_calcPrazoUtilProt(dias, p.dataHora ? new Date(p.dataHora) : new Date());
+    dados.prazo_dias = dias;
+    dados.prazo_data = pa_dataISOLocal(dPrazo);
+    showLoading('Salvando alterações...');
+    const r = await sbPatch('pa_protocolos', editId, dados);
+    hideLoading();
+    if (!r || !r[0]) { alert('⚠️ Não foi possível salvar as alterações. Tente novamente.'); return; }
+    Object.assign(p, rowToProtocoloPa(r[0]));
+    pa_auditar('EDITAR', { tabela: 'pa_protocolos', id: p.id, num: p.num, detalhes: `Protocolo ${p.num} editado pelo administrador` });
+    toast('✅ Protocolo atualizado.');
+    navegarPara('protocolosPa');
+    return;
+  }
+
+  // ── Novo protocolo ──
+  const btn = g('pt-btn'); btn.disabled = true;
+  const ano = new Date().getFullYear();
+  const dPrazo = pa_calcPrazoUtilProt(dias, new Date());
+  dados.prazo_dias = dias;
+  dados.prazo_data = pa_dataISOLocal(dPrazo);
+  showLoading('Gerando protocolo...');
+  let criado = null, ultimoErro = null, piso = 0;
+  for (let tent = 0; tent < 8 && !criado; tent++) {
+    // Atualiza os protocolos do ano com o que está no banco, para enxergar números de outros servidores.
+    const frescos = await sbGet('pa_protocolos', 'ano=eq.' + ano);
+    if (frescos.length) pa_protocolos = pa_protocolos.filter(p => p.ano !== ano).concat(frescos.map(rowToProtocoloPa));
+    // 'piso' garante que, após uma recusa por duplicidade, a próxima tentativa sempre avança.
+    const seq = Math.max(pa_proxSeqProtocolo(ano), piso + 1);
+    const numero = pa_numProtocolo(seq, ano);
+    const agora = new Date();
+    const row = Object.assign({}, dados, {
+      ano, seq, numero,
+      situacao: 'aguardando_relatorio',
+      atendente_nome:      pa_usuarioAtual?.nome || '',
+      atendente_login:     pa_usuarioAtual?.login || '',
+      atendente_matricula: pa_usuarioAtual?.matricula || '',
+      data_hora:           agora.toISOString(),
+      assin_hash:          pa_hashProt(numero + '|' + (pa_usuarioAtual?.nome || '') + '|' + agora.toISOString())
+    });
+    const { data, error } = await _sb.from('pa_protocolos').insert(row).select();
+    if (!error && data && data[0]) { criado = rowToProtocoloPa(data[0]); break; }
+    ultimoErro = error;
+    // Número já usado por outro servidor no mesmo instante: tenta o próximo livre.
+    if (error && (error.code === '23505' || /duplicate key/i.test(error.message || ''))) { piso = seq; continue; }
+    break;
+  }
+  hideLoading();
+  btn.disabled = false;
+  if (!criado) {
+    const msg = ultimoErro?.message || 'erro desconhecido';
+    const semTabela = ultimoErro && (ultimoErro.code === '42P01' || /does not exist|schema cache|relation/i.test(msg));
+    alert(semTabela
+      ? '⚠️ A tabela de protocolos ainda não existe no banco.\n\nRode o SQL da etapa 1 no Supabase e tente novamente.'
+      : '⚠️ Não foi possível gerar o protocolo: ' + msg);
+    return;
+  }
+  pa_protocolos.push(criado);
+  pa_auditar('CRIAR', { tabela: 'pa_protocolos', id: criado.id, num: criado.num, detalhes: `Protocolo ${criado.num} — ${criado.nm} (${criado.assunto})` });
+  toast('✅ Protocolo ' + criado.num + ' gerado.');
+  navegarPara('protocolosPa');
+  pa_verComprovanteProt(criado.id);
+}
+
+// Cancelamento (somente admin). O número cancelado nunca é reaproveitado.
+async function pa_cancelarProtocolo(id) {
+  if (!isAdmin()) { alert('⛔ Apenas o administrador pode cancelar um protocolo.'); return; }
+  const p = pa_protocolos.find(x => x.id === id); if (!p) return;
+  if (p.situacao === 'processo_aberto') { alert('Este protocolo já tem processo aberto e não pode ser cancelado.'); return; }
+  if (p.situacao === 'cancelado') return;
+  const motivo = prompt(`Cancelar o protocolo ${p.num}?\n\nO número NÃO será reaproveitado.\nInforme o motivo do cancelamento:`);
+  if (motivo === null) return;
+  if (!motivo.trim()) { alert('Informe o motivo do cancelamento.'); return; }
+  const r = await sbPatch('pa_protocolos', id, {
+    situacao: 'cancelado',
+    cancelado_por: pa_usuarioAtual?.nome || '',
+    cancelado_em: new Date().toISOString(),
+    motivo_cancelamento: motivo.trim()
+  });
+  if (!r || !r[0]) { alert('⚠️ Não foi possível cancelar. Tente novamente.'); return; }
+  Object.assign(p, rowToProtocoloPa(r[0]));
+  pa_auditar('EDITAR', { tabela: 'pa_protocolos', id: p.id, num: p.num, detalhes: `Protocolo ${p.num} cancelado: ${motivo.trim().slice(0, 80)}` });
+  toast('Protocolo cancelado.');
+  pa_renderProtocolos();
+}
+
+// ── COMPROVANTE ──────────────────────────────────────────────────
+function pa_verComprovanteProt(id) {
+  const p = pa_protocolos.find(x => x.id === id); if (!p) return;
+  pa_openModal('Comprovante de Protocolo ' + p.num, pa_gerarHtmlComprovanteProt(p), true);
+  if (p.situacao === 'aguardando_relatorio' && pa_podeProtocolar())
+    document.getElementById('pa-m-title-actions').insertAdjacentHTML('beforeend', ' <button class="btn btn-p btn-sm" onclick="pa_fm();pa_gerarRelatorioDeProtocolo(' + p.id + ')">📄 Gerar relatório</button>');
+}
+
+function pa_gerarHtmlComprovanteProt(p) {
+  const dh = p.dataHora ? new Date(p.dataHora) : null;
+  const tz = { timeZone: 'America/Sao_Paulo' };
+  const dhTxt   = dh ? dh.toLocaleString('pt-BR', tz) : '—';
+  const dataTxt = dh ? dh.toLocaleDateString('pt-BR', tz) : '—';
+  const horaTxt = dh ? dh.toLocaleTimeString('pt-BR', Object.assign({ hour: '2-digit', minute: '2-digit' }, tz)) : '—';
+  const rotuloDoc = p.tipoPessoa === 'fisica' ? 'CPF' : 'CNPJ';
+  const docsHtml = p.docs
+    ? p.docs.split(/\r?\n/).map(s => s.trim()).filter(Boolean).map(s => '• ' + pa_escP(s)).join('<br>')
+    : '—';
+  const prazoTxt = p.prazoDias ? `${p.prazoDias} dias úteis — até ${pa_fd(p.prazoData)}` : '—';
+  const cor = '-webkit-print-color-adjust:exact;print-color-adjust:exact;';
+  const lbl = cor + 'background:#e8e8e8;font-weight:700;width:32%;border:0.75px solid #999;padding:7px 9px;vertical-align:top;font-size:12.5px';
+  const val = 'border:0.75px solid #999;padding:7px 9px;vertical-align:top;font-size:12.5px';
+  const linha = (rot, v) => `<tr><td style="${lbl}">${rot}</td><td style="${val}">${v}</td></tr>`;
+  const mat = p.atendMat
+    ? `<div style="font-size:11px;color:#555;font-weight:600;margin-top:2px">${/^decreto/i.test(p.atendMat) ? '' : 'Matrícula: '}${pa_escP(p.atendMat)}</div>`
+    : '';
+  return `<div style="background:#fff;color:#000;font-family:'Times New Roman',Georgia,serif;padding:24px 14px;width:100%;box-sizing:border-box">
+    <div style="display:flex;align-items:center;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:14px">
+      <img src="${BRASAO_SRC}" style="width:96px;height:auto;margin-right:16px;flex-shrink:0" alt="Brasão">
+      <div style="flex:1;text-align:center">
+        <div style="font-size:13px;font-weight:bold;text-transform:uppercase">Prefeitura Municipal de Caetité</div>
+        <div style="font-size:11px;color:#444">Secretaria Municipal de Administração, Planejamento e Finanças — Setor de Tributos</div>
+        <div style="font-size:10px;color:#444">CNPJ: 13.811.476/0001-54</div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-bottom:16px">
+      <div style="font-size:15px;font-weight:700;letter-spacing:.02em">COMPROVANTE DE PROTOCOLO</div>
+      <div style="font-size:18px;font-weight:700;color:#0a3d62;border:2px solid #0a3d62;display:inline-block;padding:6px 20px;border-radius:6px;margin:12px 0 6px">${pa_escP(p.num)}</div>
+      <div style="font-size:12px;font-weight:600">Emitido em: ${dhTxt}</div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:6px"><tbody>
+      ${linha('Contribuinte / Requerente', pa_escP(p.nm))}
+      ${linha(rotuloDoc, pa_escP(p.doc) || '—')}
+      ${linha('Endereço', pa_escP(p.end) || '—')}
+      ${linha('E-mail', pa_escP(p.email) || '—')}
+      ${linha('Telefone', pa_escP(p.tel) || '—')}
+      ${linha('Assunto', pa_escP(p.assunto))}
+      ${linha('Documentos apresentados', docsHtml)}
+      ${linha('Prazo para resposta', pa_escP(prazoTxt))}
+      ${linha('Atendente responsável', pa_escP(p.atendNome) || '—')}
+      ${linha('Situação atual', pa_escP(PA_PROT_SITUACOES[p.situacao] || p.situacao))}
+    </tbody></table>
+    <div style="margin-top:26px;display:flex;justify-content:center">
+      <div style="${cor}background:#f0f7f4;border:1px solid #c5dfd0;border-radius:6px;padding:10px 14px;min-width:280px;text-align:center">
+        <div style="font-size:10px;font-weight:bold;margin-bottom:4px;letter-spacing:.5px;color:#2a4538">✅ ASSINATURA ELETRÔNICA</div>
+        <div style="font-size:13px;font-weight:600;color:#222">${pa_escP(p.atendNome) || '—'}</div>
+        <div style="font-size:11px;color:#555">Atendente responsável — Setor de Tributos</div>
+        ${mat}
+        <div style="font-size:10px;color:#777;margin-top:6px">${dataTxt} às ${horaTxt}</div>
+        <div style="font-size:9px;color:#888;margin-top:2px;font-family:monospace">Cód: ${pa_escP(p.hash) || '—'}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ════════════════════════════════════════════════════════════════
+// ETAPA 2 — Protocolo → Relatório → Processo com o MESMO número
+//   Protocolo PROT-0010/2026  →  Relatório REL-0010/2026  →  Processo 0010/2026
+// ════════════════════════════════════════════════════════════════
+let pa_protParaRel = null; // protocolo escolhido pelo botão "Gerar relatório"
+
+const pa_numRelDeProt  = p => 'REL-' + String(p.seq).padStart(4, '0') + '/' + p.ano;
+const pa_numProcDeProt = p => String(p.seq).padStart(4, '0') + '/' + p.ano;
+// Próximo número livre para um processo aberto sem protocolo (exceção do admin)
+const pa_numProcLivre  = () => { const a = new Date().getFullYear(); return String(pa_proxSeqProtocolo(a)).padStart(4, '0') + '/' + a; };
+
+function pa_protSelecionadoRel(pf) {
+  const sel = document.getElementById(pf + '-prot');
+  const id = sel ? parseInt(sel.value) : 0;
+  return id ? (pa_protocolos.find(x => x.id === id) || null) : null;
+}
+
+// Preenche a lista de protocolos que aguardam relatório e aplica o escolhido pelo botão "Gerar relatório"
+function pa_popularProtRel(pf) {
+  const sel = document.getElementById(pf + '-prot'); if (!sel) return;
+  const wrap = document.getElementById(pf + '-prot-wrap'); if (wrap) wrap.style.display = '';
+  const livres = pa_protocolos.filter(p => p.situacao === 'aguardando_relatorio')
+    .sort((a, b) => (a.ano - b.ano) || (a.seq - b.seq));
+  sel.innerHTML = '<option value="">' + (livres.length ? 'Selecione o protocolo...' : 'Nenhum protocolo aguardando relatório') + '</option>' +
+    livres.map(p => `<option value="${p.id}">${pa_escP(p.num)} — ${pa_escP(p.nm)} (${pa_escP(p.assunto)})</option>`).join('');
+  if (pa_protParaRel && livres.some(p => p.id === pa_protParaRel)) sel.value = String(pa_protParaRel);
+  pa_protParaRel = null;
+  pa_aplicarProtRel(pf);
+}
+
+// Ao escolher o protocolo: o relatório assume o número dele e os dados do contribuinte
+function pa_aplicarProtRel(pf) {
+  const p = pa_protSelecionadoRel(pf);
+  const numEl = document.getElementById(pf + '-num');
+  if (!p) { if (numEl) numEl.value = ''; return; }
+  if (numEl) numEl.value = pa_numRelDeProt(p);
+  if (pf === 'ri') {
+    document.getElementById('ri-nm').value = p.nm;
+    document.getElementById('ri-doc').value = p.doc;
+  } else {
+    document.getElementById('rc-interessado').value = p.nm;
+    document.getElementById('rc-cnpj').value = p.doc;
+  }
+}
+
+// Em modo "corrigir relatório" o protocolo já está definido: esconde o campo
+function pa_protEsconderRel() {
+  ['ri', 'rc'].forEach(pf => { const w = document.getElementById(pf + '-prot-wrap'); if (w) w.style.display = 'none'; });
+}
+
+async function pa_recarregarProtocolos() {
+  const rows = await sbGet('pa_protocolos', 'select=*&limit=3000');
+  if (rows.length) pa_protocolos = rows.map(rowToProtocoloPa);
+}
+
+// "Reivindica" o protocolo de forma atômica: só um relatório consegue usá-lo,
+// mesmo que dois servidores cliquem ao mesmo tempo.
+async function pa_reivindicarProtocolo(id) {
+  try {
+    const { data, error } = await _sb.from('pa_protocolos')
+      .update({ situacao: 'em_andamento' }).eq('id', id).eq('situacao', 'aguardando_relatorio').select();
+    if (error || !data || !data[0]) { await pa_recarregarProtocolos(); return false; }
+    const p = pa_protocolos.find(x => x.id === id);
+    if (p) Object.assign(p, rowToProtocoloPa(data[0]));
+    return true;
+  } catch (e) { return false; }
+}
+function pa_ligarProtocoloRel(protId, relId) {
+  const p = pa_protocolos.find(x => x.id === protId); if (p) p.relId = relId;
+  sbPatch('pa_protocolos', protId, { rel_id: relId }).catch(e => console.warn('Erro ao ligar protocolo ao relatório:', e));
+}
+// Se o relatório não foi salvo no banco, devolve o protocolo para "aguardando relatório"
+function pa_desfazerProtocoloRel(protId, relId) {
+  pa_relatorios = pa_relatorios.filter(x => x.id !== relId);
+  const p = pa_protocolos.find(x => x.id === protId);
+  if (p) { p.situacao = 'aguardando_relatorio'; p.relId = null; }
+  sbPatch('pa_protocolos', protId, { situacao: 'aguardando_relatorio', rel_id: null }).catch(() => {});
+  alert('⚠️ Não foi possível salvar o relatório. O protocolo voltou para "aguardando relatório"; tente novamente.');
+  if (typeof pa_renderRels === 'function') pa_renderRels();
+}
+// Diretor "não autorizou": o protocolo é encerrado sem processo (o número não é reaproveitado)
+function pa_encerrarProtocoloDeRel(relId) {
+  const p = pa_protocolos.find(x => x.relId === relId); if (!p) return;
+  p.situacao = 'encerrado_sem_processo';
+  sbPatch('pa_protocolos', p.id, { situacao: 'encerrado_sem_processo' }).catch(e => console.warn('Erro ao encerrar protocolo:', e));
+}
+// Processo aberto a partir do relatório: o protocolo passa para "processo aberto"
+function pa_protAbrirProcesso(relId, procId) {
+  const p = pa_protocolos.find(x => x.relId === relId); if (!p) return;
+  p.procId = procId; p.situacao = 'processo_aberto';
+  sbPatch('pa_protocolos', p.id, { proc_id: procId, situacao: 'processo_aberto' }).catch(e => console.warn('Erro ao ligar protocolo ao processo:', e));
+}
+
+// Botão "Gerar relatório" (no comprovante e na lista): escolhe individual ou coletivo
+function pa_gerarRelatorioDeProtocolo(protId) {
+  const p = pa_protocolos.find(x => x.id === protId); if (!p) return;
+  if (p.situacao !== 'aguardando_relatorio') { alert('Este protocolo já tem relatório ou foi encerrado.'); return; }
+  if (!pa_podeProtocolar()) { alert('⛔ Seu perfil não pode gerar relatórios.'); return; }
+  pa_openModal('Gerar relatório — ' + p.num, `<div style="padding:6px 4px;max-width:520px">
+    <p style="font-size:13px;margin-bottom:4px"><strong>${pa_escP(p.num)}</strong> — ${pa_escP(p.nm)}</p>
+    <p style="font-size:12px;color:var(--pa-text2);margin-bottom:14px">${pa_escP(p.assunto)}</p>
+    <p style="font-size:13px;margin-bottom:10px">Que tipo de relatório será feito?</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-p" onclick="pa_iniciarRelDeProt(${p.id},'ind')">Relatório individual</button>
+      <button class="btn btn-g" onclick="pa_iniciarRelDeProt(${p.id},'col')">Relatório coletivo</button>
+    </div></div>`, false);
+}
+function pa_iniciarRelDeProt(protId, tipo) {
+  pa_fm();
+  pa_protParaRel = protId;
+  navegarPara(tipo === 'col' ? 'novo-rel-col' : 'novo-rel-ind');
+}
+
+// Botões da coluna de ações da lista de protocolos, conforme a situação
+function pa_acoesFluxoProt(p) {
+  if (p.situacao === 'aguardando_relatorio' && pa_podeProtocolar())
+    return `<button class="btn btn-p btn-xs" onclick="pa_gerarRelatorioDeProtocolo(${p.id})">📄 Gerar relatório</button>`;
+  let h = '';
+  if (p.relId) h += `<button class="btn btn-g btn-xs" onclick="pa_irParaRelatorio(${p.relId})">Ver relatório</button> `;
+  if (p.procId) h += `<button class="btn btn-g btn-xs" onclick="pa_verDetalhe(${p.procId})">Ver processo</button>`;
+  return h;
+}
+
+// Processo manual (sem protocolo) só é permitido ao admin, como exceção
+function pa_novoProcessoManual() {
+  if (isAdmin()) { navegarPara('novo-proc'); return; }
+  alert('Todo processo começa pelo protocolo.\n\n1) Registre o protocolo\n2) Gere o relatório a partir dele\n3) Depois que o Diretor autorizar, abra o processo pelo relatório.');
+  navegarPara(pa_podeProtocolar() ? 'protocolosPa' : 'painel');
+}
+
+// ════════════════════════════════════════════════════════════════
+// ETAPA 3 — Tramitação dentro do processo, com lista de setores
+// ════════════════════════════════════════════════════════════════
+const PA_DESTINOS_PADRAO = ['Setor de Cadastro', 'Setor de Arrecadação', 'Diretor', 'Secretário', 'Procuradoria', 'Jurídico'];
+let pa_destinos = []; // linhas da tabela pa_destinos (se vazia, vale a lista padrão acima)
+
+function rowToDestinoPa(row) {
+  return { id: row.id, nome: row.nome || '', ativo: row.ativo !== false, ordem: row.ordem || 0 };
+}
+// Lista de setores ativos. Se a tabela não existir ou estiver vazia, usa a lista padrão (o sistema nunca trava).
+function pa_listaDestinos() {
+  const ativos = pa_destinos.filter(d => d.ativo && d.nome)
+    .sort((a, b) => (a.ordem - b.ordem) || a.nome.localeCompare(b.nome, 'pt-BR')).map(d => d.nome);
+  return ativos.length ? ativos : PA_DESTINOS_PADRAO.slice();
+}
+// <option>s do select de destino. O valor atual, se não estiver na lista (ex.: processos antigos), é preservado.
+function pa_optsDestino(atual, comVazio) {
+  const lista = pa_listaDestinos();
+  const extra = atual && !lista.includes(atual) ? `<option value="${pa_escP(atual)}" selected>${pa_escP(atual)} (atual)</option>` : '';
+  const vazio = comVazio ? '<option value="">Selecione...</option>' : '';
+  return vazio + extra + lista.map(n => `<option value="${pa_escP(n)}"${n === atual ? ' selected' : ''}>${pa_escP(n)}</option>`).join('');
+}
+function pa_metaTram(t) {
+  return pa_fd(t.data) + (t.obs ? ' · ' + t.obs : '') + (t.por ? ' · por ' + t.por + (t.hora ? ' às ' + t.hora : '') : '');
+}
+
+// Registra uma movimentação (usada pela tela antiga e pelo botão "Movimentar" do processo)
+async function pa_registrarTram(pid, dest, data, obs, status) {
+  const p = pa_processos.find(x => x.id === pid);
+  if (!p) return false;
+  if (!dest || !data) { alert('Escolha o destino e informe a data.'); return false; }
+  if (!pa_canEdit(p.autorId, p.autorLogin)) { alert('Você não tem permissão para tramitar este processo.'); return false; }
+  const mov = { data, destino: dest, obs: obs || '', por: pa_usuarioAtual?.nome || '', hora: new Date().toTimeString().slice(0, 5) };
+  const trams = p.trams.concat([mov]);
+  const r = await sbPatch('pa_processos', p.id, { destino: dest, status, trams });
+  if (!r) { alert('⚠️ Não foi possível registrar a movimentação. Tente novamente.'); return false; }
+  p.trams = trams; p.destino = dest; p.status = status;
+  pa_auditar('TRAMITAR', { tabela: 'pa_processos', id: p.id, num: p.num, detalhes: `Processo ${p.num} tramitado para ${dest}` });
+  return true;
+}
+
+function pa_abrirMovimentar(pid) {
+  const p = pa_processos.find(x => x.id === pid); if (!p) return;
+  if (!pa_canEdit(p.autorId, p.autorLogin)) { alert('Você não tem permissão para tramitar este processo.'); return; }
+  const st = [['em-andamento', 'Em andamento'], ['pendente', 'Pendente'], ['concluido', 'Concluído'], ['arquivado', 'Arquivado']]
+    .map(([v, l]) => `<option value="${v}"${p.status === v ? ' selected' : ''}>${l}</option>`).join('');
+  const lb = 'font-size:12px;color:var(--pa-text2)';
+  pa_openModal('Movimentar processo ' + p.num, `<div style="display:flex;flex-direction:column;gap:12px;padding:6px 2px;max-width:520px">
+    <div><label style="${lb}">DESTINO</label><select id="tm-d" style="width:100%">${pa_optsDestino('', true)}</select></div>
+    <div><label style="${lb}">DATA</label><input type="date" id="tm-dt" value="${pa_dataISOLocal(new Date())}" style="width:100%"></div>
+    <div><label style="${lb}">OBSERVAÇÃO</label><textarea id="tm-o" rows="3" style="width:100%"></textarea></div>
+    <div><label style="${lb}">STATUS DO PROCESSO</label><select id="tm-s" style="width:100%">${st}</select></div>
+    <div style="display:flex;gap:8px"><button class="btn btn-p" onclick="pa_salvarMovimentar(${p.id})">✓ Registrar movimentação</button><button class="btn btn-g" onclick="pa_fm()">Cancelar</button></div>
+  </div>`, false);
+}
+async function pa_salvarMovimentar(pid) {
+  const g = id => document.getElementById(id);
+  const dest = g('tm-d').value;
+  if (!dest) { alert('Escolha o destino na lista.'); return; }
+  const ok = await pa_registrarTram(pid, dest, g('tm-dt').value, g('tm-o').value.trim(), g('tm-s').value);
+  if (!ok) return;
+  pa_fm();
+  toast(`Movimentação registrada em "${dest}"`);
+  pa_verDetalhe(pid);
+}
+
+// ════════════════════════════════════════════════════════════════
+// ETAPA 5 — Tela do admin para editar a lista de setores
+// ════════════════════════════════════════════════════════════════
+const pa_semTabelaDestinos = err => err && (err.code === '42P01' || /does not exist|schema cache|relation/i.test(err.message || ''));
+
+function pa_renderDestinos() {
+  if (!isAdmin()) { alert('⛔ Apenas o administrador pode editar os setores.'); navegarPara('painel'); return; }
+  const tb = document.getElementById('dst-tbody'), av = document.getElementById('dst-aviso');
+  if (!tb || !av) return;
+  const lista = pa_destinos.slice().sort((a, b) => (a.ordem - b.ordem) || a.nome.localeCompare(b.nome, 'pt-BR'));
+  if (!lista.length) {
+    av.innerHTML = 'Nenhum setor gravado no banco: o sistema está usando a lista padrão. ' +
+      '<button class="btn btn-p btn-xs" onclick="pa_semearDestinos()">Gravar a lista padrão no banco</button>';
+    tb.innerHTML = PA_DESTINOS_PADRAO.map(n => `<tr><td>${pa_escP(n)}</td><td>Padrão</td><td></td></tr>`).join('');
+    return;
+  }
+  av.innerHTML = '';
+  tb.innerHTML = lista.map(d => `<tr><td>${pa_escP(d.nome)}</td><td>${d.ativo ? '✅ Ativo' : '⏸️ Desativado'}</td>` +
+    `<td><button class="btn btn-g btn-xs" onclick="pa_alternarDestino(${d.id})">${d.ativo ? 'Desativar' : 'Reativar'}</button></td></tr>`).join('');
+}
+async function pa_semearDestinos() {
+  if (!isAdmin()) return;
+  const { data, error } = await _sb.from('pa_destinos').insert(PA_DESTINOS_PADRAO.map((n, i) => ({ nome: n, ativo: true, ordem: i + 1 }))).select();
+  if (error || !data) {
+    alert(pa_semTabelaDestinos(error) ? '⚠️ A tabela de setores ainda não existe. Rode o SQL das etapas 2 a 5 no Supabase.' : '⚠️ Não foi possível gravar: ' + (error?.message || 'erro desconhecido'));
+    return;
+  }
+  pa_destinos = data.map(rowToDestinoPa);
+  pa_auditar('CRIAR', { tabela: 'pa_destinos', id: 0, num: 'setores', detalhes: 'Lista padrão de setores gravada' });
+  pa_renderDestinos(); toast('Lista padrão gravada.');
+}
+async function pa_addDestino() {
+  if (!isAdmin()) return;
+  const inp = document.getElementById('dst-novo');
+  const nome = inp.value.trim();
+  if (!nome) { alert('Digite o nome do setor.'); return; }
+  const existentes = pa_destinos.length ? pa_destinos.map(d => d.nome) : PA_DESTINOS_PADRAO;
+  if (existentes.some(n => n.toLowerCase() === nome.toLowerCase())) { alert('Já existe um setor com esse nome.'); return; }
+  const ordem = pa_destinos.reduce((m, d) => Math.max(m, d.ordem || 0), 0) + 1;
+  // Se a tabela ainda está vazia, grava primeiro a lista padrão para o novo setor não "apagar" os outros.
+  if (!pa_destinos.length) {
+    const sem = await _sb.from('pa_destinos').insert(PA_DESTINOS_PADRAO.map((n, i) => ({ nome: n, ativo: true, ordem: i + 1 }))).select();
+    if (sem.error || !sem.data) {
+      alert(pa_semTabelaDestinos(sem.error) ? '⚠️ A tabela de setores ainda não existe. Rode o SQL das etapas 2 a 5 no Supabase.' : '⚠️ Não foi possível gravar: ' + (sem.error?.message || 'erro desconhecido'));
+      return;
+    }
+    pa_destinos = sem.data.map(rowToDestinoPa);
+  }
+  const { data, error } = await _sb.from('pa_destinos').insert({ nome, ativo: true, ordem: Math.max(ordem, pa_destinos.length + 1) }).select();
+  if (error || !data || !data[0]) { alert('⚠️ Não foi possível adicionar o setor: ' + (error?.message || 'erro desconhecido')); return; }
+  pa_destinos.push(rowToDestinoPa(data[0]));
+  pa_auditar('CRIAR', { tabela: 'pa_destinos', id: data[0].id, num: nome, detalhes: `Setor "${nome}" adicionado` });
+  inp.value = ''; pa_renderDestinos(); toast('Setor adicionado.');
+}
+async function pa_alternarDestino(id) {
+  if (!isAdmin()) return;
+  const d = pa_destinos.find(x => x.id === id); if (!d) return;
+  if (d.ativo && pa_destinos.filter(x => x.ativo).length <= 1) { alert('Mantenha ao menos um setor ativo.'); return; }
+  const r = await sbPatch('pa_destinos', id, { ativo: !d.ativo });
+  if (!r || !r[0]) { alert('⚠️ Não foi possível alterar o setor. Tente novamente.'); return; }
+  Object.assign(d, rowToDestinoPa(r[0]));
+  pa_auditar('EDITAR', { tabela: 'pa_destinos', id: d.id, num: d.nome, detalhes: `Setor "${d.nome}" ${d.ativo ? 'reativado' : 'desativado'}` });
+  pa_renderDestinos();
+}
+
+// ════════════════════════════════════════════════════════════════
+// ETAPA 4 — Consulta de CNPJ (BrasilAPI, dados da Receita Federal)
+// ════════════════════════════════════════════════════════════════
+let pa_cnpjTimer = null;
+
+function pa_cnpjValido(c) {
+  const d = String(c || '').replace(/\D/g, '');
+  if (d.length !== 14 || /^(\d)\1+$/.test(d)) return false;
+  const dv = (base, pesos) => { let s = 0; for (let i = 0; i < pesos.length; i++) s += parseInt(base[i]) * pesos[i]; const r = s % 11; return r < 2 ? 0 : 11 - r; };
+  const d1 = dv(d, [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
+  const d2 = dv(d, [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
+  return d1 === parseInt(d[12]) && d2 === parseInt(d[13]);
+}
+// Converte a resposta da BrasilAPI nos campos do formulário (tolera campos ausentes)
+function pa_mapearCnpjBrasilApi(j) {
+  const s = v => (v == null ? '' : String(v)).trim();
+  const tel = s(j.ddd_telefone_1 || j.telefone);
+  const dig = tel.replace(/\D/g, '');
+  let telefone = tel;
+  if (dig.length === 11) telefone = '(' + dig.slice(0, 2) + ') ' + dig.slice(2, 7) + '-' + dig.slice(7);
+  else if (dig.length === 10) telefone = '(' + dig.slice(0, 2) + ') ' + dig.slice(2, 6) + '-' + dig.slice(6);
+  const logr = [s(j.descricao_tipo_de_logradouro), s(j.logradouro)].filter(Boolean).join(' ');
+  const via = logr ? logr + (s(j.numero) ? ', ' + s(j.numero) : '') : '';
+  const cidade = [s(j.municipio), s(j.uf)].filter(Boolean).join(' - ');
+  const endereco = [via, s(j.complemento), s(j.bairro), cidade, s(j.cep) ? 'CEP ' + s(j.cep) : ''].filter(Boolean).join(', ');
+  return { nome: s(j.razao_social || j.nome), endereco, email: s(j.email).toLowerCase(), telefone, situacao: s(j.descricao_situacao_cadastral || j.situacao_cadastral) };
+}
+function pa_aoDigitarDocProt(el) {
+  pa_formatarCNPJouCPF(el);
+  clearTimeout(pa_cnpjTimer);
+  const msg = document.getElementById('pt-cnpj-msg');
+  if (document.getElementById('pt-tp').value === 'juridica' && el.value.replace(/\D/g, '').length === 14) pa_cnpjTimer = setTimeout(pa_buscarCnpjProt, 400);
+  else if (msg) msg.textContent = '';
+}
+async function pa_buscarCnpjProt() {
+  const msg = document.getElementById('pt-cnpj-msg');
+  const set = (t, cor) => { msg.textContent = t; msg.style.color = cor || '#6B6760'; };
+  if (document.getElementById('pt-tp').value !== 'juridica') { set('A consulta automática só existe para CNPJ.', '#b45309'); return; }
+  const dig = document.getElementById('pt-dc').value.replace(/\D/g, '');
+  if (dig.length !== 14) { set('Digite os 14 números do CNPJ.', '#b45309'); return; }
+  if (!pa_cnpjValido(dig)) { set('CNPJ inválido: confira os números.', '#b91c1c'); return; }
+  set('Consultando a Receita…');
+  const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timer = setTimeout(() => { if (ctrl) ctrl.abort(); }, 12000);
+  try {
+    const r = await fetch('https://brasilapi.com.br/api/cnpj/v1/' + dig, ctrl ? { signal: ctrl.signal } : {});
+    clearTimeout(timer);
+    if (r.status === 404) { set('CNPJ não encontrado na base da Receita. Preencha manualmente.', '#b45309'); return; }
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = pa_mapearCnpjBrasilApi(await r.json());
+    // só preenche o que ainda está vazio: nada que o servidor digitou é sobrescrito
+    const put = (id, v) => { const el = document.getElementById(id); if (v && !el.value.trim()) el.value = v; };
+    put('pt-nm', d.nome); put('pt-en', d.endereco); put('pt-em', d.email); put('pt-tl', d.telefone);
+    const alerta = d.situacao && !/ativa/i.test(d.situacao) ? ' ⚠️ Situação cadastral: ' + d.situacao + '.' : '';
+    set('✓ Dados da Receita preenchidos; confira e corrija se preciso.' + alerta, alerta ? '#b45309' : '#16a34a');
+  } catch (e) {
+    clearTimeout(timer);
+    set('Não foi possível consultar agora. Preencha manualmente.', '#b45309');
+  }
+}
 
 // ── Recalcula contadores sequenciais (chamado antes de criar processo/relatório) ──
 function pa_recalcularNumeros() {
@@ -2508,7 +3282,7 @@ function logout() {
   if (window._refreshIntervalA) { clearInterval(window._refreshIntervalA); window._refreshIntervalA = null; }
   if (window._refreshIntervalB) { clearInterval(window._refreshIntervalB); window._refreshIntervalB = null; }
   // Limpar dados PA em memória
-  pa_processos = []; pa_relatorios = []; pa_folhas = []; pa_intimacoes = []; pa_termos = [];
+  pa_processos = []; pa_relatorios = []; pa_folhas = []; pa_intimacoes = []; pa_termos = []; pa_protocolos = []; pa_destinos = [];
   // Mostrar login
   const app = document.getElementById('unified-app');
   const login = document.getElementById('loginScreen');
@@ -2523,6 +3297,8 @@ function logout() {
 // ── NAVEGAÇÃO UNIFICADA ───────────────────────────────────────────
 const TITULOS = {
   dashboard:'Dashboard', novoProtocolo:'Novo Protocolo', protocolos:'Consultar Protocolos',
+  protocolosPa:'Protocolos — ProcessAdmin', 'novo-protocoloPa':'Protocolo — ProcessAdmin',
+  destinosPa:'Setores de tramitação',
   relatorios:'Relatórios', configuracoes:'Configurações',
   painel:'ProcessAdmin — Painel', processos:'Processos Administrativos',
   detalhe:'Detalhe do Processo', 'novo-proc':'Novo Processo',
@@ -2545,7 +3321,7 @@ function navegarPara(destino, btn) {
   // Segurança extra: Auxiliar Administrativo não tem acesso ao Sistema B (ProcessAdmin)
   const TELAS_SISTEMA_B = ['painel','processos','tram','relatoriosPa','notificacoesPa','intimacoes',
     'usuariosPa','auditoria','backup','novo-proc','detalhe','folhas','nova-intimacao','despacho',
-    'relatorioInd','relatorioCol','novoRelInd','novoRelCol'];
+    'relatorioInd','relatorioCol','novoRelInd','novoRelCol','protocolosPa','novo-protocoloPa','destinosPa'];
   if (TELAS_SISTEMA_B.includes(destino) && usuarioLogado?.perfil === 'auxiliar_adm') {
     alert('⛔ Este perfil não tem acesso ao módulo de Processos Administrativos.');
     return;
@@ -2605,8 +3381,11 @@ function navegarPara(destino, btn) {
     relatorios:       () => renderRelatorios(),
     configuracoes:    () => renderConfiguracoes(),
     painel:           () => pa_renderPainel(),
-    processos:        () => { pa_renderProcs(); if(acts) acts.innerHTML = (isAdmin()||pa_perfis.find(p=>p.id===pa_usuarioAtual?.perfilId)?.perms?.processo)?'<button class="btn btn-p btn-sm" onclick="pa_initNovoProcesso();navegarPara(\'novo-proc\')">+ Novo processo</button>':''; },
+    processos:        () => { pa_renderProcs(); if(acts) acts.innerHTML = (isAdmin()||pa_perfis.find(p=>p.id===pa_usuarioAtual?.perfilId)?.perms?.processo)?'<button class="btn btn-p btn-sm" onclick="pa_novoProcessoManual()">+ Novo processo</button>':''; },
     tram:             () => pa_initTram(),
+    protocolosPa:     () => { pa_renderProtocolos(); if(acts && pa_podeProtocolar()) acts.innerHTML='<button class="btn btn-p btn-sm" onclick="pa_novoProtocolo()">+ Novo protocolo</button>'; },
+    'novo-protocoloPa': () => pa_initProtocolo(),
+    destinosPa:       () => pa_renderDestinos(),
     relatoriosPa:     () => { pa_renderRels(); if(acts) acts.innerHTML='<button class="btn btn-g btn-sm" onclick="navegarPara(\'novo-rel-ind\')">+ Relatório Individual</button><button class="btn btn-p btn-sm" onclick="navegarPara(\'novo-rel-col\')">+ Relatório Coletivo</button>'; },
     'novo-rel-ind':   () => pa_initRelInd(),
     'novo-rel-col':   () => pa_initRelCol(),
@@ -2657,6 +3436,8 @@ function buildUnifiedNav() {
   if (!ehAuxiliarAdm) {
     html += '<div class="nav-group-label">ProcessAdmin</div>';
     html += navBtn('painel','grid','Painel');
+    const canProt = admin || perf?.perms?.relatorio || perf?.perms?.despacho || perf?.perms?.processo;
+    if (canProt) html += navBtn('protocolosPa','doc','Protocolos');
     html += navBtn('processos','file','Processos');
     const canTram = admin || perf?.perms?.despacho || perf?.perms?.processo;
     if (canTram) html += navBtn('tram','arrow-right','Tramitação');
@@ -2668,6 +3449,7 @@ function buildUnifiedNav() {
   if (admin) {
     html += '<hr class="nav-sep">';
     html += navBtn('usuariosPa','users','Usuários');
+    html += navBtn('destinosPa','arrow-right','Setores');
     html += navBtn('auditoria','clock','Auditoria');
     html += navBtn('backup','download','Backup');
   }
@@ -3340,7 +4122,11 @@ async function salvarProtocolo() {
 const feriadosBase = [
   '2026-01-01','2026-04-03','2026-04-21','2026-05-01','2026-06-11',
   '2026-07-02','2026-09-07','2026-10-12','2026-11-02','2026-11-15',
-  '2026-11-20','2026-12-25'
+  '2026-11-20','2026-12-25',
+  // 2027: feriados fixos nacionais, Sexta-feira Santa, 2 de julho e Consciência Negra (mesmo critério de 2026).
+  // Corpus Christi e datas municipais de 2027: cadastrar na tela de Feriados.
+  '2027-01-01','2027-03-26','2027-04-21','2027-05-01','2027-07-02',
+  '2027-09-07','2027-10-12','2027-11-02','2027-11-15','2027-11-20','2027-12-25'
 ];
 
 function isFeriado(d) {
@@ -6250,7 +7036,8 @@ function pa_verDetalhe(id) {
   if(p.coletivo && p.empresas.length) {
     document.getElementById('det-empresas').innerHTML=`<div style="margin-top:10px"><div style="font-size:11px;font-weight:500;color:var(--pa-text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Empresas (${p.empresas.length})</div>${p.empresas.map((e,i)=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:6px 0;border-bottom:1px solid var(--pa-border)"><span><strong>${i+1}.</strong> ${e.nm} · ${e.doc}</span><span style="color:var(--pa-text2)">R$ ${e.va}</span></div>`).join('')}</div>`;
   } else document.getElementById('det-empresas').innerHTML='';
-  document.getElementById('det-tram').innerHTML=p.trams.map((t,i)=>`<div class="ti${i===p.trams.length-1?' cur':''}"><div class="ti-dest">${t.destino}</div><div class="ti-meta">${pa_fd(t.data)}${t.obs?' · '+t.obs:''}</div></div>`).join('');
+  document.getElementById('det-tram').innerHTML=p.trams.map((t,i)=>`<div class="ti${i===p.trams.length-1?' cur':''}"><div class="ti-dest">${t.destino}</div><div class="ti-meta">${pa_metaTram(t)}</div></div>`).join('');
+  { const _bt=document.getElementById('det-tram-btn'); if(_bt) _bt.innerHTML = pa_canEdit(p.autorId, p.autorLogin) ? `<button class="btn btn-p btn-xs" onclick="pa_abrirMovimentar(${p.id})">+ Movimentar</button>` : ''; }
   const pf=pa_folhas.filter(f=>f.pid===id);
   document.getElementById('det-folhas').innerHTML=pf.length?pf.map(f=>{
     const canEf = pa_canEdit(f.autorId, f.autorLogin);
@@ -6318,7 +7105,7 @@ function pa_verDetalhe(id) {
 
 // ── NOVO PROCESSO ──────────────────────────────────────────────────────────
 function pa_initNovoProcesso() {
-  pa_recalcularNumeros(); document.getElementById('np-num').value=String(pa_nextProcNum).padStart(4,'0')+'/'+new Date().getFullYear();
+  pa_recalcularNumeros(); document.getElementById('np-num').value=pa_numProcLivre(); document.getElementById('np-de').innerHTML=pa_optsDestino('',true);
   document.getElementById('np-dt').value=new Date().toISOString().slice(0,10);
   document.getElementById('np-at').value=pa_usuarioAtual?.nome||'';
   document.getElementById('np-ok').style.display='none';
@@ -6331,6 +7118,11 @@ function pa_toggleNpDoc() {
 function pa_cadProc() {
   const nm=document.getElementById('np-nm').value.trim(), as=document.getElementById('np-as').value.trim();
   if(!nm||!as){alert('Preencha nome e assunto.');return;}
+  if(!document.getElementById('np-de').value){alert('Escolha o destino inicial do processo na lista.');return;}
+  if(!parseInt(document.getElementById('np-form')?.dataset?.relId||'0')){
+    if(!isAdmin()){alert('⛔ Todo processo começa pelo protocolo: registre o protocolo, gere o relatório e abra o processo a partir dele.');return;}
+    if(!confirm('Este processo não está ligado a nenhum relatório/protocolo. Abrir mesmo assim, como exceção do administrador?')) return;
+  }
   const p={id:pa_nextProcId++,num:document.getElementById('np-num').value,nome:nm,tipo:document.getElementById('np-tp').value,doc:document.getElementById('np-dc').value,im:document.getElementById('np-im').value,atend:document.getElementById('np-at').value,assunto:as,desc:document.getElementById('np-ds').value,destino:document.getElementById('np-de').value||'Protocolo Geral',status:document.getElementById('np-st').value,data:document.getElementById('np-dt').value,autorId:pa_usuarioAtual.id,coletivo:false,empresas:[],trams:[{data:document.getElementById('np-dt').value,destino:document.getElementById('np-de').value||'Protocolo Geral',obs:'Abertura do processo'}]};
   pa_processos.push(p); pa_nextProcNum++;
   sbPost('pa_processos', {
@@ -6350,6 +7142,7 @@ function pa_cadProc() {
       // Persistir vínculo no Supabase
       sbPatch('pa_relatorios', rel.id, { proc_id: p.id })
         .catch(e => console.warn('Erro ao vincular relatório ao processo:', e));
+      pa_protAbrirProcesso(rel.id, p.id);
     }
     document.getElementById('np-form').dataset.relId='';
   }
@@ -6366,24 +7159,20 @@ function pa_initTram() {
   // A restrição de quem pode REGISTRAR continua em pa_regTram
   sel.innerHTML='<option value="">Selecione...</option>'+pa_processos.map(p=>`<option value="${p.id}">${p.num} — ${p.nome}</option>`).join('');
   document.getElementById('tr-dt').value=new Date().toISOString().slice(0,10);
+  document.getElementById('tr-d').innerHTML=pa_optsDestino('',true);
   pa_rht();
 }
 function pa_rht() {
   const pid=parseInt(document.getElementById('tr-p').value), c=document.getElementById('tram-h');
   if(!pid){c.innerHTML='<p style="color:var(--pa-text2);font-size:13px">Selecione um processo.</p>';return;}
   const p=pa_processos.find(x=>x.id===pid);
-  c.innerHTML=p?`<div class="tl">${p.trams.map((t,i)=>`<div class="ti${i===p.trams.length-1?' cur':''}"><div class="ti-dest">${t.destino}</div><div class="ti-meta">${pa_fd(t.data)}${t.obs?' · '+t.obs:''}</div></div>`).join('')}</div>`:'';
+  c.innerHTML=p?`<div class="tl">${p.trams.map((t,i)=>`<div class="ti${i===p.trams.length-1?' cur':''}"><div class="ti-dest">${t.destino}</div><div class="ti-meta">${pa_metaTram(t)}</div></div>`).join('')}</div>`:'';
 }
-function pa_regTram() {
-  const pid=parseInt(document.getElementById('tr-p').value), dest=document.getElementById('tr-d').value.trim(), data=document.getElementById('tr-dt').value;
+async function pa_regTram() {
+  const pid=parseInt(document.getElementById('tr-p').value), dest=document.getElementById('tr-d').value, data=document.getElementById('tr-dt').value;
   if(!pid||!dest||!data){alert('Preencha processo, destino e data.');return;}
-  const p=pa_processos.find(x=>x.id===pid);
-  if(!pa_canEdit(p.autorId)){alert('Você não tem permissão para tramitar este processo.');return;}
-  p.trams.push({data,destino:dest,obs:document.getElementById('tr-o').value.trim()});
-  p.destino=dest; p.status=document.getElementById('tr-s').value;
-  pa_auditar('TRAMITAR', {tabela:'pa_processos', id:p.id, num:p.num, detalhes:`Processo ${p.num} tramitado para ${dest}`});
-  sbPatch('pa_processos', p.id, {destino:p.destino, status:p.status, trams:p.trams})
-    .catch(e=>console.warn('Erro salvar tram:',e));
+  const ok = await pa_registrarTram(pid, dest, data, document.getElementById('tr-o').value.trim(), document.getElementById('tr-s').value);
+  if(!ok) return;
   document.getElementById('tr-d').value=''; document.getElementById('tr-o').value='';
   pa_rht(); toast(`Tramitação registrada em "${dest}"`);
 }
@@ -6678,10 +7467,12 @@ function pa_initRelInd() {
   pa_recalcularNumeros(); document.getElementById('ri-num').value=`REL-${String(pa_nextRelNum).padStart(4,'0')}/`+new Date().getFullYear();
   document.getElementById('ri-dt').value=new Date().toISOString().slice(0,10);
   document.getElementById('ri-fiscal').value=pa_usuarioAtual?.nome||'';
+  pa_popularProtRel('ri');
   const enc=document.getElementById('ri-enc');
   enc.innerHTML='<option value="">Selecione...</option>'+paUsuarios().filter(u=>u.id!==pa_usuarioAtual?.id&&u.ativo).map(u=>`<option value="${u.id}">${u.nome} — ${u.cargo || pa_perfilNome(u.perfilId)}</option>`).join('');
 }
-function pa_enviarRelInd() {
+async function pa_enviarRelInd() {
+  if(!pa_editRelId && !pa_protSelecionadoRel('ri')){alert('Selecione o protocolo deste relatório. Todo relatório começa por um protocolo (menu Protocolos).');return;}
   if(!pa_usuarioAtual){alert('Sessão expirada. Faça login novamente.');return;}
   const nm=document.getElementById('ri-nm').value.trim(), desc=document.getElementById('ri-desc').value.trim();
   const enc=document.getElementById('ri-enc').value;
@@ -6722,9 +7513,13 @@ function pa_enviarRelInd() {
       toast(`Relatório ${r.num} corrigido e reencaminhado!`);
     }
   } else {
+    const protSel = pa_protSelecionadoRel('ri');
+    if (!protSel) { alert('Selecione o protocolo deste relatório. Todo relatório começa por um protocolo (menu Protocolos).'); return; }
+    if (!(await pa_reivindicarProtocolo(protSel.id))) { alert('Este protocolo já foi usado ou encerrado. A lista foi atualizada; escolha outro.'); pa_popularProtRel('ri'); return; }
     const encUserInd = paUsuarios().find(u => u.id === parseInt(enc));
-    const r={id:pa_nextRelId++,num:`REL-${String(pa_nextRelNum).padStart(4,'0')}/${new Date().getFullYear()}`,tipo:'individual',autorId:pa_usuarioAtual.id,autorLogin:pa_usuarioAtual.login||'',fiscal:pa_usuarioAtual.nome,encParaId:parseInt(enc),encParaLogin:encUserInd?.login||'',data:document.getElementById('ri-dt').value,nm,doc:document.getElementById('ri-doc').value,im:'',trib:'',exercicio:'',vo:'',va:'',desc,conc:document.getElementById('ri-conc').value,status:'aguardando',despacho:null,procId:null,empresas:[],assinFiscal};
+    const r={id:pa_nextRelId++,num:pa_numRelDeProt(protSel),tipo:'individual',autorId:pa_usuarioAtual.id,autorLogin:pa_usuarioAtual.login||'',fiscal:pa_usuarioAtual.nome,encParaId:parseInt(enc),encParaLogin:encUserInd?.login||'',data:document.getElementById('ri-dt').value,nm,doc:document.getElementById('ri-doc').value,im:'',trib:'',exercicio:'',vo:'',va:'',desc,conc:document.getElementById('ri-conc').value,status:'aguardando',despacho:null,procId:null,empresas:[],assinFiscal};
     pa_relatorios.push(r); pa_nextRelNum++;
+    pa_ligarProtocoloRel(protSel.id, r.id);
     sbPost('pa_relatorios', {
       id:r.id, numero:r.num, tipo:r.tipo,
       autor_id:r.autorId||null, autor_login:r.autorLogin||'',
@@ -6734,7 +7529,7 @@ function pa_enviarRelInd() {
       descricao:r.desc||'', conclusao:r.conc||'', status:r.status,
       visto:false, despacho:null,
       empresas:r.empresas||[], assinfiscal:r.assinFiscal||null
-    }).then(res => { if(!res) console.warn('Falha ao salvar relatório individual no Supabase'); })
+    }).then(res => { if(!res) { console.warn('Falha ao salvar relatório individual no Supabase'); pa_desfazerProtocoloRel(protSel.id, r.id); } })
       .catch(e=>console.warn('Erro salvar relatorio:', e));
     pa_auditar('CRIAR', {tabela:'pa_relatorios', id:r.id, num:r.num, detalhes:`Relatório ${r.num} criado - Fiscal: ${r.fiscal}, Interessado: ${r.nm}`});
     // Notificar o destinatário (sino)
@@ -6757,6 +7552,7 @@ function pa_initRelCol() {
   pa_recalcularNumeros(); document.getElementById('rc-num').value=`REL-${String(pa_nextRelNum).padStart(4,'0')}/`+new Date().getFullYear();
   document.getElementById('rc-dt').value=new Date().toISOString().slice(0,10);
   document.getElementById('rc-fiscal').value=pa_usuarioAtual?.nome||'';
+  pa_popularProtRel('rc');
   const enc=document.getElementById('rc-enc');
   enc.innerHTML='<option value="">Selecione...</option>'+paUsuarios().filter(u=>u.id!==pa_usuarioAtual?.id&&u.ativo).map(u=>`<option value="${u.id}">${u.nome} — ${u.cargo || pa_perfilNome(u.perfilId)}</option>`).join('');
   pa_numEmpresas=0;
@@ -6793,7 +7589,8 @@ function pa_atualizaResumo() {
   if(rows.length) { r.style.display='block'; r.textContent=`${rows.length} empresa(s) · Total atualizado: R$ ${total.toFixed(2).replace('.',',')} `; }
   else r.style.display='none';
 }
-function pa_enviarRelCol() {
+async function pa_enviarRelCol() {
+  if(!pa_editRelId && !pa_protSelecionadoRel('rc')){alert('Selecione o protocolo deste relatório. Todo relatório começa por um protocolo (menu Protocolos).');return;}
   const desc=document.getElementById('rc-desc').value.trim(), enc=document.getElementById('rc-enc').value;
   if(!desc||!enc){alert('Preencha a descrição e o destinatário.');return;}
   const empresas=[];
@@ -6841,9 +7638,13 @@ function pa_enviarRelCol() {
       toast(`Relatório coletivo ${r.num} corrigido e reencaminhado!`);
     }
   } else {
+    const protSel = pa_protSelecionadoRel('rc');
+    if (!protSel) { alert('Selecione o protocolo deste relatório. Todo relatório começa por um protocolo (menu Protocolos).'); return; }
+    if (!(await pa_reivindicarProtocolo(protSel.id))) { alert('Este protocolo já foi usado ou encerrado. A lista foi atualizada; escolha outro.'); pa_popularProtRel('rc'); return; }
     const encUserCol = paUsuarios().find(u => u.id === parseInt(enc));
-    const r={id:pa_nextRelId++,num:`REL-${String(pa_nextRelNum).padStart(4,'0')}/${new Date().getFullYear()}`,tipo:'coletivo',autorId:pa_usuarioAtual.id,autorLogin:pa_usuarioAtual.login||'',fiscal:pa_usuarioAtual.nome,encParaId:parseInt(enc),encParaLogin:encUserCol?.login||'',data:document.getElementById('rc-dt').value,nm:`Coletivo${rcInteressado?' — '+rcInteressado:''}`,doc:rcCnpj,im:'',trib:'',interessado:rcInteressado,exercicio:'',vo:'',va:'',desc,conc:document.getElementById('rc-conc').value,status:'aguardando',despacho:null,procId:null,empresas,assinFiscal};
+    const r={id:pa_nextRelId++,num:pa_numRelDeProt(protSel),tipo:'coletivo',autorId:pa_usuarioAtual.id,autorLogin:pa_usuarioAtual.login||'',fiscal:pa_usuarioAtual.nome,encParaId:parseInt(enc),encParaLogin:encUserCol?.login||'',data:document.getElementById('rc-dt').value,nm:`Coletivo${rcInteressado?' — '+rcInteressado:''}`,doc:rcCnpj,im:'',trib:'',interessado:rcInteressado,exercicio:'',vo:'',va:'',desc,conc:document.getElementById('rc-conc').value,status:'aguardando',despacho:null,procId:null,empresas,assinFiscal};
     pa_relatorios.push(r); pa_nextRelNum++;
+    pa_ligarProtocoloRel(protSel.id, r.id);
     sbPost('pa_relatorios', {
       id:r.id, numero:r.num, tipo:r.tipo,
       autor_id:r.autorId||null, autor_login:r.autorLogin||'',
@@ -6853,7 +7654,7 @@ function pa_enviarRelCol() {
       descricao:r.desc||'', conclusao:r.conc||'', status:r.status,
       visto:false, despacho:null,
       empresas:r.empresas||[], assinfiscal:r.assinFiscal||null
-    }).then(res => { if(!res) console.warn('Falha ao salvar relatório coletivo no Supabase'); })
+    }).then(res => { if(!res) { console.warn('Falha ao salvar relatório coletivo no Supabase'); pa_desfazerProtocoloRel(protSel.id, r.id); } })
       .catch(e=>console.warn('Erro salvar relatorio coletivo:', e));
     pa_auditar('CRIAR', {tabela:'pa_relatorios', id:r.id, num:r.num, detalhes:`Relatório coletivo ${r.num} criado - Fiscal: ${r.fiscal}, ${r.empresas?.length||0} empresa(s)`});
     // Notificar o destinatário (sino)
@@ -7337,6 +8138,7 @@ function pa_despachar(decisao) {
     null,
     [r.autorLogin]
   );
+  if (decisao === 'rejeitado') pa_encerrarProtocoloDeRel(r.id);
   sbPatch('pa_relatorios', r.id, {status:r.status, despacho:r.despacho, visto:false})
     .catch(e=>console.warn('Erro salvar despacho:',e));
   toast(decisao==='autorizado'?'Despacho emitido — processo autorizado!':'Despacho emitido — não autorizado.');
@@ -7400,6 +8202,8 @@ function pa_abrirProcDeRel(rid) {
     document.getElementById('np-tp').value = r.tipo === 'coletivo' ? 'juridica' : 'fisica';
     document.getElementById('np-at').value = pa_usuarioAtual?.nome||'';
     document.getElementById('np-form').dataset.relId = rid;
+    const _pr = pa_protocolos.find(x => x.relId === rid);
+    if (_pr) { document.getElementById('np-num').value = pa_numProcDeProt(_pr); document.getElementById('np-as').value = _pr.assunto; if (_pr.im) document.getElementById('np-im').value = _pr.im; }
     toast('Dados do interessado preenchidos. Informe o assunto e a descrição do processo.');
   }, 100);
 }
@@ -7409,7 +8213,7 @@ function pa_abrirRelParaCorrigir(rid) {
   if(r.tipo === 'coletivo') {
     navegarPara('novo-rel-col');
     setTimeout(()=>{
-      pa_editRelId = rid;
+      pa_editRelId = rid; pa_protEsconderRel();
       document.getElementById('rc-num').value = r.num;
       document.getElementById('rc-dt').value = r.data;
       document.getElementById('rc-interessado').value = r.interessado || r.nm || '';
@@ -7441,7 +8245,7 @@ function pa_abrirRelParaCorrigir(rid) {
   } else {
     navegarPara('novo-rel-ind');
     setTimeout(()=>{
-      pa_editRelId = rid;
+      pa_editRelId = rid; pa_protEsconderRel();
       document.getElementById('ri-num').value = r.num;
       document.getElementById('ri-nm').value = r.nm;
       document.getElementById('ri-doc').value = r.doc;
@@ -7678,7 +8482,7 @@ function pa_editarProcesso(id) {
       <div><label style="font-size:12px;color:var(--pa-text2)">ASSUNTO</label><input id="ep-as" type="text" value="${(p.assunto||'').replace(/"/g,'&quot;')}" style="width:100%"></div>
       <div><label style="font-size:12px;color:var(--pa-text2)">DESCRIÇÃO</label><textarea id="ep-ds" rows="3" style="width:100%">${p.desc||''}</textarea></div>
       <div style="display:flex;gap:10px">
-        <div style="flex:1"><label style="font-size:12px;color:var(--pa-text2)">DESTINO</label><input id="ep-de" type="text" value="${(p.destino||'').replace(/"/g,'&quot;')}" style="width:100%"></div>
+        <div style="flex:1"><label style="font-size:12px;color:var(--pa-text2)">DESTINO</label><select id="ep-de" style="width:100%">${pa_optsDestino(p.destino||'', !p.destino)}</select></div>
         <div style="flex:1"><label style="font-size:12px;color:var(--pa-text2)">STATUS</label><select id="ep-st" style="width:100%"><option value="em-andamento"${p.status==='em-andamento'?' selected':''}>Em andamento</option><option value="pendente"${p.status==='pendente'?' selected':''}>Pendente</option><option value="concluido"${p.status==='concluido'?' selected':''}>Concluído</option><option value="arquivado"${p.status==='arquivado'?' selected':''}>Arquivado</option></select></div>
       </div>
       <button class="btn btn-p" onclick="pa_salvarEdicaoProcesso(${p.id})">💾 Salvar alterações</button>
@@ -7977,12 +8781,14 @@ async function pa_exportarBackup() {
       if (!r.error) anexosB = r.data || [];
     } catch(e) { console.warn('Anexos não disponíveis:', e); }
 
-    const [procs, rels, folhas, intimacoes, usuariosRows] = await Promise.all([
+    const [procs, rels, folhas, intimacoes, usuariosRows, protocolosRows, destinosRows] = await Promise.all([
       sbGet('pa_processos', 'select=*&limit=10000'),
       sbGet('pa_relatorios', 'select=*&limit=10000'),
       sbGet('pa_folhas', 'select=*&limit=10000'),
       sbGet('pa_intimacoes', 'select=*&limit=10000'),
-      sbGet('usuarios', 'select=*&limit=1000')
+      sbGet('usuarios', 'select=*&limit=1000'),
+      sbGet('pa_protocolos', 'select=*&limit=10000'),
+      sbGet('pa_destinos', 'select=*&limit=1000')
     ]);
     const dados = {
       versao: '6.1',
@@ -7993,7 +8799,7 @@ async function pa_exportarBackup() {
       pa_nextProcId, pa_nextProcNum, pa_nextRelId, pa_nextRelNum,
       pa_nextFolhaId, pa_nextPerfId, pa_nextTribId,
       pa_perfis, pa_tributos,
-      tabelas: { pa_processos: procs||[], pa_relatorios: rels||[], pa_folhas: folhas||[], pa_intimacoes: intimacoes||[], usuarios: usuariosRows||[], anexos: anexosB }
+      tabelas: { pa_processos: procs||[], pa_relatorios: rels||[], pa_folhas: folhas||[], pa_intimacoes: intimacoes||[], usuarios: usuariosRows||[], pa_protocolos: protocolosRows||[], pa_destinos: destinosRows||[], anexos: anexosB }
     };
     const json = JSON.stringify(dados, null, 2);
     const blob = new Blob([json], {type:'application/json'});
@@ -8069,6 +8875,8 @@ async function pa_importarBackup(input) {
       for(const row of (t.pa_relatorios||[])){ await tentarInserir('pa_relatorios', row); }
       for(const row of (t.pa_folhas||[]))    { await tentarInserir('pa_folhas', row); }
       for(const row of (t.pa_intimacoes||[])){ await tentarInserir('pa_intimacoes', row); }
+      for(const row of (t.pa_protocolos||[])){ await tentarInserir('pa_protocolos', row); }
+      for(const row of (t.pa_destinos||[])){ await tentarInserir('pa_destinos', row); }
 
       // Atualizar dados locais (perfis e tributos ficam só em memória)
       if(dados.pa_perfis) pa_perfis = dados.pa_perfis;
