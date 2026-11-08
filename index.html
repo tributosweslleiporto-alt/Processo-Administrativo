@@ -2448,7 +2448,7 @@ function rowToTermo(row) {
 }
 
 async function carregarDadosPA() {
-  const [procs, rels, folhas, ints, termos, prots, dests] = await Promise.all([
+  const [procs, rels, folhas, ints, termos, prots, dests, pars] = await Promise.all([
     sbGet('pa_processos','select=*&limit=500'),
     sbGet('pa_relatorios','select=*&limit=500'),
     sbGet('pa_folhas','select=*&limit=1000'),
@@ -2456,6 +2456,7 @@ async function carregarDadosPA() {
     sbGet('pa_termos_da','select=*&limit=500'),
     sbGet('pa_protocolos','select=*&limit=3000'),
     sbGet('pa_destinos','select=*&limit=500'),
+    sbGet('pa_pareceres','select=*&limit=3000'),
   ]);
   pa_processos   = (procs   || []).map(rowToProcesso);
   // (auto-reparo automático removido — vínculo agora é criado apenas via ação manual do usuário)
@@ -2465,6 +2466,7 @@ async function carregarDadosPA() {
   pa_termos      = (termos  || []).map(rowToTermo);
   pa_protocolos  = (prots   || []).map(rowToProtocoloPa);
   pa_destinos    = (dests   || []).map(rowToDestinoPa);
+  pa_pareceres   = (pars    || []).map(rowToParecerPa);
   pa_nextProcId  = pa_processos.length  ? Math.max(...pa_processos.map(p=>p.id)) + 1 : 1;
   pa_nextRelId   = pa_relatorios.length ? Math.max(...pa_relatorios.map(p=>p.id)) + 1 : 1;
   pa_nextFolhaId = pa_folhas.length     ? Math.max(...pa_folhas.map(p=>p.id)) + 1 : 1;
@@ -3282,7 +3284,7 @@ function logout() {
   if (window._refreshIntervalA) { clearInterval(window._refreshIntervalA); window._refreshIntervalA = null; }
   if (window._refreshIntervalB) { clearInterval(window._refreshIntervalB); window._refreshIntervalB = null; }
   // Limpar dados PA em memória
-  pa_processos = []; pa_relatorios = []; pa_folhas = []; pa_intimacoes = []; pa_termos = []; pa_protocolos = []; pa_destinos = [];
+  pa_processos = []; pa_relatorios = []; pa_folhas = []; pa_intimacoes = []; pa_termos = []; pa_protocolos = []; pa_destinos = []; pa_pareceres = [];
   // Mostrar login
   const app = document.getElementById('unified-app');
   const login = document.getElementById('loginScreen');
@@ -7072,6 +7074,7 @@ function pa_verDetalhe(id) {
     <button class="btn btn-g btn-sm" onclick="pa_impCapa()">⎙ Capa</button>
     <button class="btn btn-g btn-sm" onclick="pa_imprimirProcessoCompleto(${p.id})" title="Imprimir capa + relatório + folhas + termo + intimações">🖨️ Imprimir Tudo</button>
     ${relBtn}
+    ${pa_btnParecerDet(p)}
     ${ativo ? `<button class="btn btn-g btn-sm" onclick="pa_novaFolhaDet()">+ Folha</button>` : ''}
     ${ativo ? `<button class="btn btn-g btn-sm" onclick="pa_novaIntimacaoDet('fisica')">+ Intimação Pessoa Física</button>` : ''}
     ${ativo ? `<button class="btn btn-p btn-sm" onclick="pa_novaIntimacaoDet('juridica')">+ Intimação Pessoa Jurídica</button>` : ''}
@@ -8530,7 +8533,7 @@ async function pa_excluirProcesso(id) {
   const folhasVinc = pa_folhas.filter(f=>f.pid===id).length;
   const intimVinc = pa_intimacoes.filter(i=>i.procId===id).length;
   const relsVinc = pa_relatorios.filter(r=>r.procId===id).length;
-  if(!confirm(`⚠️ EXCLUIR processo ${p.num} - ${p.nome}?\n\n• ${folhasVinc} folha(s) também serão excluídas\n• ${intimVinc} intimação(ões) também serão excluídas\n• ${relsVinc} relatório(s) terão o vínculo removido\n\nEsta ação NÃO pode ser desfeita.`)) return;
+  if(!confirm(`⚠️ EXCLUIR processo ${p.num} - ${p.nome}?\n\n• ${folhasVinc} folha(s) também serão excluídas\n• ${intimVinc} intimação(ões) também serão excluídas\n• ${relsVinc} relatório(s) terão o vínculo removido\n\n${pa_parecerDoProc(id)?'• O parecer técnico fiscal também será excluído\n':''}Esta ação NÃO pode ser desfeita.`)) return;
   try {
     showLoading && showLoading('Excluindo processo...');
     // Apagar folhas
@@ -8540,6 +8543,10 @@ async function pa_excluirProcesso(id) {
     // Apagar intimações
     for(const i of pa_intimacoes.filter(i=>i.procId===id)) {
       await sbDelete('pa_intimacoes', i.id);
+    }
+    // Apagar parecer técnico fiscal
+    for(const pr of pa_pareceres.filter(x=>x.procId===id)) {
+      await sbDelete('pa_pareceres', pr.id);
     }
     // Desvincular relatórios
     for(const r of pa_relatorios.filter(r=>r.procId===id)) {
@@ -8552,6 +8559,7 @@ async function pa_excluirProcesso(id) {
     // Atualizar memória
     pa_folhas = pa_folhas.filter(f=>f.pid!==id);
     pa_intimacoes = pa_intimacoes.filter(i=>i.procId!==id);
+    pa_pareceres = pa_pareceres.filter(x=>x.procId!==id);
     pa_processos = pa_processos.filter(x=>x.id!==id);
     hideLoading && hideLoading();
     toast(`Processo ${p.num} excluído.`);
@@ -8782,14 +8790,15 @@ async function pa_exportarBackup() {
       if (!r.error) anexosB = r.data || [];
     } catch(e) { console.warn('Anexos não disponíveis:', e); }
 
-    const [procs, rels, folhas, intimacoes, usuariosRows, protocolosRows, destinosRows] = await Promise.all([
+    const [procs, rels, folhas, intimacoes, usuariosRows, protocolosRows, destinosRows, pareceresRows] = await Promise.all([
       sbGet('pa_processos', 'select=*&limit=10000'),
       sbGet('pa_relatorios', 'select=*&limit=10000'),
       sbGet('pa_folhas', 'select=*&limit=10000'),
       sbGet('pa_intimacoes', 'select=*&limit=10000'),
       sbGet('usuarios', 'select=*&limit=1000'),
       sbGet('pa_protocolos', 'select=*&limit=10000'),
-      sbGet('pa_destinos', 'select=*&limit=1000')
+      sbGet('pa_destinos', 'select=*&limit=1000'),
+      sbGet('pa_pareceres', 'select=*&limit=10000')
     ]);
     const dados = {
       versao: '6.1',
@@ -8800,7 +8809,7 @@ async function pa_exportarBackup() {
       pa_nextProcId, pa_nextProcNum, pa_nextRelId, pa_nextRelNum,
       pa_nextFolhaId, pa_nextPerfId, pa_nextTribId,
       pa_perfis, pa_tributos,
-      tabelas: { pa_processos: procs||[], pa_relatorios: rels||[], pa_folhas: folhas||[], pa_intimacoes: intimacoes||[], usuarios: usuariosRows||[], pa_protocolos: protocolosRows||[], pa_destinos: destinosRows||[], anexos: anexosB }
+      tabelas: { pa_processos: procs||[], pa_relatorios: rels||[], pa_folhas: folhas||[], pa_intimacoes: intimacoes||[], usuarios: usuariosRows||[], pa_protocolos: protocolosRows||[], pa_destinos: destinosRows||[], pa_pareceres: pareceresRows||[], anexos: anexosB }
     };
     const json = JSON.stringify(dados, null, 2);
     const blob = new Blob([json], {type:'application/json'});
@@ -8878,6 +8887,7 @@ async function pa_importarBackup(input) {
       for(const row of (t.pa_intimacoes||[])){ await tentarInserir('pa_intimacoes', row); }
       for(const row of (t.pa_protocolos||[])){ await tentarInserir('pa_protocolos', row); }
       for(const row of (t.pa_destinos||[])){ await tentarInserir('pa_destinos', row); }
+      for(const row of (t.pa_pareceres||[])){ await tentarInserir('pa_pareceres', row); }
 
       // Atualizar dados locais (perfis e tributos ficam só em memória)
       if(dados.pa_perfis) pa_perfis = dados.pa_perfis;
@@ -8959,6 +8969,145 @@ function pa_prevFolhaById(fid) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// ETAPA 6 — Parecer técnico fiscal dentro do processo (Sistema B)
+// Um parecer por processo, mesmo número do processo (PAR-NNNN/AAAA),
+// uma só assinatura (a de quem fez). Tabela própria: pa_pareceres.
+// ═══════════════════════════════════════════════════════════════
+const PA_PARECER_TEXTO_PADRAO = 'Pelo exposto, após análise do caso concreto à luz da legislação tributária municipal vigente (LC n° 5, de 26/12/2025), encaminho o presente processo com a manifestação técnica fundamentada para as providências cabíveis à autoridade competente.';
+let pa_pareceres = [];
+
+function rowToParecerPa(r) {
+  return {
+    id: r.id, procId: r.proc_id, num: r.numero || '',
+    analise: r.analise || '', conclusao: r.conclusao || '',
+    autorNome: r.autor_nome || '', autorLogin: r.autor_login || '', autorMatricula: r.autor_matricula || '',
+    dataHora: r.data_hora || '', hash: r.assin_hash || '',
+    editadoPor: r.editado_por || '', editadoEm: r.editado_em || ''
+  };
+}
+function pa_parecerDoProc(procId) { return pa_pareceres.find(x => x.procId === procId) || null; }
+function pa_numParecer(p) { return 'PAR-' + (p.num || ''); }
+function pa_parecerData(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso); if (isNaN(d)) return '—';
+  return d.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+}
+function pa_parecerHora(iso) {
+  const d = new Date(iso); if (isNaN(d)) return '—';
+  return d.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' });
+}
+function pa_parecerProcAtivo(p) { return ['em-andamento', 'pendente'].includes(p.status); }
+// Quem pode criar: processo em andamento (ou admin). Auxiliar administrativo nunca.
+function pa_podeCriarParecer(p) {
+  if (!p) return false;
+  let perfil = ''; try { perfil = pa_perfilNomeAtual(); } catch (e) {}
+  if (perfil === 'auxiliar_adm' && !isAdmin()) return false;
+  return pa_parecerProcAtivo(p) || isAdmin();
+}
+// Quem pode editar: quem fez e o admin (e, fora do admin, só com o processo em andamento)
+function pa_podeEditarParecer(par, p) {
+  if (!par || !p) return false;
+  if (isAdmin()) return true;
+  return par.autorLogin && pa_usuarioAtual && par.autorLogin === pa_usuarioAtual.login && pa_parecerProcAtivo(p);
+}
+function pa_btnParecerDet(p) {
+  const par = pa_parecerDoProc(p.id);
+  if (par) return `<button class="btn btn-g btn-sm" onclick="pa_verParecer(${p.id})">📄 Ver parecer</button>`;
+  return pa_podeCriarParecer(p) ? `<button class="btn btn-g btn-sm" onclick="pa_abrirParecer(${p.id})">+ Parecer técnico fiscal</button>` : '';
+}
+
+function pa_abrirParecer(procId) {
+  const p = pa_processos.find(x => x.id === procId); if (!p) return;
+  const par = pa_parecerDoProc(procId);
+  if (par) { if (!pa_podeEditarParecer(par, p)) { alert('⛔ Só quem fez o parecer ou o administrador pode editá-lo.'); return; } }
+  else if (!pa_podeCriarParecer(p)) { alert('⛔ Não é possível registrar parecer neste processo (encerrado ou sem permissão).'); return; }
+  const doc = p.tipo === 'fisica' ? 'CPF' : 'CNPJ';
+  const resp = par ? par.autorNome : (pa_usuarioAtual?.nome || '');
+  const dataTxt = par ? pa_parecerData(par.dataHora) : new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+  const ro = (rot, val, full) => `<div style="${full ? 'grid-column:1/-1' : ''}"><label style="font-size:11px;font-weight:600;color:var(--pa-text2)">${rot}</label><input type="text" readonly value="${pa_escP(val)}" style="width:100%"></div>`;
+  const h = `
+    <div style="font-size:12px;font-weight:700;margin-bottom:6px">I — IDENTIFICAÇÃO <span style="font-weight:400;color:var(--pa-text2)">(preenchida pelo sistema)</span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      ${ro('Parecer Nº', pa_numParecer(p))}${ro('Data', dataTxt)}
+      ${ro('Requerente', p.nome || '', true)}
+      ${ro(doc, p.doc || '—')}${ro('Inscrição municipal', p.im || '—')}
+      ${ro('Assunto', p.assunto || '', true)}
+      ${ro('Servidor responsável', resp, true)}
+    </div>
+    <div style="font-size:12px;font-weight:700;margin-bottom:4px">II — ANÁLISE</div>
+    <textarea id="par-an" rows="9" style="width:100%;margin-bottom:14px" placeholder="Análise do caso concreto...">${pa_escP(par ? par.analise : '')}</textarea>
+    <div style="font-size:12px;font-weight:700;margin-bottom:4px">III — CONCLUSÃO</div>
+    <textarea id="par-co" rows="7" style="width:100%">${pa_escP(par ? par.conclusao : PA_PARECER_TEXTO_PADRAO)}</textarea>
+    <div style="font-size:11px;color:var(--pa-text2);margin-top:4px">O texto da conclusão vem preenchido e pode ser editado.</div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+      <button class="btn btn-g" onclick="pa_fm()">Cancelar</button>
+      <button class="btn btn-p" id="par-btn" onclick="pa_salvarParecer(${p.id})">${par ? 'Salvar alterações' : 'Salvar parecer'}</button>
+    </div>`;
+  pa_openModal((par ? 'Editar parecer técnico fiscal — ' : 'Parecer técnico fiscal — ') + p.num, h, false);
+}
+
+async function pa_salvarParecer(procId) {
+  const p = pa_processos.find(x => x.id === procId); if (!p) return;
+  const par = pa_parecerDoProc(procId);
+  if (par ? !pa_podeEditarParecer(par, p) : !pa_podeCriarParecer(p)) { alert('⛔ Sem permissão para salvar este parecer.'); return; }
+  const analise = (document.getElementById('par-an').value || '').trim();
+  const conclusao = (document.getElementById('par-co').value || '').trim();
+  if (!analise) { alert('Escreva a análise.'); return; }
+  if (!conclusao) { alert('Escreva a conclusão.'); return; }
+  const btn = document.getElementById('par-btn'); if (btn) btn.disabled = true;
+  const agora = new Date().toISOString();
+  if (par) {
+    const r = await sbPatch('pa_pareceres', par.id, { analise, conclusao, editado_por: pa_usuarioAtual?.nome || '', editado_em: agora });
+    if (!r) { if (btn) btn.disabled = false; alert('Não foi possível salvar o parecer. Tente novamente.'); return; }
+    par.analise = analise; par.conclusao = conclusao; par.editadoPor = pa_usuarioAtual?.nome || ''; par.editadoEm = agora;
+    pa_auditar('EDITAR', { tabela: 'pa_pareceres', id: par.id, num: par.num, detalhes: `Parecer técnico fiscal ${par.num} editado` });
+    toast('Parecer atualizado!');
+  } else {
+    const numero = pa_numParecer(p);
+    const hash = pa_hashProt(`${numero}|${pa_usuarioAtual?.login || ''}|${agora}`);
+    const r = await sbPost('pa_pareceres', {
+      proc_id: p.id, numero, analise, conclusao,
+      autor_nome: pa_usuarioAtual?.nome || '', autor_login: pa_usuarioAtual?.login || '',
+      autor_matricula: pa_usuarioAtual?.matricula || '', data_hora: agora, assin_hash: hash
+    });
+    if (!r || !r[0]) { if (btn) btn.disabled = false; alert('Não foi possível salvar o parecer (já existe um para este processo, ou a tabela não foi criada). Atualize a página e tente novamente.'); return; }
+    pa_pareceres.push(rowToParecerPa(r[0]));
+    pa_auditar('CRIAR', { tabela: 'pa_pareceres', id: r[0].id, num: numero, detalhes: `Parecer técnico fiscal ${numero} registrado no processo ${p.num}` });
+    toast('Parecer registrado!');
+  }
+  pa_fm();
+  pa_verDetalhe(p.id);
+  pa_verParecer(p.id);
+}
+
+function pa_gerarHtmlParecer(par, p) {
+  const doc = p.tipo === 'fisica' ? 'CPF' : 'CNPJ';
+  const mat = par.autorMatricula ? `<div style="font-size:11px;color:#555;font-weight:600;margin-top:2px">${/^decreto/i.test(par.autorMatricula) ? '' : 'Matrícula: '}${pa_escP(par.autorMatricula)}</div>` : '';
+  return `<div class="doc-sheet"><div class="doc-hdr"><div class="doc-brasao"><img src="${BRASAO_SRC}" style="width:52px;height:52px;object-fit:contain"></div><div class="doc-hdr-c"><div class="doc-inst">Prefeitura Municipal de Caetité</div><div class="doc-sub">Estado da Bahia</div><div class="doc-sub" style="font-size:10px;color:#444;margin-top:2px">Secretaria Municipal de Administração, Planejamento e Finanças — Setor de Tributos</div></div><div style="width:48px;text-align:right"><div style="font-size:10px">Processo Nº<br><strong>${pa_escP(p.num)}</strong></div></div></div>`
+    + `<div class="doc-bar">Parecer Técnico Fiscal Nº ${pa_escP(p.num)}</div>`
+    + `<div style="font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:6px">I — Identificação</div>`
+    + `<div class="doc-row"><span class="doc-lbl">Requerente:</span><span class="doc-val">${pa_escP(p.nome)}</span></div>`
+    + `<div class="doc-row"><span class="doc-lbl">${doc}:</span><span class="doc-val">${pa_escP(p.doc || '—')}</span><span class="doc-lbl" style="margin-left:12px">Inscrição Municipal:</span><span class="doc-val">${pa_escP(p.im || '—')}</span></div>`
+    + `<div class="doc-row"><span class="doc-lbl">Assunto:</span><span class="doc-val">${pa_escP(p.assunto || '')}</span></div>`
+    + `<div class="doc-row"><span class="doc-lbl">Processo Nº:</span><span class="doc-val">${pa_escP(p.num)}</span><span class="doc-lbl" style="margin-left:12px">Data:</span><span class="doc-val">${pa_parecerData(par.dataHora)}</span></div>`
+    + `<div class="doc-row"><span class="doc-lbl">Servidor responsável:</span><span class="doc-val">${pa_escP(par.autorNome)}</span></div>`
+    + `<hr class="doc-hr"><div style="font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:5px">II — Análise</div><div class="doc-body">${pa_escP(par.analise)}</div>`
+    + `<hr class="doc-hr"><div style="font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:5px">III — Conclusão</div><div class="doc-body">${pa_escP(par.conclusao)}</div>`
+    + `<div style="margin-top:24px;display:flex;justify-content:center"><div style="background:#f0f7f4;border:1px solid #c5dfd0;border-radius:6px;padding:10px 14px;min-width:240px;text-align:center"><div style="font-size:10px;font-weight:bold;margin-bottom:4px;letter-spacing:.5px;color:#2a4538">✅ ASSINATURA ELETRÔNICA</div><div style="font-size:13px;font-weight:600;color:#222">${pa_escP(par.autorNome)}</div>${mat}<div style="font-size:10px;color:#777;margin-top:6px">${pa_parecerData(par.dataHora)} às ${pa_parecerHora(par.dataHora)}</div><div style="font-size:9px;color:#888;margin-top:2px;font-family:monospace">Cód: ${pa_escP(par.hash || '—')}</div></div></div></div>`;
+}
+
+function pa_verParecer(procId) {
+  const p = pa_processos.find(x => x.id === procId); if (!p) return;
+  const par = pa_parecerDoProc(procId);
+  if (!par) { toast('Este processo ainda não tem parecer.'); return; }
+  pa_openModal('Parecer técnico fiscal — ' + p.num, pa_gerarHtmlParecer(par, p));
+  if (pa_podeEditarParecer(par, p)) {
+    const a = document.getElementById('pa-m-title-actions');
+    if (a) a.insertAdjacentHTML('beforeend', `<button class="btn btn-g btn-sm" onclick="pa_abrirParecer(${p.id})">✏️ Editar</button>`);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
 // IMPRIMIR PROCESSO COMPLETO — Capa + Relatório(s) + Folhas + Intimações
 // Reaproveita os "moldes" de impressão já existentes (pa_gerarHtmlCapa,
 // pa_gerarHtmlRelatorio, pa_gerarHtmlFolha, pa_gerarDocNotif), sem alterar
@@ -8981,6 +9130,10 @@ function pa_imprimirProcessoCompleto(procId) {
   // 3) Folhas de informação, em ordem numérica
   const folhas = pa_folhas.filter(f => f.pid === p.id).sort((a,b) => (a.num||0) - (b.num||0));
   folhas.forEach(f => partes.push(pa_gerarHtmlFolha(f, p)));
+
+  // 3b) Parecer técnico fiscal do processo
+  const parecerImp = pa_parecerDoProc(p.id);
+  if (parecerImp) partes.push(pa_gerarHtmlParecer(parecerImp, p));
 
   // 4) Termo(s) de Inscrição em Dívida Ativa vinculado(s) a este processo
   const termos = pa_termos.filter(t => t.procId === p.id);
