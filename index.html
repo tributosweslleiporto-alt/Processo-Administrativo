@@ -8979,6 +8979,7 @@ let pa_pareceres = [];
 function rowToParecerPa(r) {
   return {
     id: r.id, procId: r.proc_id, num: r.numero || '',
+    fatos: r.relatorio_fatos || '', fundamentacao: r.fundamentacao || '',
     analise: r.analise || '', conclusao: r.conclusao || '',
     autorNome: r.autor_nome || '', autorLogin: r.autor_login || '', autorMatricula: r.autor_matricula || '',
     dataHora: r.data_hora || '', hash: r.assin_hash || '',
@@ -9034,9 +9035,13 @@ function pa_abrirParecer(procId) {
       ${ro('Assunto', p.assunto || '', true)}
       ${ro('Servidor responsável', resp, true)}
     </div>
-    <div style="font-size:12px;font-weight:700;margin-bottom:4px">II — ANÁLISE</div>
+    <div style="font-size:12px;font-weight:700;margin-bottom:4px">II — RELATÓRIO DOS FATOS</div>
+    <textarea id="par-fa" rows="7" style="width:100%;margin-bottom:14px" placeholder="Descreva os fatos...">${pa_escP(par ? par.fatos : '')}</textarea>
+    <div style="font-size:12px;font-weight:700;margin-bottom:4px">III — FUNDAMENTAÇÃO LEGAL</div>
+    <textarea id="par-fu" rows="7" style="width:100%;margin-bottom:14px" placeholder="Fundamentos legais...">${pa_escP(par ? par.fundamentacao : '')}</textarea>
+    <div style="font-size:12px;font-weight:700;margin-bottom:4px">IV — ANÁLISE</div>
     <textarea id="par-an" rows="9" style="width:100%;margin-bottom:14px" placeholder="Análise do caso concreto...">${pa_escP(par ? par.analise : '')}</textarea>
-    <div style="font-size:12px;font-weight:700;margin-bottom:4px">III — CONCLUSÃO</div>
+    <div style="font-size:12px;font-weight:700;margin-bottom:4px">V — CONCLUSÃO</div>
     <textarea id="par-co" rows="7" style="width:100%">${pa_escP(par ? par.conclusao : PA_PARECER_TEXTO_PADRAO)}</textarea>
     <div style="font-size:11px;color:var(--pa-text2);margin-top:4px">O texto da conclusão vem preenchido e pode ser editado.</div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
@@ -9050,23 +9055,27 @@ async function pa_salvarParecer(procId) {
   const p = pa_processos.find(x => x.id === procId); if (!p) return;
   const par = pa_parecerDoProc(procId);
   if (par ? !pa_podeEditarParecer(par, p) : !pa_podeCriarParecer(p)) { alert('⛔ Sem permissão para salvar este parecer.'); return; }
+  const fatos = (document.getElementById('par-fa').value || '').trim();
+  const fundamentacao = (document.getElementById('par-fu').value || '').trim();
   const analise = (document.getElementById('par-an').value || '').trim();
   const conclusao = (document.getElementById('par-co').value || '').trim();
+  if (!fatos) { alert('Escreva o relatório dos fatos.'); return; }
+  if (!fundamentacao) { alert('Escreva a fundamentação legal.'); return; }
   if (!analise) { alert('Escreva a análise.'); return; }
   if (!conclusao) { alert('Escreva a conclusão.'); return; }
   const btn = document.getElementById('par-btn'); if (btn) btn.disabled = true;
   const agora = new Date().toISOString();
   if (par) {
-    const r = await sbPatch('pa_pareceres', par.id, { analise, conclusao, editado_por: pa_usuarioAtual?.nome || '', editado_em: agora });
+    const r = await sbPatch('pa_pareceres', par.id, { relatorio_fatos: fatos, fundamentacao, analise, conclusao, editado_por: pa_usuarioAtual?.nome || '', editado_em: agora });
     if (!r) { if (btn) btn.disabled = false; alert('Não foi possível salvar o parecer. Tente novamente.'); return; }
-    par.analise = analise; par.conclusao = conclusao; par.editadoPor = pa_usuarioAtual?.nome || ''; par.editadoEm = agora;
+    par.fatos = fatos; par.fundamentacao = fundamentacao; par.analise = analise; par.conclusao = conclusao; par.editadoPor = pa_usuarioAtual?.nome || ''; par.editadoEm = agora;
     pa_auditar('EDITAR', { tabela: 'pa_pareceres', id: par.id, num: par.num, detalhes: `Parecer técnico fiscal ${par.num} editado` });
     toast('Parecer atualizado!');
   } else {
     const numero = pa_numParecer(p);
     const hash = pa_hashProt(`${numero}|${pa_usuarioAtual?.login || ''}|${agora}`);
     const r = await sbPost('pa_pareceres', {
-      proc_id: p.id, numero, analise, conclusao,
+      proc_id: p.id, numero, relatorio_fatos: fatos, fundamentacao, analise, conclusao,
       autor_nome: pa_usuarioAtual?.nome || '', autor_login: pa_usuarioAtual?.login || '',
       autor_matricula: pa_usuarioAtual?.matricula || '', data_hora: agora, assin_hash: hash
     });
@@ -9091,8 +9100,10 @@ function pa_gerarHtmlParecer(par, p) {
     + `<div class="doc-row"><span class="doc-lbl">Assunto:</span><span class="doc-val">${pa_escP(p.assunto || '')}</span></div>`
     + `<div class="doc-row"><span class="doc-lbl">Processo Nº:</span><span class="doc-val">${pa_escP(p.num)}</span><span class="doc-lbl" style="margin-left:12px">Data:</span><span class="doc-val">${pa_parecerData(par.dataHora)}</span></div>`
     + `<div class="doc-row"><span class="doc-lbl">Servidor responsável:</span><span class="doc-val">${pa_escP(par.autorNome)}</span></div>`
-    + `<hr class="doc-hr"><div style="font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:5px">II — Análise</div><div class="doc-body">${pa_escP(par.analise)}</div>`
-    + `<hr class="doc-hr"><div style="font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:5px">III — Conclusão</div><div class="doc-body">${pa_escP(par.conclusao)}</div>`
+    + `<hr class="doc-hr"><div style="font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:5px">II — Relatório dos fatos</div><div class="doc-body">${pa_escP(par.fatos)}</div>`
+    + `<hr class="doc-hr"><div style="font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:5px">III — Fundamentação legal</div><div class="doc-body">${pa_escP(par.fundamentacao)}</div>`
+    + `<hr class="doc-hr"><div style="font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:5px">IV — Análise</div><div class="doc-body">${pa_escP(par.analise)}</div>`
+    + `<hr class="doc-hr"><div style="font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:5px">V — Conclusão</div><div class="doc-body">${pa_escP(par.conclusao)}</div>`
     + `<div style="margin-top:24px;display:flex;justify-content:center"><div style="background:#f0f7f4;border:1px solid #c5dfd0;border-radius:6px;padding:10px 14px;min-width:240px;text-align:center"><div style="font-size:10px;font-weight:bold;margin-bottom:4px;letter-spacing:.5px;color:#2a4538">✅ ASSINATURA ELETRÔNICA</div><div style="font-size:13px;font-weight:600;color:#222">${pa_escP(par.autorNome)}</div>${mat}<div style="font-size:10px;color:#777;margin-top:6px">${pa_parecerData(par.dataHora)} às ${pa_parecerHora(par.dataHora)}</div><div style="font-size:9px;color:#888;margin-top:2px;font-family:monospace">Cód: ${pa_escP(par.hash || '—')}</div></div></div></div>`;
 }
 
