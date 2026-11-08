@@ -7150,6 +7150,7 @@ function pa_cadProc() {
   document.getElementById('np-ok').style.display='block';
   document.getElementById('np-ok').textContent=`✓ Processo ${p.num} aberto com sucesso para ${p.nome}.`;
   pa_initNovoProcesso(); toast(`Processo ${p.num} aberto!`);
+  pa_verDetalhe(p.id); // cai direto dentro do processo recém-aberto
 }
 
 // ── TRAMITAÇÃO ─────────────────────────────────────────────────────────────
