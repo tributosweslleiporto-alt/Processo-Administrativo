@@ -1214,6 +1214,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
             <div class="fgg full"><label>Assunto</label><input type="text" id="np-as"></div>
             <div class="fgg full"><label>Descrição</label><textarea id="np-ds" rows="4"></textarea></div>
             <div class="fgg"><label>Destino inicial</label><select id="np-de"></select></div>
+            <div class="fgg full" id="np-pz-wrap"></div>
             <div class="fgg"><label>Status</label><select id="np-st"><option value="em-andamento">Em andamento</option><option value="pendente">Pendente</option></select></div>
           </div>
         </div>
@@ -1245,7 +1246,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
             </select>
           </div>
         </div>
-        <div class="tw"><table><thead><tr><th>Protocolo</th><th>Contribuinte</th><th>Assunto</th><th>Prazo</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="pt-tbody"></tbody></table>
+        <div class="tw"><table><thead><tr><th>Protocolo</th><th>Contribuinte</th><th>Assunto</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="pt-tbody"></tbody></table>
         <div id="pt-empty" style="text-align:center;padding:44px;color:var(--pa-text2);font-size:13px;display:none">Nenhum protocolo registrado.</div></div>
       </div>
 
@@ -1273,9 +1274,6 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
         <div class="card"><div class="card-title">Requerimento</div>
           <div class="fg">
             <div class="fgg full"><label>Assunto</label><input type="text" id="pt-as" list="pt-as-list" autocomplete="off"><datalist id="pt-as-list"></datalist></div>
-            <div class="fgg full"><label>Documentos apresentados (um por linha)</label><textarea id="pt-docs" rows="4"></textarea></div>
-            <div class="fgg"><label>Prazo de resposta (dias úteis)</label><input type="number" id="pt-pz" min="1" max="365" oninput="pa_prevPrazoProt()"></div>
-            <div class="fgg"><label>Vencimento do prazo</label><input type="text" id="pt-pzinfo" readonly placeholder="Informe os dias úteis"></div>
           </div>
         </div>
         <div style="display:flex;gap:10px">
@@ -1291,9 +1289,24 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
           <div id="dst-aviso" style="font-size:12px;color:#b45309;margin-bottom:10px"></div>
           <div style="display:flex;gap:8px;margin-bottom:12px">
             <input type="text" id="dst-novo" placeholder="Nome do novo setor" style="flex:1" onkeydown="if(event.key==='Enter')pa_addDestino()">
+            <label style="font-size:12px;display:flex;align-items:center;gap:4px;white-space:nowrap"><input type="checkbox" id="dst-novo-sp"> Não exige prazo</label>
             <button class="btn btn-p btn-sm" onclick="pa_addDestino()">+ Adicionar</button>
           </div>
-          <div class="tw"><table><thead><tr><th>Setor</th><th>Situação</th><th></th></tr></thead><tbody id="dst-tbody"></tbody></table></div>
+          <div class="tw"><table><thead><tr><th>Setor</th><th>Situação</th><th>Prazo</th><th></th></tr></thead><tbody id="dst-tbody"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- PRAZOS (ProcessAdmin) — acompanhamento para todos -->
+      <div id="view-prazosPa" class="view">
+        <div class="card"><div class="card-title">Prazos dos processos em tramitação</div>
+          <div id="pz-resumo" style="margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap"></div>
+          <div class="search-row" style="margin-bottom:10px">
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <input type="text" id="pz-q" placeholder="Buscar por processo, requerente, tipo ou destino..." oninput="pa_renderPrazos()" style="min-width:260px">
+              <select id="pz-sf" onchange="pa_renderPrazos()"><option value="abertos">Em aberto</option><option value="vencidos">Vencidos</option><option value="vencendo">Vencendo em até 5 dias</option><option value="cumpridos">Cumpridos</option><option value="todos">Todos</option></select>
+            </div>
+          </div>
+          <div class="tw"><table><thead><tr><th>Vencimento</th><th>Situação</th><th>Processo</th><th>Requerente</th><th>Prazo</th><th>Destino</th><th>Registrado por</th><th>Ações</th></tr></thead><tbody id="pz-tbody"></tbody></table></div>
         </div>
       </div>
 
@@ -1303,6 +1316,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
             <div style="display:flex;flex-direction:column;gap:11px">
               <div class="fgg"><label>Processo</label><select id="tr-p" onchange="pa_rht()"><option value="">Selecione...</option></select></div>
               <div class="fgg"><label>Destino</label><select id="tr-d"></select></div>
+              <div id="tr-pz-wrap"></div>
               <div class="fgg"><label>Data</label><input type="date" id="tr-dt"></div>
               <div class="fgg"><label>Observação</label><textarea id="tr-o" rows="2"></textarea></div>
               <div class="fgg"><label>Status</label><select id="tr-s"><option value="em-andamento">Em andamento</option><option value="pendente">Pendente</option><option value="concluido">Concluído</option><option value="arquivado">Arquivado</option></select></div>
@@ -2628,7 +2642,6 @@ function pa_renderProtocolos() {
       <td><strong>${pa_escP(p.num)}</strong><div style="font-size:11px;color:var(--pa-text2)">${dh}</div></td>
       <td>${pa_escP(p.nm)}<div style="font-size:11px;color:var(--pa-text2)">${pa_escP(p.doc)}</div></td>
       <td>${pa_escP(p.assunto)}</td>
-      <td>${p.prazoData ? pa_fd(p.prazoData) : '—'}</td>
       <td><span${tip} style="background:${bg};color:${fg};padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;display:inline-block">${pa_escP(PA_PROT_SITUACOES[p.situacao] || p.situacao)}</span></td>
       <td><div style="display:flex;gap:4px;flex-wrap:wrap;min-width:150px"><button class="btn btn-g btn-xs" onclick="pa_verComprovanteProt(${p.id})">🖨️ Comprovante</button>${pa_acoesFluxoProt(p)}${acoesAdmin}</div></td>
     </tr>`;
@@ -2642,17 +2655,6 @@ function pa_toggleProtDoc() {
   const t = document.getElementById('pt-tp').value;
   document.getElementById('pt-dl').textContent = t === 'fisica' ? 'CPF' : 'CNPJ';
   document.getElementById('pt-dc').placeholder = t === 'fisica' ? '000.000.000-00' : '00.000.000/0000-00';
-}
-
-function pa_prevPrazoProt() {
-  const out = document.getElementById('pt-pzinfo'); if (!out) return;
-  const dias = parseInt(document.getElementById('pt-pz').value);
-  if (!dias || dias < 1) { out.value = ''; return; }
-  if (dias > 365) { out.value = 'Máximo de 365 dias úteis'; return; }
-  const idEd = parseInt(document.getElementById('pt-id').value) || 0;
-  const pEd = idEd ? pa_protocolos.find(x => x.id === idEd) : null;
-  const d = pa_calcPrazoUtilProt(dias, pEd && pEd.dataHora ? new Date(pEd.dataHora) : new Date());
-  out.value = d ? PA_DIAS_SEMANA[d.getDay()] + ', ' + pa_fd(pa_dataISOLocal(d)) : '';
 }
 
 function pa_initProtocolo() {
@@ -2671,7 +2673,7 @@ function pa_initProtocolo() {
   g('pt-num').value = pa_numProtocolo(pa_proxSeqProtocolo(ano), ano);
   g('pt-dh').value = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
   g('pt-at').value = pa_usuarioAtual?.nome || '';
-  ['pt-dc', 'pt-nm', 'pt-im', 'pt-em', 'pt-tl', 'pt-en', 'pt-as', 'pt-docs', 'pt-pz', 'pt-pzinfo'].forEach(id => { g(id).value = ''; });
+  ['pt-dc', 'pt-nm', 'pt-im', 'pt-em', 'pt-tl', 'pt-en', 'pt-as'].forEach(id => { g(id).value = ''; });
   g('pt-tp').value = 'juridica';
   g('pt-cnpj-msg').textContent = '';
   pa_toggleProtDoc();
@@ -2699,9 +2701,7 @@ function pa_editarProtocolo(id) {
   pa_toggleProtDoc();
   g('pt-dc').value = p.doc; g('pt-nm').value = p.nm; g('pt-im').value = p.im;
   g('pt-em').value = p.email; g('pt-tl').value = p.tel; g('pt-en').value = p.end;
-  g('pt-as').value = p.assunto; g('pt-docs').value = p.docs;
-  g('pt-pz').value = p.prazoDias || '';
-  pa_prevPrazoProt();
+  g('pt-as').value = p.assunto;
 }
 
 async function pa_salvarProtocolo() {
@@ -2716,20 +2716,14 @@ async function pa_salvarProtocolo() {
     email:                   g('pt-em').value.trim(),
     telefone:                g('pt-tl').value.trim(),
     endereco:                g('pt-en').value.trim(),
-    assunto:                 g('pt-as').value.trim(),
-    documentos_apresentados: g('pt-docs').value.trim()
+    assunto:                 g('pt-as').value.trim()
   };
-  const dias = parseInt(g('pt-pz').value);
   if (!dados.nome || !dados.assunto) { alert('Preencha o nome do contribuinte e o assunto.'); return; }
-  if (!dias || dias < 1 || dias > 365) { alert('Informe o prazo de resposta em dias úteis (de 1 a 365).'); return; }
 
   // ── Edição (somente admin): o número e o atendente nunca mudam ──
   if (editId) {
     if (!isAdmin()) { alert('⛔ Apenas o administrador pode editar um protocolo.'); return; }
     const p = pa_protocolos.find(x => x.id === editId); if (!p) return;
-    const dPrazo = pa_calcPrazoUtilProt(dias, p.dataHora ? new Date(p.dataHora) : new Date());
-    dados.prazo_dias = dias;
-    dados.prazo_data = pa_dataISOLocal(dPrazo);
     showLoading('Salvando alterações...');
     const r = await sbPatch('pa_protocolos', editId, dados);
     hideLoading();
@@ -2744,9 +2738,6 @@ async function pa_salvarProtocolo() {
   // ── Novo protocolo ──
   const btn = g('pt-btn'); btn.disabled = true;
   const ano = new Date().getFullYear();
-  const dPrazo = pa_calcPrazoUtilProt(dias, new Date());
-  dados.prazo_dias = dias;
-  dados.prazo_data = pa_dataISOLocal(dPrazo);
   showLoading('Gerando protocolo...');
   let criado = null, ultimoErro = null, piso = 0;
   for (let tent = 0; tent < 8 && !criado; tent++) {
@@ -2827,10 +2818,6 @@ function pa_gerarHtmlComprovanteProt(p) {
   const dataTxt = dh ? dh.toLocaleDateString('pt-BR', tz) : '—';
   const horaTxt = dh ? dh.toLocaleTimeString('pt-BR', Object.assign({ hour: '2-digit', minute: '2-digit' }, tz)) : '—';
   const rotuloDoc = p.tipoPessoa === 'fisica' ? 'CPF' : 'CNPJ';
-  const docsHtml = p.docs
-    ? p.docs.split(/\r?\n/).map(s => s.trim()).filter(Boolean).map(s => '• ' + pa_escP(s)).join('<br>')
-    : '—';
-  const prazoTxt = p.prazoDias ? `${p.prazoDias} dias úteis — até ${pa_fd(p.prazoData)}` : '—';
   const cor = '-webkit-print-color-adjust:exact;print-color-adjust:exact;';
   const lbl = cor + 'background:#e8e8e8;font-weight:700;width:32%;border:0.75px solid #999;padding:7px 9px;vertical-align:top;font-size:12.5px';
   const val = 'border:0.75px solid #999;padding:7px 9px;vertical-align:top;font-size:12.5px';
@@ -2859,8 +2846,6 @@ function pa_gerarHtmlComprovanteProt(p) {
       ${linha('E-mail', pa_escP(p.email) || '—')}
       ${linha('Telefone', pa_escP(p.tel) || '—')}
       ${linha('Assunto', pa_escP(p.assunto))}
-      ${linha('Documentos apresentados', docsHtml)}
-      ${linha('Prazo para resposta', pa_escP(prazoTxt))}
       ${linha('Atendente responsável', pa_escP(p.atendNome) || '—')}
       ${linha('Situação atual', pa_escP(PA_PROT_SITUACOES[p.situacao] || p.situacao))}
     </tbody></table>
@@ -3014,7 +2999,7 @@ const PA_DESTINOS_PADRAO = ['Setor de Cadastro', 'Setor de Arrecadação', 'Dire
 let pa_destinos = []; // linhas da tabela pa_destinos (se vazia, vale a lista padrão acima)
 
 function rowToDestinoPa(row) {
-  return { id: row.id, nome: row.nome || '', ativo: row.ativo !== false, ordem: row.ordem || 0 };
+  return { id: row.id, nome: row.nome || '', ativo: row.ativo !== false, ordem: row.ordem || 0, semPrazo: row.sem_prazo === true };
 }
 // Lista de setores ativos. Se a tabela não existir ou estiver vazia, usa a lista padrão (o sistema nunca trava).
 function pa_listaDestinos() {
@@ -3034,12 +3019,14 @@ function pa_metaTram(t) {
 }
 
 // Registra uma movimentação (usada pela tela antiga e pelo botão "Movimentar" do processo)
-async function pa_registrarTram(pid, dest, data, obs, status) {
+async function pa_registrarTram(pid, dest, data, obs, status, prazo) {
   const p = pa_processos.find(x => x.id === pid);
   if (!p) return false;
   if (!dest || !data) { alert('Escolha o destino e informe a data.'); return false; }
   if (!pa_canEdit(p.autorId, p.autorLogin)) { alert('Você não tem permissão para tramitar este processo.'); return false; }
-  const mov = { data, destino: dest, obs: obs || '', por: pa_usuarioAtual?.nome || '', hora: new Date().toTimeString().slice(0, 5) };
+  if (!pa_destinoSemPrazo(dest) && !(prazo && prazo.venc)) { alert('Informe o prazo desta movimentação.'); return false; }
+  const mov = { data, destino: dest, obs: obs || '', por: pa_usuarioAtual?.nome || '', porLogin: pa_usuarioAtual?.login || '', hora: new Date().toTimeString().slice(0, 5) };
+  if (prazo && prazo.venc) mov.prazo = prazo;
   const trams = p.trams.concat([mov]);
   const r = await sbPatch('pa_processos', p.id, { destino: dest, status, trams });
   if (!r) { alert('⚠️ Não foi possível registrar a movimentação. Tente novamente.'); return false; }
@@ -3056,17 +3043,20 @@ function pa_abrirMovimentar(pid) {
   const lb = 'font-size:12px;color:var(--pa-text2)';
   pa_openModal('Movimentar processo ' + p.num, `<div style="display:flex;flex-direction:column;gap:12px;padding:6px 2px;max-width:520px">
     <div><label style="${lb}">DESTINO</label><select id="tm-d" style="width:100%">${pa_optsDestino('', true)}</select></div>
+    <div id="tm-pz-wrap"></div>
     <div><label style="${lb}">DATA</label><input type="date" id="tm-dt" value="${pa_dataISOLocal(new Date())}" style="width:100%"></div>
     <div><label style="${lb}">OBSERVAÇÃO</label><textarea id="tm-o" rows="3" style="width:100%"></textarea></div>
     <div><label style="${lb}">STATUS DO PROCESSO</label><select id="tm-s" style="width:100%">${st}</select></div>
     <div style="display:flex;gap:8px"><button class="btn btn-p" onclick="pa_salvarMovimentar(${p.id})">✓ Registrar movimentação</button><button class="btn btn-g" onclick="pa_fm()">Cancelar</button></div>
   </div>`, false);
+  pa_prazoPreparar('tm');
 }
 async function pa_salvarMovimentar(pid) {
   const g = id => document.getElementById(id);
   const dest = g('tm-d').value;
   if (!dest) { alert('Escolha o destino na lista.'); return; }
-  const ok = await pa_registrarTram(pid, dest, g('tm-dt').value, g('tm-o').value.trim(), g('tm-s').value);
+  const pz = pa_lerPrazo('tm'); if (pz.erro) { alert(pz.erro); return; }
+  const ok = await pa_registrarTram(pid, dest, g('tm-dt').value, g('tm-o').value.trim(), g('tm-s').value, pz.prazo || null);
   if (!ok) return;
   pa_fm();
   toast(`Movimentação registrada em "${dest}"`);
@@ -3086,11 +3076,12 @@ function pa_renderDestinos() {
   if (!lista.length) {
     av.innerHTML = 'Nenhum setor gravado no banco: o sistema está usando a lista padrão. ' +
       '<button class="btn btn-p btn-xs" onclick="pa_semearDestinos()">Gravar a lista padrão no banco</button>';
-    tb.innerHTML = PA_DESTINOS_PADRAO.map(n => `<tr><td>${pa_escP(n)}</td><td>Padrão</td><td></td></tr>`).join('');
+    tb.innerHTML = PA_DESTINOS_PADRAO.map(n => `<tr><td>${pa_escP(n)}</td><td>Padrão</td><td>⏱️ Exige prazo</td><td></td></tr>`).join('');
     return;
   }
   av.innerHTML = '';
   tb.innerHTML = lista.map(d => `<tr><td>${pa_escP(d.nome)}</td><td>${d.ativo ? '✅ Ativo' : '⏸️ Desativado'}</td>` +
+    `<td>${d.semPrazo ? '🚫 Não exige prazo' : '⏱️ Exige prazo'} <button class="btn btn-g btn-xs" onclick="pa_alternarSemPrazo(${d.id})">${d.semPrazo ? 'Passar a exigir' : 'Não exigir'}</button></td>` +
     `<td><button class="btn btn-g btn-xs" onclick="pa_alternarDestino(${d.id})">${d.ativo ? 'Desativar' : 'Reativar'}</button></td></tr>`).join('');
 }
 async function pa_semearDestinos() {
@@ -3121,11 +3112,22 @@ async function pa_addDestino() {
     }
     pa_destinos = sem.data.map(rowToDestinoPa);
   }
-  const { data, error } = await _sb.from('pa_destinos').insert({ nome, ativo: true, ordem: Math.max(ordem, pa_destinos.length + 1) }).select();
+  const novo = { nome, ativo: true, ordem: Math.max(ordem, pa_destinos.length + 1) };
+  if (document.getElementById('dst-novo-sp')?.checked) novo.sem_prazo = true;
+  const { data, error } = await _sb.from('pa_destinos').insert(novo).select();
   if (error || !data || !data[0]) { alert('⚠️ Não foi possível adicionar o setor: ' + (error?.message || 'erro desconhecido')); return; }
   pa_destinos.push(rowToDestinoPa(data[0]));
   pa_auditar('CRIAR', { tabela: 'pa_destinos', id: data[0].id, num: nome, detalhes: `Setor "${nome}" adicionado` });
-  inp.value = ''; pa_renderDestinos(); toast('Setor adicionado.');
+  inp.value = ''; { const c = document.getElementById('dst-novo-sp'); if (c) c.checked = false; } pa_renderDestinos(); toast('Setor adicionado.');
+}
+async function pa_alternarSemPrazo(id) {
+  if (!isAdmin()) return;
+  const d = pa_destinos.find(x => x.id === id); if (!d) return;
+  const r = await sbPatch('pa_destinos', id, { sem_prazo: !d.semPrazo });
+  if (!r || !r[0]) { alert('⚠️ Não foi possível alterar. Confirme que o SQL da etapa 7 (coluna sem_prazo) foi rodado no Supabase.'); return; }
+  Object.assign(d, rowToDestinoPa(r[0]));
+  pa_auditar('EDITAR', { tabela: 'pa_destinos', id: d.id, num: d.nome, detalhes: `Setor "${d.nome}": ${d.semPrazo ? 'não exige prazo' : 'passa a exigir prazo'}` });
+  pa_renderDestinos();
 }
 async function pa_alternarDestino(id) {
   if (!isAdmin()) return;
@@ -3300,7 +3302,7 @@ function logout() {
 const TITULOS = {
   dashboard:'Dashboard', novoProtocolo:'Novo Protocolo', protocolos:'Consultar Protocolos',
   protocolosPa:'Protocolos — ProcessAdmin', 'novo-protocoloPa':'Protocolo — ProcessAdmin',
-  destinosPa:'Setores de tramitação',
+  destinosPa:'Setores de tramitação', prazosPa:'Prazos',
   relatorios:'Relatórios', configuracoes:'Configurações',
   painel:'ProcessAdmin — Painel', processos:'Processos Administrativos',
   detalhe:'Detalhe do Processo', 'novo-proc':'Novo Processo',
@@ -3323,7 +3325,7 @@ function navegarPara(destino, btn) {
   // Segurança extra: Auxiliar Administrativo não tem acesso ao Sistema B (ProcessAdmin)
   const TELAS_SISTEMA_B = ['painel','processos','tram','relatoriosPa','notificacoesPa','intimacoes',
     'usuariosPa','auditoria','backup','novo-proc','detalhe','folhas','nova-intimacao','despacho',
-    'relatorioInd','relatorioCol','novoRelInd','novoRelCol','protocolosPa','novo-protocoloPa','destinosPa'];
+    'relatorioInd','relatorioCol','novoRelInd','novoRelCol','protocolosPa','novo-protocoloPa','destinosPa','prazosPa'];
   if (TELAS_SISTEMA_B.includes(destino) && usuarioLogado?.perfil === 'auxiliar_adm') {
     alert('⛔ Este perfil não tem acesso ao módulo de Processos Administrativos.');
     return;
@@ -3391,6 +3393,7 @@ function navegarPara(destino, btn) {
     relatoriosPa:     () => { pa_renderRels(); if(acts) acts.innerHTML='<button class="btn btn-g btn-sm" onclick="navegarPara(\'novo-rel-ind\')">+ Relatório Individual</button><button class="btn btn-p btn-sm" onclick="navegarPara(\'novo-rel-col\')">+ Relatório Coletivo</button>'; },
     'novo-rel-ind':   () => pa_initRelInd(),
     'novo-rel-col':   () => pa_initRelCol(),
+    prazosPa:         () => pa_renderPrazos(),
     notificacoesPa:   () => pa_renderNotificacoes(),
     usuariosPa:       () => pa_renderUsuarios(),
     auditoria:        () => pa_carregarAuditoria(),
@@ -3443,6 +3446,7 @@ function buildUnifiedNav() {
     html += navBtn('processos','file','Processos');
     const canTram = admin || perf?.perms?.despacho || perf?.perms?.processo;
     if (canTram) html += navBtn('tram','arrow-right','Tramitação');
+    html += navBtn('prazosPa','clock','Prazos');
     const canRel = admin || perf?.perms?.relatorio || perf?.perms?.despacho || perf?.perms?.processo;
     if (canRel) html += navBtn('relatoriosPa','clipboard','Relatórios Fisc.',0);
     html += navBtn('notificacoesPa','bell','Notificações',notifPA);
@@ -7038,7 +7042,7 @@ function pa_verDetalhe(id) {
   if(p.coletivo && p.empresas.length) {
     document.getElementById('det-empresas').innerHTML=`<div style="margin-top:10px"><div style="font-size:11px;font-weight:500;color:var(--pa-text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Empresas (${p.empresas.length})</div>${p.empresas.map((e,i)=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:6px 0;border-bottom:1px solid var(--pa-border)"><span><strong>${i+1}.</strong> ${e.nm} · ${e.doc}</span><span style="color:var(--pa-text2)">R$ ${e.va}</span></div>`).join('')}</div>`;
   } else document.getElementById('det-empresas').innerHTML='';
-  document.getElementById('det-tram').innerHTML=p.trams.map((t,i)=>`<div class="ti${i===p.trams.length-1?' cur':''}"><div class="ti-dest">${t.destino}</div><div class="ti-meta">${pa_metaTram(t)}</div></div>`).join('');
+  document.getElementById('det-tram').innerHTML=p.trams.map((t,i)=>`<div class="ti${i===p.trams.length-1?' cur':''}"><div class="ti-dest">${t.destino}</div><div class="ti-meta">${pa_metaTram(t)}</div>${pa_htmlPrazoTram(p,t,i)}</div>`).join('');
   { const _bt=document.getElementById('det-tram-btn'); if(_bt) _bt.innerHTML = pa_canEdit(p.autorId, p.autorLogin) ? `<button class="btn btn-p btn-xs" onclick="pa_abrirMovimentar(${p.id})">+ Movimentar</button>` : ''; }
   const pf=pa_folhas.filter(f=>f.pid===id);
   document.getElementById('det-folhas').innerHTML=pf.length?pf.map(f=>{
@@ -7109,6 +7113,7 @@ function pa_verDetalhe(id) {
 // ── NOVO PROCESSO ──────────────────────────────────────────────────────────
 function pa_initNovoProcesso() {
   pa_recalcularNumeros(); document.getElementById('np-num').value=pa_numProcLivre(); document.getElementById('np-de').innerHTML=pa_optsDestino('',true);
+  pa_prazoPreparar('np');
   document.getElementById('np-dt').value=new Date().toISOString().slice(0,10);
   document.getElementById('np-at').value=pa_usuarioAtual?.nome||'';
   document.getElementById('np-ok').style.display='none';
@@ -7122,11 +7127,12 @@ function pa_cadProc() {
   const nm=document.getElementById('np-nm').value.trim(), as=document.getElementById('np-as').value.trim();
   if(!nm||!as){alert('Preencha nome e assunto.');return;}
   if(!document.getElementById('np-de').value){alert('Escolha o destino inicial do processo na lista.');return;}
+  const _pz=pa_lerPrazo('np'); if(_pz.erro){alert(_pz.erro);return;}
   if(!parseInt(document.getElementById('np-form')?.dataset?.relId||'0')){
     if(!isAdmin()){alert('⛔ Todo processo começa pelo protocolo: registre o protocolo, gere o relatório e abra o processo a partir dele.');return;}
     if(!confirm('Este processo não está ligado a nenhum relatório/protocolo. Abrir mesmo assim, como exceção do administrador?')) return;
   }
-  const p={id:pa_nextProcId++,num:document.getElementById('np-num').value,nome:nm,tipo:document.getElementById('np-tp').value,doc:document.getElementById('np-dc').value,im:document.getElementById('np-im').value,atend:document.getElementById('np-at').value,assunto:as,desc:document.getElementById('np-ds').value,destino:document.getElementById('np-de').value||'Protocolo Geral',status:document.getElementById('np-st').value,data:document.getElementById('np-dt').value,autorId:pa_usuarioAtual.id,coletivo:false,empresas:[],trams:[{data:document.getElementById('np-dt').value,destino:document.getElementById('np-de').value||'Protocolo Geral',obs:'Abertura do processo'}]};
+  const p={id:pa_nextProcId++,num:document.getElementById('np-num').value,nome:nm,tipo:document.getElementById('np-tp').value,doc:document.getElementById('np-dc').value,im:document.getElementById('np-im').value,atend:document.getElementById('np-at').value,assunto:as,desc:document.getElementById('np-ds').value,destino:document.getElementById('np-de').value||'Protocolo Geral',status:document.getElementById('np-st').value,data:document.getElementById('np-dt').value,autorId:pa_usuarioAtual.id,coletivo:false,empresas:[],trams:[{data:document.getElementById('np-dt').value,destino:document.getElementById('np-de').value||'Protocolo Geral',obs:'Abertura do processo',por:pa_usuarioAtual?.nome||'',porLogin:pa_usuarioAtual?.login||'',hora:new Date().toTimeString().slice(0,5),...(_pz.prazo?{prazo:_pz.prazo}:{})}]};
   pa_processos.push(p); pa_nextProcNum++;
   sbPost('pa_processos', {
     id:p.id, numero:p.num, nome:p.nome, tipo:p.tipo, documento:p.doc,
@@ -7164,20 +7170,22 @@ function pa_initTram() {
   sel.innerHTML='<option value="">Selecione...</option>'+pa_processos.map(p=>`<option value="${p.id}">${p.num} — ${p.nome}</option>`).join('');
   document.getElementById('tr-dt').value=new Date().toISOString().slice(0,10);
   document.getElementById('tr-d').innerHTML=pa_optsDestino('',true);
+  pa_prazoPreparar('tr');
   pa_rht();
 }
 function pa_rht() {
   const pid=parseInt(document.getElementById('tr-p').value), c=document.getElementById('tram-h');
   if(!pid){c.innerHTML='<p style="color:var(--pa-text2);font-size:13px">Selecione um processo.</p>';return;}
   const p=pa_processos.find(x=>x.id===pid);
-  c.innerHTML=p?`<div class="tl">${p.trams.map((t,i)=>`<div class="ti${i===p.trams.length-1?' cur':''}"><div class="ti-dest">${t.destino}</div><div class="ti-meta">${pa_metaTram(t)}</div></div>`).join('')}</div>`:'';
+  c.innerHTML=p?`<div class="tl">${p.trams.map((t,i)=>`<div class="ti${i===p.trams.length-1?' cur':''}"><div class="ti-dest">${t.destino}</div><div class="ti-meta">${pa_metaTram(t)}</div>${pa_htmlPrazoTram(p,t,i)}</div>`).join('')}</div>`:'';
 }
 async function pa_regTram() {
   const pid=parseInt(document.getElementById('tr-p').value), dest=document.getElementById('tr-d').value, data=document.getElementById('tr-dt').value;
   if(!pid||!dest||!data){alert('Preencha processo, destino e data.');return;}
-  const ok = await pa_registrarTram(pid, dest, data, document.getElementById('tr-o').value.trim(), document.getElementById('tr-s').value);
+  const pz = pa_lerPrazo('tr'); if(pz.erro){alert(pz.erro);return;}
+  const ok = await pa_registrarTram(pid, dest, data, document.getElementById('tr-o').value.trim(), document.getElementById('tr-s').value, pz.prazo||null);
   if(!ok) return;
-  document.getElementById('tr-d').value=''; document.getElementById('tr-o').value='';
+  document.getElementById('tr-d').value=''; document.getElementById('tr-o').value=''; pa_prazoPreparar('tr');
   pa_rht(); toast(`Tramitação registrada em "${dest}"`);
 }
 
@@ -8966,6 +8974,238 @@ function pa_prevFolhaById(fid) {
   const f=pa_folhas.find(x=>x.id===fid); if(!f) return;
   const p=pa_processos.find(x=>x.id===f.pid);
   pa_openModal('Folha de informação', pa_gerarHtmlFolha(f, p));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ETAPA 7A — Prazos na movimentação do processo (Sistema B)
+// O prazo nasce junto com o destino: abertura do processo, "+ Movimentar" e a
+// tela antiga de Tramitação. Fica guardado dentro da própria movimentação (trams).
+// Destino marcado como "não exige prazo" (movimentação interna) dispensa o prazo.
+// Tabela de referência: Guia de prazos do PAF — LC nº 05/2025 (versão corrigida).
+// ═══════════════════════════════════════════════════════════════
+const PA_TIPOS_PRAZO = [
+  { nome: 'Impugnação de lançamento / auto de infração', dias: 20, quem: 'Contribuinte', fund: 'Art. 270, caput e § 4º' },
+  { nome: 'Contestação fiscal / parecer técnico', dias: 40, quem: 'Preposto fiscal', fund: 'Art. 271, caput e § 3º' },
+  { nome: 'Manifestação sobre termo complementar', dias: 20, quem: 'Contribuinte', fund: 'Art. 255' },
+  { nome: 'Sentença de 1ª instância administrativa', dias: 60, quem: 'Secretário de Finanças / Julgador', fund: 'Art. 274, caput' },
+  { nome: 'Recurso voluntário para 2ª instância', dias: 20, quem: 'Contribuinte', fund: 'Art. 275, caput' },
+  { nome: 'Julgamento de 2ª instância (rito regimental — informar dias)', dias: null, quem: 'Conselho de Tributos / Prefeito', fund: 'Art. 273, II e § 2º' },
+  { nome: 'Cumprimento de decisão definitiva (pagamento)', dias: 20, quem: 'Contribuinte', fund: 'Art. 278, parágrafo único' },
+  { nome: 'Exibição de documentos requisitados', dias: 5, quem: 'Contribuinte', fund: 'Art. 229, caput' },
+  { nome: 'Exibição de livros fiscais e contábeis', dias: 10, quem: 'Contribuinte', fund: 'Art. 144, parágrafo único' },
+  { nome: 'Certidão verbo ad verbum / positiva c/ efeito negativa', dias: 5, quem: 'Fazenda Municipal', fund: 'Art. 16' },
+  { nome: 'Certidão negativa de débito (CND) ordinária', dias: 10, quem: 'Fazenda Municipal', fund: 'Art. 313' },
+  { nome: 'Comunicação de alteração ou inscrição cadastral (do fato)', dias: 20, quem: 'Contribuinte', fund: 'Art. 282, par. único / Art. 294, § 2º' },
+  { nome: 'Pedido de revisão cadastral (do fato)', dias: 20, quem: 'Contribuinte', fund: 'Art. 265, § 1º' },
+  { nome: 'Resposta a pedido de baixa cadastral ordinário', dias: 40, quem: 'Fazenda / Preposto fiscal', fund: 'Art. 268, caput' },
+  { nome: 'Resposta a baixa (EI/ME/EPP sem movimento > 3 anos)', dias: 60, quem: 'Fazenda / Preposto fiscal', fund: 'Art. 300, I' },
+  { nome: 'Resposta a processo de consulta tributária', dias: 60, quem: 'Secretário de Finanças', fund: 'Art. 263, caput' },
+  { nome: 'Adequação à resposta da consulta tributária', dias: 20, quem: 'Contribuinte', fund: 'Art. 263, § 1º' },
+  { nome: 'Outro (informar dias e fundamento)', dias: null, quem: '', fund: '' }
+];
+const PA_PZ_IDS = { tm: ['tm-d', 'tm-dt'], np: ['np-de', 'np-dt'], tr: ['tr-d', 'tr-dt'] };
+
+function pa_destinoSemPrazo(nome) {
+  const d = pa_destinos.find(x => x.nome === nome);
+  return !!(d && d.semPrazo);
+}
+function pa_prazoHtml(pref) {
+  const opts = '<option value="">Selecione o tipo de prazo...</option>' +
+    PA_TIPOS_PRAZO.map((t, i) => `<option value="${i}">${pa_escP(t.nome)}${t.dias ? ' — ' + t.dias + ' dias úteis' : ''}</option>`).join('');
+  const lb = 'font-size:11px;font-weight:600;color:var(--pa-text2)';
+  return `<div id="${pref}-pz" style="display:none;border:1px solid var(--pa-border);border-radius:8px;padding:10px;background:var(--pa-bg2);margin-top:4px">
+    <div style="font-weight:700;font-size:12px;margin-bottom:8px">⏱️ PRAZO <span style="font-weight:400;color:var(--pa-text2)">(obrigatório para este destino)</span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div style="grid-column:1/-1"><label style="${lb}">TIPO DE PRAZO</label><select id="${pref}-pz-t" onchange="pa_prazoTipo('${pref}')" style="width:100%">${opts}</select></div>
+      <div><label style="${lb}">DIAS ÚTEIS</label><input type="number" id="${pref}-pz-d" min="1" max="365" oninput="pa_prazoCalc('${pref}')" style="width:100%"></div>
+      <div><label style="${lb}">INÍCIO DA CONTAGEM</label><input type="date" id="${pref}-pz-i" oninput="this.dataset.manual='1';pa_prazoCalc('${pref}')" style="width:100%"></div>
+      <div style="grid-column:1/-1"><label style="${lb}">FUNDAMENTO LEGAL</label><input type="text" id="${pref}-pz-f" style="width:100%"></div>
+      <div style="grid-column:1/-1"><label style="${lb}">VENCIMENTO</label><input type="text" id="${pref}-pz-v" readonly placeholder="Informe os dias úteis" style="width:100%"></div>
+    </div>
+    <div style="font-size:11px;color:var(--pa-text2);margin-top:6px">Conta em dias úteis (exclui o dia do início e inclui o do vencimento; pula fins de semana e feriados cadastrados).</div>
+  </div>`;
+}
+function pa_prazoTipo(pref) {
+  const g = id => document.getElementById(pref + '-pz-' + id);
+  const i = g('t').value; const t = i === '' ? null : PA_TIPOS_PRAZO[parseInt(i)];
+  if (t) { g('d').value = t.dias || ''; g('f').value = t.fund || ''; }
+  pa_prazoCalc(pref);
+}
+function pa_calcVencPrazo(iniISO, dias) {
+  const n = parseInt(dias);
+  if (!iniISO || !n || n < 1 || n > 365) return null;
+  const b = new Date(iniISO + 'T12:00:00'); if (isNaN(b)) return null;
+  return calcularPrazoUtil(b, n);
+}
+function pa_prazoCalc(pref) {
+  const g = id => document.getElementById(pref + '-pz-' + id);
+  const out = g('v'); if (!out) return;
+  const dias = parseInt(g('d').value);
+  if (dias > 365) { out.value = 'Máximo de 365 dias úteis'; return; }
+  const d = pa_calcVencPrazo(g('i').value, dias);
+  out.value = d ? PA_DIAS_SEMANA[d.getDay()] + ', ' + pa_fd(pa_dataISOLocal(d)) : '';
+}
+// Mostra/esconde o bloco do prazo conforme o destino escolhido
+function pa_prazoToggle(pref) {
+  const [idD, idDt] = PA_PZ_IDS[pref];
+  const dest = (document.getElementById(idD) || {}).value || '';
+  const box = document.getElementById(pref + '-pz'); if (!box) return;
+  const mostrar = !!dest && !pa_destinoSemPrazo(dest);
+  box.style.display = mostrar ? 'block' : 'none';
+  const ini = document.getElementById(pref + '-pz-i');
+  if (mostrar && ini && ini.dataset.manual !== '1') ini.value = (document.getElementById(idDt) || {}).value || pa_dataISOLocal(new Date());
+  pa_prazoCalc(pref);
+}
+function pa_prazoPreparar(pref) {
+  const w = document.getElementById(pref + '-pz-wrap'); if (!w) return;
+  w.innerHTML = pa_prazoHtml(pref);
+  const [idD, idDt] = PA_PZ_IDS[pref];
+  const d = document.getElementById(idD), dt = document.getElementById(idDt);
+  if (d) d.onchange = () => pa_prazoToggle(pref);
+  if (dt) dt.onchange = () => pa_prazoToggle(pref);
+}
+// Lê o bloco: { sem:true } (destino dispensa prazo), { erro } ou { prazo }
+function pa_lerPrazo(pref) {
+  const [idD] = PA_PZ_IDS[pref];
+  const dest = (document.getElementById(idD) || {}).value || '';
+  if (!dest) return { erro: 'Escolha o destino na lista.' };
+  if (pa_destinoSemPrazo(dest)) return { sem: true };
+  const g = id => document.getElementById(pref + '-pz-' + id);
+  const ti = g('t').value;
+  if (ti === '') return { erro: 'Escolha o tipo de prazo.' };
+  const t = PA_TIPOS_PRAZO[parseInt(ti)];
+  const dias = parseInt(g('d').value);
+  if (!dias || dias < 1 || dias > 365) return { erro: 'Informe o prazo em dias úteis (de 1 a 365).' };
+  const ini = g('i').value; if (!ini) return { erro: 'Informe a data de início da contagem.' };
+  const venc = pa_calcVencPrazo(ini, dias); if (!venc) return { erro: 'Não foi possível calcular o vencimento.' };
+  const fund = (g('f').value || '').trim();
+  if (!t.dias && !t.fund && !fund) return { erro: 'Informe o fundamento legal do prazo.' };
+  return { prazo: { tipo: t.nome, dias, ini, venc: pa_dataISOLocal(venc), fund, quem: t.quem || '', sit: 'aberto', prorrogacoes: [] } };
+}
+
+// ── Situação do prazo (cores) ──
+function pa_estadoPrazo(venc) {
+  const hoje = new Date(pa_dataISOLocal(new Date()) + 'T12:00:00');
+  const v = new Date(venc + 'T12:00:00');
+  const dif = Math.round((v - hoje) / 86400000);
+  if (dif < 0) return { k: 'vencido', dif, cor: '#b91c1c', bg: '#fee2e2', txt: '🔴 Vencido há ' + (-dif) + (dif === -1 ? ' dia' : ' dias') };
+  if (dif <= 5) return { k: 'vencendo', dif, cor: '#a16207', bg: '#fef3c7', txt: '🟡 ' + (dif === 0 ? 'Vence hoje' : 'Vence em ' + dif + (dif === 1 ? ' dia' : ' dias')) };
+  return { k: 'noprazo', dif, cor: '#166534', bg: '#dcfce7', txt: '🟢 Faltam ' + dif + ' dias' };
+}
+function pa_podeGerirPrazo(t, p) {
+  if (!t || !p || !t.prazo) return false;
+  if (!['em-andamento', 'pendente'].includes(p.status)) return false;
+  return isAdmin() || !!(t.porLogin && pa_usuarioAtual && t.porLogin === pa_usuarioAtual.login);
+}
+// Bloco do prazo, mostrado abaixo de cada movimentação
+function pa_htmlPrazoTram(p, t, i) {
+  const z = t.prazo; if (!z) return '';
+  const base = `<div style="font-size:12px;margin-top:4px"><strong>${pa_escP(z.tipo)}</strong>${z.fund ? ' · ' + pa_escP(z.fund) : ''}`;
+  const pror = (z.prorrogacoes || []).map(r => `<div style="font-size:11px;color:var(--pa-text2)">↪ Prorrogado em ${pa_fd(r.em)} por ${pa_escP(r.por)}: +${r.dias} dias úteis (de ${pa_fd(r.de)} para ${pa_fd(r.para)}) — ${pa_escP(r.motivo)}</div>`).join('');
+  if (z.sit === 'cumprido') {
+    return base + `</div><div style="font-size:12px;color:#166534;margin-top:2px">✅ Cumprido em ${pa_fd(z.cumpridoEm)}${z.cumpridoPor ? ' por ' + pa_escP(z.cumpridoPor) : ''} (vencimento: ${pa_fd(z.venc)})</div>${pror}`;
+  }
+  const e = pa_estadoPrazo(z.venc);
+  const btns = pa_podeGerirPrazo(t, p)
+    ? ` <button class="btn btn-g btn-xs" onclick="pa_cumprirPrazo(${p.id},${i})">✅ Cumprido</button> <button class="btn btn-g btn-xs" onclick="pa_abrirProrrogar(${p.id},${i})">⏩ Prorrogar</button>` : '';
+  return base + ` · ${z.dias} dias úteis · vence em <strong>${pa_fd(z.venc)}</strong></div>` +
+    `<div style="margin-top:3px"><span style="background:${e.bg};color:${e.cor};padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">${e.txt}</span>${btns}</div>${pror}`;
+}
+
+async function pa_salvarTramsPrazo(p, trams) {
+  const r = await sbPatch('pa_processos', p.id, { trams });
+  if (!r) { alert('⚠️ Não foi possível salvar. Tente novamente.'); return false; }
+  p.trams = trams; return true;
+}
+async function pa_cumprirPrazo(pid, idx) {
+  const p = pa_processos.find(x => x.id === pid); if (!p) return;
+  const t = p.trams[idx]; if (!pa_podeGerirPrazo(t, p)) { alert('⛔ Só quem fez a movimentação ou o administrador pode alterar este prazo.'); return; }
+  if (!confirm('Marcar este prazo como cumprido?\n\n' + t.prazo.tipo)) return;
+  const trams = p.trams.map((x, i) => i === idx ? Object.assign({}, x, { prazo: Object.assign({}, x.prazo, { sit: 'cumprido', cumpridoEm: pa_dataISOLocal(new Date()), cumpridoPor: pa_usuarioAtual?.nome || '' }) }) : x);
+  if (!(await pa_salvarTramsPrazo(p, trams))) return;
+  pa_auditar('EDITAR', { tabela: 'pa_processos', id: p.id, num: p.num, detalhes: `Prazo "${t.prazo.tipo}" marcado como cumprido no processo ${p.num}` });
+  toast('Prazo marcado como cumprido.');
+  if (document.getElementById('view-prazosPa')?.classList.contains('active')) pa_renderPrazos(); else pa_verDetalhe(p.id);
+}
+function pa_abrirProrrogar(pid, idx) {
+  const p = pa_processos.find(x => x.id === pid); if (!p) return;
+  const t = p.trams[idx]; if (!pa_podeGerirPrazo(t, p)) { alert('⛔ Só quem fez a movimentação ou o administrador pode alterar este prazo.'); return; }
+  const lb = 'font-size:12px;color:var(--pa-text2)';
+  pa_openModal('Prorrogar prazo — ' + p.num, `<div style="display:flex;flex-direction:column;gap:12px;padding:6px 2px;max-width:520px">
+    <div style="font-size:13px"><strong>${pa_escP(t.prazo.tipo)}</strong><br>Vencimento atual: <strong>${pa_fd(t.prazo.venc)}</strong></div>
+    <div><label style="${lb}">DIAS ÚTEIS A ACRESCENTAR</label><input type="number" id="pr-d" min="1" max="365" value="10" oninput="pa_prorrogarCalc(${pid},${idx})" style="width:100%"></div>
+    <div><label style="${lb}">NOVO VENCIMENTO</label><input type="text" id="pr-v" readonly style="width:100%"></div>
+    <div><label style="${lb}">MOTIVO (obrigatório)</label><textarea id="pr-m" rows="3" style="width:100%"></textarea></div>
+    <div style="display:flex;gap:8px"><button class="btn btn-p" onclick="pa_salvarProrrogar(${pid},${idx})">⏩ Prorrogar</button><button class="btn btn-g" onclick="pa_fm()">Cancelar</button></div>
+  </div>`, false);
+  pa_prorrogarCalc(pid, idx);
+}
+function pa_prorrogarCalc(pid, idx) {
+  const p = pa_processos.find(x => x.id === pid); if (!p) return;
+  const d = pa_calcVencPrazo(p.trams[idx].prazo.venc, document.getElementById('pr-d').value);
+  document.getElementById('pr-v').value = d ? PA_DIAS_SEMANA[d.getDay()] + ', ' + pa_fd(pa_dataISOLocal(d)) : '';
+}
+async function pa_salvarProrrogar(pid, idx) {
+  const p = pa_processos.find(x => x.id === pid); if (!p) return;
+  const t = p.trams[idx]; if (!pa_podeGerirPrazo(t, p)) { alert('⛔ Só quem fez a movimentação ou o administrador pode alterar este prazo.'); return; }
+  const dias = parseInt(document.getElementById('pr-d').value);
+  const motivo = (document.getElementById('pr-m').value || '').trim();
+  if (!dias || dias < 1 || dias > 365) { alert('Informe os dias úteis a acrescentar (de 1 a 365).'); return; }
+  if (!motivo) { alert('Informe o motivo da prorrogação.'); return; }
+  const nv = pa_calcVencPrazo(t.prazo.venc, dias); if (!nv) return;
+  const para = pa_dataISOLocal(nv);
+  const reg = { em: pa_dataISOLocal(new Date()), por: pa_usuarioAtual?.nome || '', dias, de: t.prazo.venc, para, motivo };
+  const trams = p.trams.map((x, i) => i === idx ? Object.assign({}, x, { prazo: Object.assign({}, x.prazo, { venc: para, prorrogacoes: (x.prazo.prorrogacoes || []).concat([reg]) }) }) : x);
+  if (!(await pa_salvarTramsPrazo(p, trams))) return;
+  pa_auditar('EDITAR', { tabela: 'pa_processos', id: p.id, num: p.num, detalhes: `Prazo "${t.prazo.tipo}" prorrogado até ${pa_fd(para)} no processo ${p.num} — ${motivo}` });
+  pa_fm(); toast('Prazo prorrogado até ' + pa_fd(para) + '.');
+  if (document.getElementById('view-prazosPa')?.classList.contains('active')) pa_renderPrazos(); else pa_verDetalhe(p.id);
+}
+
+// ── Tela "Prazos" (todos veem) ──
+function pa_linhasPrazos() {
+  const out = [];
+  pa_processos.forEach(p => {
+    const ativo = ['em-andamento', 'pendente'].includes(p.status);
+    (p.trams || []).forEach((t, i) => {
+      if (!t.prazo) return;
+      if (t.prazo.sit !== 'cumprido' && !ativo) return; // processo encerrado não gera acompanhamento
+      out.push({ p, t, i, z: t.prazo });
+    });
+  });
+  return out;
+}
+function pa_renderPrazos() {
+  const tb = document.getElementById('pz-tbody'), rs = document.getElementById('pz-resumo'); if (!tb || !rs) return;
+  const q = (document.getElementById('pz-q')?.value || '').toLowerCase().trim();
+  const sf = document.getElementById('pz-sf')?.value || 'abertos';
+  const todas = pa_linhasPrazos().map(x => Object.assign(x, { e: x.z.sit === 'cumprido' ? null : pa_estadoPrazo(x.z.venc) }));
+  const cnt = k => todas.filter(x => x.e && x.e.k === k).length;
+  rs.innerHTML = `<span style="background:#fee2e2;color:#b91c1c;padding:4px 10px;border-radius:10px;font-size:12px;font-weight:600">🔴 Vencidos: ${cnt('vencido')}</span> ` +
+    `<span style="background:#fef3c7;color:#a16207;padding:4px 10px;border-radius:10px;font-size:12px;font-weight:600">🟡 Vencendo em até 5 dias: ${cnt('vencendo')}</span> ` +
+    `<span style="background:#dcfce7;color:#166534;padding:4px 10px;border-radius:10px;font-size:12px;font-weight:600">🟢 No prazo: ${cnt('noprazo')}</span>`;
+  let lista = todas.filter(x => {
+    if (sf === 'abertos' && x.z.sit === 'cumprido') return false;
+    if (sf === 'vencidos' && !(x.e && x.e.k === 'vencido')) return false;
+    if (sf === 'vencendo' && !(x.e && x.e.k === 'vencendo')) return false;
+    if (sf === 'cumpridos' && x.z.sit !== 'cumprido') return false;
+    if (q) { const s = [x.p.num, x.p.nome, x.z.tipo, x.t.destino, x.t.por].join(' ').toLowerCase(); if (!s.includes(q)) return false; }
+    return true;
+  });
+  lista.sort((a, b) => (a.z.sit === 'cumprido') - (b.z.sit === 'cumprido') || String(a.z.venc).localeCompare(String(b.z.venc)));
+  if (!lista.length) { tb.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--pa-text2);padding:18px">Nenhum prazo encontrado.</td></tr>'; return; }
+  tb.innerHTML = lista.map(x => {
+    const sit = x.z.sit === 'cumprido'
+      ? '<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">✅ Cumprido</span>'
+      : `<span style="background:${x.e.bg};color:${x.e.cor};padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;white-space:nowrap">${x.e.txt}</span>`;
+    const pror = (x.z.prorrogacoes || []).length ? ` <span title="Prorrogado ${(x.z.prorrogacoes || []).length}x" style="font-size:11px">⏩</span>` : '';
+    const acoes = `<button class="btn btn-g btn-xs" onclick="pa_verDetalhe(${x.p.id})">Abrir processo</button>` +
+      (x.z.sit !== 'cumprido' && pa_podeGerirPrazo(x.t, x.p) ? ` <button class="btn btn-g btn-xs" onclick="pa_cumprirPrazo(${x.p.id},${x.i})">✅</button> <button class="btn btn-g btn-xs" onclick="pa_abrirProrrogar(${x.p.id},${x.i})">⏩</button>` : '');
+    return `<tr><td style="white-space:nowrap"><strong>${pa_fd(x.z.venc)}</strong>${pror}</td><td>${sit}</td>` +
+      `<td><strong>${pa_escP(x.p.num)}</strong></td><td>${pa_escP(x.p.nome)}</td>` +
+      `<td>${pa_escP(x.z.tipo)}<div style="font-size:11px;color:var(--pa-text2)">${pa_escP(x.z.fund || '')}${x.z.quem ? ' · ' + pa_escP(x.z.quem) : ''}</div></td>` +
+      `<td>${pa_escP(x.t.destino)}</td><td>${pa_escP(x.t.por || '—')}</td><td><div style="display:flex;gap:4px;flex-wrap:wrap;min-width:120px">${acoes}</div></td></tr>`;
+  }).join('');
 }
 
 // ═══════════════════════════════════════════════════════════════
