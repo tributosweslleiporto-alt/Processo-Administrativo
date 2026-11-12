@@ -1310,6 +1310,15 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
         </div>
       </div>
 
+      <!-- TABELA DE PRAZOS (consulta para todos; edição só admin) -->
+      <div id="view-tabelaPrazosPa" class="view">
+        <div class="card"><div class="card-title" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">Tabela de prazos do PAF — LC nº 05/2025
+            <span style="display:flex;gap:6px;flex-wrap:wrap"><span id="tp-admin-btns"></span><button class="btn btn-g btn-sm" onclick="pa_imprimirTabelaPrazos()">🖨️ Imprimir / salvar PDF</button></span></div>
+          <input type="text" id="tp-q" placeholder="Buscar (ex.: baixa, impugnação, recurso, certidão)..." oninput="pa_renderTabelaPrazos()" style="width:100%;margin-bottom:8px">
+          <div id="tp-body"></div>
+        </div>
+      </div>
+
       <div id="view-tram" class="view">
         <div class="grid2">
           <div class="card"><div class="card-title">Registrar movimentação</div>
@@ -2462,7 +2471,7 @@ function rowToTermo(row) {
 }
 
 async function carregarDadosPA() {
-  const [procs, rels, folhas, ints, termos, prots, dests, pars] = await Promise.all([
+  const [procs, rels, folhas, ints, termos, prots, dests, pars, tips] = await Promise.all([
     sbGet('pa_processos','select=*&limit=500'),
     sbGet('pa_relatorios','select=*&limit=500'),
     sbGet('pa_folhas','select=*&limit=1000'),
@@ -2471,6 +2480,7 @@ async function carregarDadosPA() {
     sbGet('pa_protocolos','select=*&limit=3000'),
     sbGet('pa_destinos','select=*&limit=500'),
     sbGet('pa_pareceres','select=*&limit=3000'),
+    sbGet('pa_tipos_prazo','select=*&limit=500'),
   ]);
   pa_processos   = (procs   || []).map(rowToProcesso);
   // (auto-reparo automático removido — vínculo agora é criado apenas via ação manual do usuário)
@@ -2481,6 +2491,7 @@ async function carregarDadosPA() {
   pa_protocolos  = (prots   || []).map(rowToProtocoloPa);
   pa_destinos    = (dests   || []).map(rowToDestinoPa);
   pa_pareceres   = (pars    || []).map(rowToParecerPa);
+  pa_tiposPrazoDb = (tips   || []).map(rowToTipoPrazoPa);
   pa_nextProcId  = pa_processos.length  ? Math.max(...pa_processos.map(p=>p.id)) + 1 : 1;
   pa_nextRelId   = pa_relatorios.length ? Math.max(...pa_relatorios.map(p=>p.id)) + 1 : 1;
   pa_nextFolhaId = pa_folhas.length     ? Math.max(...pa_folhas.map(p=>p.id)) + 1 : 1;
@@ -3286,7 +3297,7 @@ function logout() {
   if (window._refreshIntervalA) { clearInterval(window._refreshIntervalA); window._refreshIntervalA = null; }
   if (window._refreshIntervalB) { clearInterval(window._refreshIntervalB); window._refreshIntervalB = null; }
   // Limpar dados PA em memória
-  pa_processos = []; pa_relatorios = []; pa_folhas = []; pa_intimacoes = []; pa_termos = []; pa_protocolos = []; pa_destinos = []; pa_pareceres = [];
+  pa_processos = []; pa_relatorios = []; pa_folhas = []; pa_intimacoes = []; pa_termos = []; pa_protocolos = []; pa_destinos = []; pa_pareceres = []; pa_tiposPrazoDb = [];
   // Mostrar login
   const app = document.getElementById('unified-app');
   const login = document.getElementById('loginScreen');
@@ -3302,7 +3313,7 @@ function logout() {
 const TITULOS = {
   dashboard:'Dashboard', novoProtocolo:'Novo Protocolo', protocolos:'Consultar Protocolos',
   protocolosPa:'Protocolos — ProcessAdmin', 'novo-protocoloPa':'Protocolo — ProcessAdmin',
-  destinosPa:'Setores de tramitação', prazosPa:'Prazos',
+  destinosPa:'Setores de tramitação', prazosPa:'Prazos', tabelaPrazosPa:'Tabela de prazos',
   relatorios:'Relatórios', configuracoes:'Configurações',
   painel:'ProcessAdmin — Painel', processos:'Processos Administrativos',
   detalhe:'Detalhe do Processo', 'novo-proc':'Novo Processo',
@@ -3325,7 +3336,7 @@ function navegarPara(destino, btn) {
   // Segurança extra: Auxiliar Administrativo não tem acesso ao Sistema B (ProcessAdmin)
   const TELAS_SISTEMA_B = ['painel','processos','tram','relatoriosPa','notificacoesPa','intimacoes',
     'usuariosPa','auditoria','backup','novo-proc','detalhe','folhas','nova-intimacao','despacho',
-    'relatorioInd','relatorioCol','novoRelInd','novoRelCol','protocolosPa','novo-protocoloPa','destinosPa','prazosPa'];
+    'relatorioInd','relatorioCol','novoRelInd','novoRelCol','protocolosPa','novo-protocoloPa','destinosPa','prazosPa','tabelaPrazosPa'];
   if (TELAS_SISTEMA_B.includes(destino) && usuarioLogado?.perfil === 'auxiliar_adm') {
     alert('⛔ Este perfil não tem acesso ao módulo de Processos Administrativos.');
     return;
@@ -3394,6 +3405,7 @@ function navegarPara(destino, btn) {
     'novo-rel-ind':   () => pa_initRelInd(),
     'novo-rel-col':   () => pa_initRelCol(),
     prazosPa:         () => pa_renderPrazos(),
+    tabelaPrazosPa:   () => pa_renderTabelaPrazos(),
     notificacoesPa:   () => pa_renderNotificacoes(),
     usuariosPa:       () => pa_renderUsuarios(),
     auditoria:        () => pa_carregarAuditoria(),
@@ -3447,6 +3459,7 @@ function buildUnifiedNav() {
     const canTram = admin || perf?.perms?.despacho || perf?.perms?.processo;
     if (canTram) html += navBtn('tram','arrow-right','Tramitação');
     html += navBtn('prazosPa','clock','Prazos');
+    html += navBtn('tabelaPrazosPa','clipboard','Tabela de prazos');
     const canRel = admin || perf?.perms?.relatorio || perf?.perms?.despacho || perf?.perms?.processo;
     if (canRel) html += navBtn('relatoriosPa','clipboard','Relatórios Fisc.',0);
     html += navBtn('notificacoesPa','bell','Notificações',notifPA);
@@ -8798,7 +8811,7 @@ async function pa_exportarBackup() {
       if (!r.error) anexosB = r.data || [];
     } catch(e) { console.warn('Anexos não disponíveis:', e); }
 
-    const [procs, rels, folhas, intimacoes, usuariosRows, protocolosRows, destinosRows, pareceresRows] = await Promise.all([
+    const [procs, rels, folhas, intimacoes, usuariosRows, protocolosRows, destinosRows, pareceresRows, tiposRows] = await Promise.all([
       sbGet('pa_processos', 'select=*&limit=10000'),
       sbGet('pa_relatorios', 'select=*&limit=10000'),
       sbGet('pa_folhas', 'select=*&limit=10000'),
@@ -8806,7 +8819,8 @@ async function pa_exportarBackup() {
       sbGet('usuarios', 'select=*&limit=1000'),
       sbGet('pa_protocolos', 'select=*&limit=10000'),
       sbGet('pa_destinos', 'select=*&limit=1000'),
-      sbGet('pa_pareceres', 'select=*&limit=10000')
+      sbGet('pa_pareceres', 'select=*&limit=10000'),
+      sbGet('pa_tipos_prazo', 'select=*&limit=1000')
     ]);
     const dados = {
       versao: '6.1',
@@ -8817,7 +8831,7 @@ async function pa_exportarBackup() {
       pa_nextProcId, pa_nextProcNum, pa_nextRelId, pa_nextRelNum,
       pa_nextFolhaId, pa_nextPerfId, pa_nextTribId,
       pa_perfis, pa_tributos,
-      tabelas: { pa_processos: procs||[], pa_relatorios: rels||[], pa_folhas: folhas||[], pa_intimacoes: intimacoes||[], usuarios: usuariosRows||[], pa_protocolos: protocolosRows||[], pa_destinos: destinosRows||[], pa_pareceres: pareceresRows||[], anexos: anexosB }
+      tabelas: { pa_processos: procs||[], pa_relatorios: rels||[], pa_folhas: folhas||[], pa_intimacoes: intimacoes||[], usuarios: usuariosRows||[], pa_protocolos: protocolosRows||[], pa_destinos: destinosRows||[], pa_pareceres: pareceresRows||[], pa_tipos_prazo: tiposRows||[], anexos: anexosB }
     };
     const json = JSON.stringify(dados, null, 2);
     const blob = new Blob([json], {type:'application/json'});
@@ -8896,6 +8910,7 @@ async function pa_importarBackup(input) {
       for(const row of (t.pa_protocolos||[])){ await tentarInserir('pa_protocolos', row); }
       for(const row of (t.pa_destinos||[])){ await tentarInserir('pa_destinos', row); }
       for(const row of (t.pa_pareceres||[])){ await tentarInserir('pa_pareceres', row); }
+      for(const row of (t.pa_tipos_prazo||[])){ await tentarInserir('pa_tipos_prazo', row); }
 
       // Atualizar dados locais (perfis e tributos ficam só em memória)
       if(dados.pa_perfis) pa_perfis = dados.pa_perfis;
@@ -8984,24 +8999,23 @@ function pa_prevFolhaById(fid) {
 // Tabela de referência: Guia de prazos do PAF — LC nº 05/2025 (versão corrigida).
 // ═══════════════════════════════════════════════════════════════
 const PA_TIPOS_PRAZO = [
-  { nome: 'Impugnação de lançamento / auto de infração', dias: 20, quem: 'Contribuinte', fund: 'Art. 270, caput e § 4º' },
-  { nome: 'Contestação fiscal / parecer técnico', dias: 40, quem: 'Preposto fiscal', fund: 'Art. 271, caput e § 3º' },
-  { nome: 'Manifestação sobre termo complementar', dias: 20, quem: 'Contribuinte', fund: 'Art. 255' },
-  { nome: 'Sentença de 1ª instância administrativa', dias: 60, quem: 'Secretário de Finanças / Julgador', fund: 'Art. 274, caput' },
-  { nome: 'Recurso voluntário para 2ª instância', dias: 20, quem: 'Contribuinte', fund: 'Art. 275, caput' },
-  { nome: 'Julgamento de 2ª instância (rito regimental — informar dias)', dias: null, quem: 'Conselho de Tributos / Prefeito', fund: 'Art. 273, II e § 2º' },
-  { nome: 'Cumprimento de decisão definitiva (pagamento)', dias: 20, quem: 'Contribuinte', fund: 'Art. 278, parágrafo único' },
-  { nome: 'Exibição de documentos requisitados', dias: 5, quem: 'Contribuinte', fund: 'Art. 229, caput' },
-  { nome: 'Exibição de livros fiscais e contábeis', dias: 10, quem: 'Contribuinte', fund: 'Art. 144, parágrafo único' },
-  { nome: 'Certidão verbo ad verbum / positiva c/ efeito negativa', dias: 5, quem: 'Fazenda Municipal', fund: 'Art. 16' },
-  { nome: 'Certidão negativa de débito (CND) ordinária', dias: 10, quem: 'Fazenda Municipal', fund: 'Art. 313' },
-  { nome: 'Comunicação de alteração ou inscrição cadastral (do fato)', dias: 20, quem: 'Contribuinte', fund: 'Art. 282, par. único / Art. 294, § 2º' },
-  { nome: 'Pedido de revisão cadastral (do fato)', dias: 20, quem: 'Contribuinte', fund: 'Art. 265, § 1º' },
-  { nome: 'Resposta a pedido de baixa cadastral ordinário', dias: 40, quem: 'Fazenda / Preposto fiscal', fund: 'Art. 268, caput' },
-  { nome: 'Resposta a baixa (EI/ME/EPP sem movimento > 3 anos)', dias: 60, quem: 'Fazenda / Preposto fiscal', fund: 'Art. 300, I' },
-  { nome: 'Resposta a processo de consulta tributária', dias: 60, quem: 'Secretário de Finanças', fund: 'Art. 263, caput' },
-  { nome: 'Adequação à resposta da consulta tributária', dias: 20, quem: 'Contribuinte', fund: 'Art. 263, § 1º' },
-  { nome: 'Outro (informar dias e fundamento)', dias: null, quem: '', fund: '' }
+  { secao: 'contencioso', nome: 'Impugnação de lançamento / auto de infração', quem: 'Contribuinte (Sujeito Passivo)', dias: 20, txt: '20 dias úteis (+10 se requerido)', fund: 'Art. 270, caput e § 4º' },
+  { secao: 'contencioso', nome: 'Contestação fiscal / parecer técnico', quem: 'Preposto Fiscal (Autor da Ação)', dias: 40, txt: '40 dias úteis (remessa conclusa)', fund: 'Art. 271, caput e § 3º' },
+  { secao: 'contencioso', nome: 'Manifestação sobre termo complementar', quem: 'Contribuinte', dias: 20, txt: '20 dias úteis', fund: 'Art. 255' },
+  { secao: 'contencioso', nome: 'Sentença de 1ª instância administrativa', quem: 'Secretário de Finanças / Julgador', dias: 60, txt: 'Até 60 dias úteis', fund: 'Art. 274, caput' },
+  { secao: 'contencioso', nome: 'Recurso voluntário para 2ª instância', quem: 'Contribuinte', dias: 20, txt: '20 dias úteis', fund: 'Art. 275, caput' },
+  { secao: 'contencioso', nome: 'Julgamento de 2ª instância (rito regimental — informar dias)', quem: 'Conselho de Tributos / Prefeito', dias: null, txt: 'Rito regimental', fund: 'Art. 273, II e § 2º' },
+  { secao: 'contencioso', nome: 'Cumprimento de decisão definitiva (pagamento)', quem: 'Contribuinte', dias: 20, txt: '20 dias úteis', fund: 'Art. 278, parágrafo único' },
+  { secao: 'nao_contencioso', nome: 'Exibição de documentos requisitados', quem: 'Contribuinte', dias: 5, txt: '5 dias úteis', fund: 'Art. 229, caput' },
+  { secao: 'nao_contencioso', nome: 'Exibição de livros fiscais e contábeis', quem: 'Contribuinte', dias: 10, txt: '10 dias úteis', fund: 'Art. 144, parágrafo único' },
+  { secao: 'nao_contencioso', nome: 'Certidão verbo ad verbum / positiva c/ efeito negativa', quem: 'Fazenda Municipal', dias: 5, txt: 'Até 5 dias úteis', fund: 'Art. 16' },
+  { secao: 'nao_contencioso', nome: 'Certidão negativa de débito (CND) ordinária', quem: 'Fazenda Municipal', dias: 10, txt: 'Até 10 dias úteis', fund: 'Art. 313' },
+  { secao: 'nao_contencioso', nome: 'Comunicação de alteração ou inscrição cadastral (do fato)', quem: 'Contribuinte', dias: 20, txt: '20 dias úteis do fato', fund: 'Art. 282, par. único / Art. 294, § 2' },
+  { secao: 'nao_contencioso', nome: 'Pedido de revisão cadastral (do fato)', quem: 'Contribuinte', dias: 20, txt: '20 dias úteis do fato', fund: 'Art. 265, § 1º' },
+  { secao: 'nao_contencioso', nome: 'Resposta a pedido de baixa cadastral ordinário', quem: 'Fazenda / Preposto Fiscal', dias: 40, txt: 'Até 40 dias úteis', fund: 'Art. 268, caput' },
+  { secao: 'nao_contencioso', nome: 'Resposta a baixa (EI/ME/EPP sem movimento > 3 anos)', quem: 'Fazenda / Preposto Fiscal', dias: 60, txt: 'Até 60 dias úteis', fund: 'Art. 300, I' },
+  { secao: 'nao_contencioso', nome: 'Resposta a processo de consulta tributária', quem: 'Secretário de Finanças', dias: 60, txt: 'Até 60 dias úteis', fund: 'Art. 263, caput' },
+  { secao: 'nao_contencioso', nome: 'Adequação à resposta da consulta tributária', quem: 'Contribuinte', dias: 20, txt: '20 dias úteis', fund: 'Art. 263, § 1º' }
 ];
 const PA_PZ_IDS = { tm: ['tm-d', 'tm-dt'], np: ['np-de', 'np-dt'], tr: ['tr-d', 'tr-dt'] };
 
@@ -9011,10 +9025,10 @@ function pa_destinoSemPrazo(nome) {
 }
 function pa_prazoHtml(pref) {
   const opts = '<option value="">Selecione o tipo de prazo...</option>' +
-    PA_TIPOS_PRAZO.map((t, i) => `<option value="${i}">${pa_escP(t.nome)}${t.dias ? ' — ' + t.dias + ' dias úteis' : ''}</option>`).join('');
+    pa_listaTiposPrazo().map((t, i) => `<option value="${i}">${pa_escP(t.nome)}${t.dias ? ' — ' + t.dias + ' dias úteis' : ''}</option>`).join('');
   const lb = 'font-size:11px;font-weight:600;color:var(--pa-text2)';
   return `<div id="${pref}-pz" style="display:none;border:1px solid var(--pa-border);border-radius:8px;padding:10px;background:var(--pa-bg2);margin-top:4px">
-    <div style="font-weight:700;font-size:12px;margin-bottom:8px">⏱️ PRAZO <span style="font-weight:400;color:var(--pa-text2)">(obrigatório para este destino)</span></div>
+    <div style="font-weight:700;font-size:12px;margin-bottom:8px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><span>⏱️ PRAZO <span style="font-weight:400;color:var(--pa-text2)">(obrigatório para este destino)</span></span><a href="#" onclick="pa_abrirTabelaPrazos('${pref}');return false" style="font-weight:600">📋 Ver tabela de prazos</a></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <div style="grid-column:1/-1"><label style="${lb}">TIPO DE PRAZO</label><select id="${pref}-pz-t" onchange="pa_prazoTipo('${pref}')" style="width:100%">${opts}</select></div>
       <div><label style="${lb}">DIAS ÚTEIS</label><input type="number" id="${pref}-pz-d" min="1" max="365" oninput="pa_prazoCalc('${pref}')" style="width:100%"></div>
@@ -9027,7 +9041,7 @@ function pa_prazoHtml(pref) {
 }
 function pa_prazoTipo(pref) {
   const g = id => document.getElementById(pref + '-pz-' + id);
-  const i = g('t').value; const t = i === '' ? null : PA_TIPOS_PRAZO[parseInt(i)];
+  const i = g('t').value; const t = i === '' ? null : pa_listaTiposPrazo()[parseInt(i)];
   if (t) { g('d').value = t.dias || ''; g('f').value = t.fund || ''; }
   pa_prazoCalc(pref);
 }
@@ -9073,7 +9087,7 @@ function pa_lerPrazo(pref) {
   const g = id => document.getElementById(pref + '-pz-' + id);
   const ti = g('t').value;
   if (ti === '') return { erro: 'Escolha o tipo de prazo.' };
-  const t = PA_TIPOS_PRAZO[parseInt(ti)];
+  const t = pa_listaTiposPrazo()[parseInt(ti)]; if (!t) return { erro: 'Escolha o tipo de prazo.' };
   const dias = parseInt(g('d').value);
   if (!dias || dias < 1 || dias > 365) return { erro: 'Informe o prazo em dias úteis (de 1 a 365).' };
   const ini = g('i').value; if (!ini) return { erro: 'Informe a data de início da contagem.' };
@@ -9206,6 +9220,172 @@ function pa_renderPrazos() {
       `<td>${pa_escP(x.z.tipo)}<div style="font-size:11px;color:var(--pa-text2)">${pa_escP(x.z.fund || '')}${x.z.quem ? ' · ' + pa_escP(x.z.quem) : ''}</div></td>` +
       `<td>${pa_escP(x.t.destino)}</td><td>${pa_escP(x.t.por || '—')}</td><td><div style="display:flex;gap:4px;flex-wrap:wrap;min-width:120px">${acoes}</div></td></tr>`;
   }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ETAPA 7B — Tabela de prazos do PAF: consulta, busca, impressão e edição pelo admin
+// A lista vem da tabela pa_tipos_prazo; se estiver vazia, vale a tabela padrão do código.
+// ═══════════════════════════════════════════════════════════════
+const PA_TIPO_OUTRO = { id: null, secao: 'outro', nome: 'Outro (informar dias e fundamento)', dias: null, quem: '', txt: '', fund: '', ativo: true, ordem: 999 };
+let pa_tiposPrazoDb = [];
+function rowToTipoPrazoPa(r) {
+  return { id: r.id, secao: r.secao === 'nao_contencioso' ? 'nao_contencioso' : 'contencioso', nome: r.nome || '', quem: r.quem || '',
+    dias: r.dias == null ? null : r.dias, txt: r.prazo_txt || '', fund: r.fund || '', ativo: r.ativo !== false, ordem: r.ordem || 0 };
+}
+// Itens da tabela (sem "Outro"). O admin vê também os desativados.
+function pa_baseTiposPrazo(comInativos) {
+  const base = pa_tiposPrazoDb.length ? pa_tiposPrazoDb.slice() : PA_TIPOS_PRAZO.map((t, i) => Object.assign({ id: null, ativo: true, ordem: i + 1 }, t));
+  return base.filter(t => comInativos || t.ativo).sort((a, b) => (a.ordem - b.ordem) || a.nome.localeCompare(b.nome, 'pt-BR'));
+}
+// Lista usada nos formulários de prazo (ativos + "Outro" no fim)
+function pa_listaTiposPrazo() { return pa_baseTiposPrazo(false).concat([PA_TIPO_OUTRO]); }
+
+const PA_REGRAS_GERAIS = [
+  ['Dias úteis: todos os prazos do PAF fluem a partir da ciência formal e são contados exclusivamente em dias úteis.', 'Art. 261, caput'],
+  ['Exclui-se na contagem o dia do início e inclui-se o dia do vencimento.', 'Art. 261, caput'],
+  ['Os prazos só se iniciam ou vencem em dias de expediente normal da Administração Tributária.', 'Art. 261, § 1º'],
+  ['Processo eletrônico (DTE/CP-e): ciência eletrônica em até 10 dias corridos do envio ou na data da consulta. Envio tempestivo até as 23h59min59s do último dia do prazo.', 'Art. 241, § 2º / Art. 243, par. único']
+];
+const PA_ALERTAS_PAF = [
+  ['Perda de prazo para contestação pelo fiscal (Art. 271, § 2º)', 'Em caso de impedimento ou perda do prazo de 40 dias úteis pelo fiscal autuante, a autoridade administrativa determinará outro Preposto Fiscal para oferecer a contestação.'],
+  ['Transcurso de prazo sem sentença de 1ª instância (Art. 274, parágrafo único)', 'Não sendo proferida a sentença no prazo de até 60 dias úteis, o contribuinte pode interpor Recurso Voluntário como se o lançamento tivesse sido julgado procedente em 1ª Instância, cessando a jurisdição do Secretário.'],
+  ['Revelia do contribuinte (Art. 256)', 'O autuado que não apresentar impugnação no prazo de 20 dias úteis será considerado revel, lavrando-se o Termo de Revelia e conformação do crédito.']
+];
+const PA_TAB_SECOES = { contencioso: '2. Prazos do processo contencioso (impugnações e recursos)', nao_contencioso: '3. Procedimentos não contenciosos e atendimento geral' };
+const pa_semAcento = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+// Tabelas das seções 2 e 3. opts: { q, usar (prefixo do formulário), admin }
+function pa_htmlTabelasPrazos(opts) {
+  opts = opts || {};
+  const q = pa_semAcento(opts.q || '');
+  const lista = pa_listaTiposPrazo();
+  const th = 'border:1px solid #bbb;padding:6px 8px;text-align:left;background:#eee;font-size:11px;text-transform:uppercase';
+  const td = 'border:1px solid #ccc;padding:6px 8px;vertical-align:top;font-size:12.5px';
+  let out = '';
+  for (const sec of ['contencioso', 'nao_contencioso']) {
+    const itens = pa_baseTiposPrazo(!!opts.admin).filter(t => t.secao === sec)
+      .filter(t => !q || pa_semAcento([t.nome, t.quem, t.txt, t.fund].join(' ')).includes(q));
+    if (!itens.length && q) continue;
+    const linhas = itens.map(t => {
+      let acao = '';
+      if (opts.usar) { const ix = lista.findIndex(x => x.nome === t.nome); acao = ix >= 0 ? `<button class="btn btn-p btn-xs" onclick="pa_usarTipoPrazo('${opts.usar}',${ix})">Usar</button>` : ''; }
+      else if (opts.admin && t.id) acao = `<button class="btn btn-g btn-xs" onclick="pa_editarTipoPrazo(${t.id})">✏️ Editar</button> <button class="btn btn-g btn-xs" onclick="pa_alternarTipoPrazo(${t.id})">${t.ativo ? 'Desativar' : 'Reativar'}</button>`;
+      const ina = t.ativo ? '' : ' <span style="font-size:11px;color:#b45309">(desativado)</span>';
+      return `<tr${t.ativo ? '' : ' style="opacity:.55"'}><td style="${td}">${pa_escP(t.nome)}${ina}</td><td style="${td}">${pa_escP(t.quem)}</td><td style="${td}">${pa_escP(t.txt || (t.dias ? t.dias + ' dias úteis' : '—'))}</td><td style="${td}">${pa_escP(t.fund)}</td>${(opts.usar || opts.admin) ? `<td style="${td};white-space:nowrap">${acao}</td>` : ''}</tr>`;
+    }).join('');
+    out += `<div style="font-weight:700;font-size:13px;margin:14px 0 6px">${PA_TAB_SECOES[sec]}</div>` +
+      `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th style="${th}">Procedimento / ato</th><th style="${th}">Quem pratica</th><th style="${th}">Prazo legal</th><th style="${th}">Fundamento legal</th>${(opts.usar || opts.admin) ? `<th style="${th}"></th>` : ''}</tr></thead><tbody>${linhas || `<tr><td colspan="5" style="${td}">Nenhum item.</td></tr>`}</tbody></table></div>`;
+  }
+  return out || '<p style="color:#666;font-size:13px">Nenhum prazo encontrado para essa busca.</p>';
+}
+function pa_htmlRegrasPrazos() {
+  return `<div style="font-weight:700;font-size:13px;margin:6px 0">1. Regras gerais de contagem dos prazos (Art. 261 — LC nº 05/2025)</div><ul style="margin:0 0 4px 18px;padding:0;font-size:12.5px;line-height:1.6">` +
+    PA_REGRAS_GERAIS.map(r => `<li>${pa_escP(r[0])} <span style="color:#555">(${pa_escP(r[1])})</span></li>`).join('') + '</ul>';
+}
+function pa_htmlAlertasPrazos() {
+  return `<div style="font-weight:700;font-size:13px;margin:16px 0 6px">4. Alertas e consequências jurídicas relevantes</div>` +
+    PA_ALERTAS_PAF.map((a, i) => `<div style="font-size:12.5px;margin-bottom:6px"><strong>${i + 1}. ${pa_escP(a[0])}:</strong> ${pa_escP(a[1])}</div>`).join('');
+}
+const PA_TAB_AVISO = 'Guia operacional interno. Em caso de divergência, prevalece o texto da Lei Complementar nº 05/2025.';
+
+// ── Tela "Tabela de prazos" ──
+function pa_renderTabelaPrazos() {
+  const body = document.getElementById('tp-body'), btns = document.getElementById('tp-admin-btns'); if (!body) return;
+  const q = document.getElementById('tp-q')?.value || '';
+  const adm = isAdmin();
+  if (btns) btns.innerHTML = adm ? '<button class="btn btn-p btn-sm" onclick="pa_editarTipoPrazo(0)">+ Novo tipo</button>' : '';
+  let aviso = '';
+  if (adm && !pa_tiposPrazoDb.length) aviso = `<div style="font-size:12px;color:#b45309;margin-bottom:8px">A tabela ainda não foi gravada no banco: o sistema usa a tabela padrão. <button class="btn btn-p btn-xs" onclick="pa_semearTiposPrazo()">Gravar a tabela padrão no banco para poder editar</button></div>`;
+  body.innerHTML = aviso + (q.trim() ? '' : pa_htmlRegrasPrazos()) + pa_htmlTabelasPrazos({ q, admin: adm && pa_tiposPrazoDb.length > 0 }) + (q.trim() ? '' : pa_htmlAlertasPrazos()) +
+    `<div style="font-size:11px;color:var(--pa-text2);margin-top:12px">${PA_TAB_AVISO}</div>`;
+}
+function pa_imprimirTabelaPrazos() {
+  const corpo = `<div class="doc-sheet"><div class="doc-hdr"><div class="doc-brasao"><img src="${BRASAO_SRC}" style="width:52px;height:52px;object-fit:contain"></div><div class="doc-hdr-c"><div class="doc-inst">Prefeitura Municipal de Caetité / BA</div><div class="doc-sub">SEFAZ — Gerência de Tributos e Arrecadação</div></div><div style="width:48px"></div></div>` +
+    `<div class="doc-bar">Tabela de prazos do processo administrativo fiscal (PAF)</div><div style="font-size:11px;text-align:center;margin-bottom:8px">Guia operacional — Lei Complementar nº 05/2025</div>` +
+    pa_htmlRegrasPrazos() + pa_htmlTabelasPrazos({}) + pa_htmlAlertasPrazos() + `<div style="font-size:10px;margin-top:14px;text-align:center">${PA_TAB_AVISO}</div></div>`;
+  pa_abrirJanelaImpressao('Tabela de prazos do PAF', corpo);
+}
+
+// ── Consulta dentro do formulário de prazo (sem perder o que já foi preenchido) ──
+function pa_abrirTabelaPrazos(pref) {
+  let ov = document.getElementById('pa-tabprazos-ov');
+  if (!ov) { ov = document.createElement('div'); ov.id = 'pa-tabprazos-ov'; document.body.appendChild(ov); }
+  ov.dataset.pref = pref || '';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow:auto';
+  ov.innerHTML = `<div style="background:#fff;color:#111;border-radius:12px;padding:16px;max-width:1000px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,.3)">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px"><strong style="font-size:15px">📋 Tabela de prazos do PAF</strong><button class="btn btn-g btn-sm" onclick="pa_fecharTabelaPrazos()">✕ Fechar</button></div>
+    <input type="text" id="tp-ov-q" placeholder="Buscar (ex.: baixa, impugnação, recurso, certidão)..." oninput="pa_renderTabelaOv()" style="width:100%;margin-bottom:6px">
+    <div id="tp-ov-body"></div><div style="font-size:11px;color:#666;margin-top:10px">${PA_TAB_AVISO}</div></div>`;
+  pa_renderTabelaOv();
+}
+function pa_renderTabelaOv() {
+  const ov = document.getElementById('pa-tabprazos-ov'), b = document.getElementById('tp-ov-body'); if (!ov || !b) return;
+  b.innerHTML = pa_htmlTabelasPrazos({ q: document.getElementById('tp-ov-q')?.value || '', usar: ov.dataset.pref || '' });
+}
+function pa_fecharTabelaPrazos() { const ov = document.getElementById('pa-tabprazos-ov'); if (ov) ov.style.display = 'none'; }
+function pa_usarTipoPrazo(pref, idx) {
+  const box = document.getElementById(pref + '-pz');
+  if (!box || box.style.display === 'none') { alert('Escolha primeiro o destino: o prazo aparece depois dele.'); return; }
+  document.getElementById(pref + '-pz-t').value = String(idx);
+  pa_prazoTipo(pref);
+  pa_fecharTabelaPrazos();
+}
+
+// ── Edição pelo admin ──
+function pa_editarTipoPrazo(id) {
+  if (!isAdmin()) { alert('⛔ Apenas o administrador pode editar a tabela de prazos.'); return; }
+  const t = id ? pa_tiposPrazoDb.find(x => x.id === id) : { secao: 'contencioso', nome: '', quem: '', dias: null, txt: '', fund: '' };
+  if (!t) return;
+  const lb = 'font-size:12px;color:var(--pa-text2)';
+  pa_openModal(id ? 'Editar tipo de prazo' : 'Novo tipo de prazo', `<div style="display:flex;flex-direction:column;gap:10px;padding:6px 2px;max-width:560px">
+    <div><label style="${lb}">PROCEDIMENTO / ATO</label><input type="text" id="tpe-n" value="${pa_escP(t.nome)}" style="width:100%"></div>
+    <div><label style="${lb}">SEÇÃO</label><select id="tpe-s" style="width:100%"><option value="contencioso"${t.secao === 'contencioso' ? ' selected' : ''}>Contencioso (impugnações e recursos)</option><option value="nao_contencioso"${t.secao === 'nao_contencioso' ? ' selected' : ''}>Não contencioso e atendimento geral</option></select></div>
+    <div><label style="${lb}">QUEM PRATICA</label><input type="text" id="tpe-q" value="${pa_escP(t.quem)}" style="width:100%"></div>
+    <div><label style="${lb}">DIAS ÚTEIS (vazio se não houver número, como rito regimental)</label><input type="number" id="tpe-d" min="1" max="365" value="${t.dias || ''}" style="width:100%"></div>
+    <div><label style="${lb}">TEXTO DO PRAZO LEGAL (como aparece na tabela)</label><input type="text" id="tpe-t" value="${pa_escP(t.txt)}" placeholder="Ex.: 20 dias úteis (+10 se requerido)" style="width:100%"></div>
+    <div><label style="${lb}">FUNDAMENTO LEGAL</label><input type="text" id="tpe-f" value="${pa_escP(t.fund)}" placeholder="Ex.: Art. 270, caput e § 4º" style="width:100%"></div>
+    <div style="display:flex;gap:8px"><button class="btn btn-p" onclick="pa_salvarTipoPrazo(${id || 0})">✓ Salvar</button><button class="btn btn-g" onclick="pa_fm()">Cancelar</button></div>
+  </div>`, false);
+}
+async function pa_salvarTipoPrazo(id) {
+  if (!isAdmin()) return;
+  const g = x => document.getElementById(x);
+  const nome = g('tpe-n').value.trim(), dias = parseInt(g('tpe-d').value) || null;
+  if (!nome) { alert('Informe o nome do procedimento.'); return; }
+  if (dias && (dias < 1 || dias > 365)) { alert('Dias úteis deve ficar entre 1 e 365.'); return; }
+  if (pa_tiposPrazoDb.some(x => x.id !== id && x.nome.toLowerCase() === nome.toLowerCase())) { alert('Já existe um tipo com esse nome.'); return; }
+  const txt = g('tpe-t').value.trim() || (dias ? dias + ' dias úteis' : '');
+  const row = { secao: g('tpe-s').value, nome, quem: g('tpe-q').value.trim(), dias, prazo_txt: txt, fund: g('tpe-f').value.trim() };
+  if (id) {
+    const r = await sbPatch('pa_tipos_prazo', id, row);
+    if (!r || !r[0]) { alert('⚠️ Não foi possível salvar. Confirme que o SQL da etapa 7B foi rodado no Supabase.'); return; }
+    Object.assign(pa_tiposPrazoDb.find(x => x.id === id), rowToTipoPrazoPa(r[0]));
+    pa_auditar('EDITAR', { tabela: 'pa_tipos_prazo', id, num: nome, detalhes: `Tipo de prazo "${nome}" editado` });
+  } else {
+    row.ordem = pa_tiposPrazoDb.reduce((m, x) => Math.max(m, x.ordem || 0), 0) + 1; row.ativo = true;
+    const r = await sbPost('pa_tipos_prazo', row);
+    if (!r || !r[0]) { alert('⚠️ Não foi possível adicionar. Confirme que o SQL da etapa 7B foi rodado no Supabase.'); return; }
+    pa_tiposPrazoDb.push(rowToTipoPrazoPa(r[0]));
+    pa_auditar('CRIAR', { tabela: 'pa_tipos_prazo', id: r[0].id, num: nome, detalhes: `Tipo de prazo "${nome}" adicionado` });
+  }
+  pa_fm(); pa_renderTabelaPrazos(); toast('Tabela de prazos atualizada.');
+}
+async function pa_alternarTipoPrazo(id) {
+  if (!isAdmin()) return;
+  const t = pa_tiposPrazoDb.find(x => x.id === id); if (!t) return;
+  const r = await sbPatch('pa_tipos_prazo', id, { ativo: !t.ativo });
+  if (!r || !r[0]) { alert('⚠️ Não foi possível alterar. Tente novamente.'); return; }
+  Object.assign(t, rowToTipoPrazoPa(r[0]));
+  pa_auditar('EDITAR', { tabela: 'pa_tipos_prazo', id, num: t.nome, detalhes: `Tipo de prazo "${t.nome}" ${t.ativo ? 'reativado' : 'desativado'}` });
+  pa_renderTabelaPrazos();
+}
+async function pa_semearTiposPrazo() {
+  if (!isAdmin() || pa_tiposPrazoDb.length) return;
+  const { data, error } = await _sb.from('pa_tipos_prazo').insert(PA_TIPOS_PRAZO.map((t, i) => ({ secao: t.secao, nome: t.nome, quem: t.quem, dias: t.dias, prazo_txt: t.txt, fund: t.fund, ativo: true, ordem: i + 1 }))).select();
+  if (error || !data) { alert('⚠️ Não foi possível gravar a tabela. Rode o SQL da etapa 7B no Supabase e tente de novo.'); return; }
+  pa_tiposPrazoDb = data.map(rowToTipoPrazoPa);
+  pa_auditar('CRIAR', { tabela: 'pa_tipos_prazo', id: 0, num: 'tabela de prazos', detalhes: 'Tabela padrão de prazos gravada' });
+  pa_renderTabelaPrazos(); toast('Tabela gravada.');
 }
 
 // ═══════════════════════════════════════════════════════════════
